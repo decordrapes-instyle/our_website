@@ -111,9 +111,9 @@ const Navbar: React.FC = () => {
   };
 
   const shouldShowDashboard = () => {
-    return currentUser && 
-           (currentUser.role === "admin" || 
-            currentUser.role === "employee" || 
+    return currentUser &&
+           (currentUser.role === "admin" ||
+            currentUser.role === "employee" ||
             currentUser.role === "production");
   };
 
@@ -178,9 +178,9 @@ const Navbar: React.FC = () => {
                     </div>
                   )}
                   <span className="text-sm text-gray-700">{firstName}</span>
-                  <ChevronDown 
-                    size={16} 
-                    className={`transition-transform duration-200 ${profileMenuOpen ? 'rotate-180' : ''}`} 
+                  <ChevronDown
+                    size={16}
+                    className={`transition-transform duration-200 ${profileMenuOpen ? 'rotate-180' : ''}`}
                   />
                 </button>
 
@@ -245,9 +245,9 @@ const Navbar: React.FC = () => {
                   <span className="text-gray-700 text-sm truncate max-w-[80px]">
                     {firstName}
                   </span>
-                  <ChevronDown 
-                    size={14} 
-                    className={`transition-transform duration-200 ${profileMenuOpen ? 'rotate-180' : ''}`} 
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform duration-200 ${profileMenuOpen ? 'rotate-180' : ''}`}
                   />
                 </button>
 
@@ -308,8 +308,8 @@ const Navbar: React.FC = () => {
           <div className="w-72 bg-white h-full shadow-xl p-5 flex flex-col justify-between animate-slideInRight">
             <div>
               <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-4">
-                <Link 
-                  to="/" 
+                <Link
+                  to="/"
                   className="flex items-center gap-3"
                   onClick={() => setSidebarOpen(false)}
                 >
@@ -467,7 +467,7 @@ const Navbar: React.FC = () => {
             opacity: 1;
           }
         }
-        
+
         @keyframes fadeIn {
           from {
             opacity: 0;
@@ -476,11 +476,11 @@ const Navbar: React.FC = () => {
             opacity: 1;
           }
         }
-        
+
         .animate-slideInRight {
           animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        
+
         .animate-fadeIn {
           animation: fadeIn 0.2s ease-out forwards;
         }
