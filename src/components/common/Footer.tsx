@@ -338,12 +338,12 @@ const Footer: React.FC = () => {
         {/* Made by section */}
         <div className="bg-gray-900 text-center py-3">
           <p className="text-gray-500 text-xs">
-            Developed by{" "}
+            Made with{" "}
             <a
               // href=""
               className="hover:text-white"
             >
-              Pankaj
+              ❤️
             </a>
           </p>
         </div>
