@@ -31,7 +31,7 @@ import ResetPassword from "./pages/ResetPassword";
 import TitleUpdater from "./components/common/TitleUpdater";
 import AuthHandler from "../src/context/Auth";
 import Sitemap from "./pages/Sitemap";
-// import OrderTracking from "./pages/OrderTracking";
+import MaintenancePage from "./pages/MaintenancePage";
 
 function LayoutWrapper() {
   const location = useLocation();
@@ -45,8 +45,7 @@ function LayoutWrapper() {
     "/estimate",
     "/privacy",
     "/our-work",
-    // "/track-order",
-    "/profile"
+    "/profile",
   ];
 
   const hideHeaderFooter =
@@ -73,12 +72,10 @@ function LayoutWrapper() {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/our-work" element={<OurWorkPublic />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/sitemap" element={<Sitemap/>} />
-          {/* <Route path="/auth/login" element={<Auth />} /> */}
+          <Route path="/sitemap" element={<Sitemap />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route path="/auth/verified" element={<Verified />} />
           <Route path="/auth/login" element={<AuthHandler />} />
-          {/* <Route path="/track" element={<OrderTracking />} /> */}
 
           <Route
             path="/profile"
@@ -89,11 +86,11 @@ function LayoutWrapper() {
             }
           />
 
-          {/* Catch-all NotFound */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
       {!hideHeaderFooter && <Footer />}
+
       <Toaster
         position="top-right"
         toastOptions={{
@@ -114,6 +111,14 @@ function App() {
     }
     gapi.load("client:auth2", start);
   }, []);
+
+  // ✅ Maintenance mode toggle (from .env)
+  const isMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === "true";
+
+  if (isMaintenanceMode) {
+    // ✅ Show maintenance page and skip everything else
+    return <MaintenancePage />;
+  }
 
   return (
     <AuthProvider>

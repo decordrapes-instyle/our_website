@@ -14,6 +14,8 @@ interface ImportMetaEnv {
   readonly VITE_CLOUDINARY_UPLOAD_PRESET: string
   readonly VITE_FEATUREABLE_ID: string
   readonly VITE_GOOGLE_CLIENT_ID: string
+  readonly VITE_MAINTENANCE_MODE: string
+  readonly VITE_WEB3_FORM: string
 }
 
 interface ImportMeta {
