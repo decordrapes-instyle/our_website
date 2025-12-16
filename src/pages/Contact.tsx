@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ref, push, onValue } from 'firebase/database';
 import { database } from '../config/firebase';
-import { Mail, Phone, MapPin, Send } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { SiteSettings } from '../types';
 
@@ -14,6 +14,12 @@ const Contact: React.FC = () => {
   });
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState<SiteSettings[]>([]);
+  const [errors, setErrors] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: '',
+  });
 
   useEffect(() => {
     const settingsRef = ref(database, 'siteSettings');
@@ -36,8 +42,53 @@ const Contact: React.FC = () => {
     return setting?.value || '';
   };
 
+  const validateForm = () => {
+    const newErrors = {
+      name: '',
+      email: '',
+      subject: '',
+      message: '',
+    };
+    let isValid = true;
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+      isValid = false;
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email is invalid';
+      isValid = false;
+    }
+
+    if (!formData.subject.trim()) {
+      newErrors.subject = 'Subject is required';
+      isValid = false;
+    }
+
+    if (!formData.message.trim()) {
+      newErrors.message = 'Message is required';
+      isValid = false;
+    } else if (formData.message.trim().length < 10) {
+      newErrors.message = 'Message must be at least 10 characters';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      toast.error('Please fill in all required fields correctly');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -50,6 +101,7 @@ const Contact: React.FC = () => {
 
       toast.success("Message sent successfully! We'll get back to you soon.");
       setFormData({ name: '', email: '', subject: '', message: '' });
+      setErrors({ name: '', email: '', subject: '', message: '' });
     } catch (error) {
       toast.error('Failed to send message. Please try again.');
       console.error('Error sending contact message:', error);
@@ -59,35 +111,48 @@ const Contact: React.FC = () => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+    // Clear error when user starts typing
+    if (errors[name as keyof typeof errors]) {
+      setErrors({
+        ...errors,
+        [name]: '',
+      });
+    }
   };
 
+  const storeName = getSetting('store_name') || 'Our Shop';
+  const storeEmail = getSetting('primary_email') || 'contact@shop.com';
+  const primaryPhone = getSetting('primary_phone') || '+1 (555) 123-4567';
+  const storeAddress = getSetting('store_address') || '123 Main Street, City, Country';
+  const storeHours = getSetting('store_hours') || 'Mon-Fri: 9AM-6PM\nSat: 10AM-4PM\nSun: Closed';
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Contact Us</h1>
-          <p className="text-xl text-gray-600">
-            We'd love to hear from you. Send us a message and we'll respond as
-            soon as possible.
+        <div className="text-center mb-16">
+          <h1 className="text-3xl md:text-4xl font-light text-gray-900 dark:text-gray-100 mb-4">
+            Contact <span className="font-medium text-blue-600 dark:text-blue-400">{storeName}</span>
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400">
+            We're here to help. Send us a message and we'll respond shortly.
           </p>
         </div>
 
-        <div className="space-y-12">
-          {/* Contact Form (on top) */}
-          <div className="bg-white rounded-lg shadow-md p-6 max-w-3xl mx-auto">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-              Send us a Message
-            </h2>
-
-            <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Floating input: Full Name */}
-                <div className="relative z-0 w-full group">
+        <div className="grid lg:grid-cols-2 gap-16">
+          {/* Contact Form */}
+          <div>
+            <h2 className="text-xl font-normal text-gray-900 dark:text-gray-100 mb-8">Send a Message</h2>
+            
+            <form onSubmit={handleSubmit} className="space-y-8" noValidate>
+              <div className="grid md:grid-cols-2 gap-8">
+                {/* Name Field */}
+                <div className="relative">
                   <input
                     type="text"
                     id="name"
@@ -95,20 +160,22 @@ const Contact: React.FC = () => {
                     required
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="block py-2.5 px-0 w-full text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                    className="peer w-full px-0 pt-6 pb-2 bg-transparent border-0 border-b border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-0 text-gray-900 dark:text-gray-100 placeholder-transparent"
                     placeholder=" "
-                    autoComplete="off"
                   />
                   <label
                     htmlFor="name"
-                    className="absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 left-0 origin-[0] peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75"
+                    className="absolute left-0 top-0 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 peer-placeholder-shown:text-base peer-placeholder-shown:top-6 peer-focus:top-0 peer-focus:text-sm peer-focus:text-blue-500"
                   >
-                    Full Name
+                    Full Name *
                   </label>
+                  {errors.name && (
+                    <p className="absolute text-xs text-red-500 dark:text-red-400 mt-1">{errors.name}</p>
+                  )}
                 </div>
 
-                {/* Floating input: Email */}
-                <div className="relative z-0 w-full group">
+                {/* Email Field */}
+                <div className="relative">
                   <input
                     type="email"
                     id="email"
@@ -116,21 +183,23 @@ const Contact: React.FC = () => {
                     required
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="block py-2.5 px-0 w-full text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                    className="peer w-full px-0 pt-6 pb-2 bg-transparent border-0 border-b border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-0 text-gray-900 dark:text-gray-100 placeholder-transparent"
                     placeholder=" "
-                    autoComplete="off"
                   />
                   <label
                     htmlFor="email"
-                    className="absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 left-0 origin-[0] peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75"
+                    className="absolute left-0 top-0 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 peer-placeholder-shown:text-base peer-placeholder-shown:top-6 peer-focus:top-0 peer-focus:text-sm peer-focus:text-blue-500"
                   >
-                    Email Address
+                    Email Address *
                   </label>
+                  {errors.email && (
+                    <p className="absolute text-xs text-red-500 dark:text-red-400 mt-1">{errors.email}</p>
+                  )}
                 </div>
               </div>
 
-              {/* Floating input: Subject */}
-              <div className="relative z-0 w-full group">
+              {/* Subject Field */}
+              <div className="relative">
                 <input
                   type="text"
                   id="subject"
@@ -138,20 +207,22 @@ const Contact: React.FC = () => {
                   required
                   value={formData.subject}
                   onChange={handleInputChange}
-                  className="block py-2.5 px-0 w-full text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                  className="peer w-full px-0 pt-6 pb-2 bg-transparent border-0 border-b border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-0 text-gray-900 dark:text-gray-100 placeholder-transparent"
                   placeholder=" "
-                  autoComplete="off"
                 />
                 <label
                   htmlFor="subject"
-                  className="absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 left-0 origin-[0] peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75"
+                  className="absolute left-0 top-0 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 peer-placeholder-shown:text-base peer-placeholder-shown:top-6 peer-focus:top-0 peer-focus:text-sm peer-focus:text-blue-500"
                 >
-                  Subject
+                  Subject *
                 </label>
+                {errors.subject && (
+                  <p className="absolute text-xs text-red-500 dark:text-red-400 mt-1">{errors.subject}</p>
+                )}
               </div>
 
-              {/* Floating textarea: Message */}
-              <div className="relative z-0 w-full group">
+              {/* Message Field */}
+              <div className="relative">
                 <textarea
                   id="message"
                   name="message"
@@ -159,112 +230,115 @@ const Contact: React.FC = () => {
                   rows={6}
                   value={formData.message}
                   onChange={handleInputChange}
-                  className="block py-2.5 px-0 w-full text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 resize-none appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                  className="peer w-full px-0 pt-6 pb-2 bg-transparent border-0 border-b border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-0 text-gray-900 dark:text-gray-100 placeholder-transparent resize-none"
                   placeholder=" "
                 />
                 <label
                   htmlFor="message"
-                  className="absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 left-0 origin-[0] peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-6 peer-focus:scale-75"
+                  className="absolute left-0 top-0 text-sm text-gray-500 dark:text-gray-400 transition-all duration-200 peer-placeholder-shown:text-base peer-placeholder-shown:top-6 peer-focus:top-0 peer-focus:text-sm peer-focus:text-blue-500"
                 >
-                  Message
+                  Message *
                 </label>
+                {errors.message && (
+                  <p className="absolute text-xs text-red-500 dark:text-red-400 mt-1">{errors.message}</p>
+                )}
+              </div>
+
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                * Required fields
               </div>
 
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center justify-center"
+                disabled={loading || !formData.name.trim() || !formData.email.trim() || !formData.subject.trim() || !formData.message.trim()}
+                className="w-full py-3 bg-gray-900 dark:bg-gray-800 text-white hover:bg-black dark:hover:bg-gray-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-900 dark:disabled:hover:bg-gray-800 flex items-center justify-center gap-2"
               >
                 {loading ? (
-                  "Sending..."
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Sending...
+                  </>
                 ) : (
                   <>
                     Send Message
-                    <Send className="w-4 h-4 ml-2" />
+                    <Send className="w-4 h-4" />
                   </>
                 )}
               </button>
             </form>
           </div>
 
-          {/* Contact Info (below form) */}
-          <div className="bg-white rounded-lg shadow-md p-6 max-w-3xl mx-auto">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-              Get in Touch
-            </h2>
-
-            <div className="space-y-6">
+          {/* Contact Information */}
+          <div>
+            <h2 className="text-xl font-normal text-gray-900 dark:text-gray-100 mb-8">Contact Information</h2>
+            
+            <div className="space-y-10">
               {/* Email */}
-              <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Mail className="w-5 h-5 text-blue-600" />
+              <div className="flex items-start">
+                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mr-4">
+                  <Mail className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Email</h3>
-                  <p className="text-gray-600">
-                    {getSetting("primary_email") || "contact@shop.com"}
-                  </p>
-                  <p className="text-gray-600">
-                    {getSetting("support_email") || "support@shop.com"}
-                  </p>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">Email</h3>
+                  <p className="text-gray-600 dark:text-gray-400">{storeEmail}</p>
                 </div>
               </div>
 
               {/* Phone */}
-              <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Phone className="w-5 h-5 text-green-600" />
+              <div className="flex items-start">
+                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mr-4">
+                  <Phone className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Phone</h3>
-                  <p className="text-gray-600">
-                    {getSetting("primary_phone") || "+1 (555) 123-4567"}
-                  </p>
-                  <p className="text-gray-600">
-                    {getSetting("secondary_phone") || "+1 (555) 987-6543"}
-                  </p>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">Phone</h3>
+                  <p className="text-gray-600 dark:text-gray-400">{primaryPhone}</p>
                 </div>
               </div>
 
               {/* Address */}
-              <div className="flex items-start space-x-4">
-                <div className="shrink-0 w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <MapPin className="w-5 h-5 text-purple-600" />
+              <div className="flex items-start">
+                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mr-4">
+                  <MapPin className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Address</h3>
-                  {(
-                    getSetting("store_address") ||
-                    ""
-                  )
-                    .split("\n")
-                    .map((line, index) => (
-                      <p className="text-gray-600" key={index}>
-                        {line}
-                      </p>
-                    ))}
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">Address</h3>
+                  {storeAddress.split('\n').map((line, index) => (
+                    <p key={index} className="text-gray-600 dark:text-gray-400">
+                      {line}
+                    </p>
+                  ))}
                 </div>
               </div>
 
               {/* Business Hours */}
-              <div className="mt-8">
-                <h3 className="font-semibold text-gray-900 mb-4">
-                  Business Hours
-                </h3>
-                <div className="space-y-2 text-sm text-gray-600">
-                  {(
-                    getSetting("store_hours") ||
-                    "Mon-Fri: 9AM-6PM, Sat: 10AM-4PM, Sun: Closed"
-                  )
-                    .split(",")
-                    .map((segment, idx) => (
-                      <div className="flex justify-between" key={idx}>
-                        <span>{segment.split(":")[0].trim()}</span>
-                        <span>{segment.split(":")[1].trim()}</span>
-                      </div>
-                    ))}
+              <div className="flex items-start">
+                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mr-4">
+                  <Clock className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">Business Hours</h3>
+                  <div className="space-y-1">
+                    {storeHours.split('\n').map((segment, idx) => {
+                      const [day, time] = segment.split(':');
+                      return (
+                        <div key={idx} className="flex justify-between text-gray-600 dark:text-gray-400">
+                          <span>{day?.trim()}</span>
+                          <span>{time?.trim()}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
+            </div>
+
+            {/* Description */}
+            <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
+                We typically respond to all inquiries within 24 hours during business days. 
+                For urgent matters, please call us directly. We're committed to providing 
+                excellent customer service and will get back to you as soon as possible.
+              </p>
             </div>
           </div>
         </div>

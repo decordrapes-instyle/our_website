@@ -9,7 +9,6 @@ export function useSiteSettings() {
     const settingsRef = ref(database, 'siteSettings');
     const unsubscribe = onValue(settingsRef, (snapshot) => {
       const data = snapshot.val() || {};
-      // Map your data into an array of { key, value }
       const arr = Object.values(data).map((entry: any) => ({
         key: entry.key,
         value: entry.value,

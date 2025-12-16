@@ -57,7 +57,7 @@ const CatalogueWithPopupRating: React.FC = () => {
   const [ratingError, setRatingError] = useState<string | null>(null);
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
 
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [_currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
 
   // Auth listener
   useEffect(() => {

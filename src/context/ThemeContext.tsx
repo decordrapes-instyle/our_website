@@ -1,4 +1,5 @@
-import React, { createContext, useEffect, useState } from "react";
+// src/context/ThemeContext.tsx
+import React, { createContext, useEffect, useState, useCallback } from "react";
 
 type Theme = "light" | "dark" | "system";
 
@@ -15,38 +16,51 @@ export const ThemeContext = createContext<ThemeContextProps>({
 });
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem("theme") as Theme) || "system"
-  );
+  const [theme, setThemeState] = useState<Theme>(() => {
+    // Check localStorage first, then system preference
+    const saved = localStorage.getItem("theme") as Theme;
+    if (saved) return saved;
+
+    // Check system preference
+    const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    return systemDark ? "dark" : "light";
+  });
+
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
+
+  const setTheme = useCallback((newTheme: Theme) => {
+    setThemeState(newTheme);
+    localStorage.setItem("theme", newTheme);
+  }, []);
 
   useEffect(() => {
     const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const activeTheme =
-      theme === "system" ? (systemDark ? "dark" : "light") : theme;
+    const activeTheme = theme === "system" ? (systemDark ? "dark" : "light") : theme;
 
     setResolvedTheme(activeTheme);
 
     if (activeTheme === "dark") {
       document.documentElement.classList.add("dark");
+      document.documentElement.style.colorScheme = "dark";
     } else {
       document.documentElement.classList.remove("dark");
+      document.documentElement.style.colorScheme = "light";
     }
 
-    localStorage.setItem("theme", theme);
-
     // Listen to system changes if using system theme
-    const listener = (e: MediaQueryListEvent) => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+    const handleChange = (e: MediaQueryListEvent) => {
       if (theme === "system") {
         const newSystemTheme = e.matches ? "dark" : "light";
         setResolvedTheme(newSystemTheme);
         document.documentElement.classList.toggle("dark", e.matches);
+        document.documentElement.style.colorScheme = e.matches ? "dark" : "light";
       }
     };
 
-    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", listener);
-    return () =>
-      window.matchMedia("(prefers-color-scheme: dark)").removeEventListener("change", listener);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme]);
 
   return (

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import TestimonialForm from "./testimonials/TestimonialForm";
-import { Reviewer, Review, ReviewsProps } from "../types";
+import { Review, ReviewsProps } from "../types";
 
 const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
   const [googleReviews, setGoogleReviews] = useState<Review[]>([]);
@@ -96,7 +96,7 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
       <div className="max-w-7xl mx-auto py-12 px-4">
         <div className="flex flex-col items-center justify-center h-64">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-gray-600">Loading reviews...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading reviews...</p>
         </div>
       </div>
     );
@@ -110,13 +110,13 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
     <div className="max-w-7xl mx-auto py-12 px-4" id="reviews-section">
       {/* Google Badge with Stats */}
       <motion.div
-        className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl shadow-sm mb-10"
+        className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 p-6 rounded-2xl shadow-sm mb-10"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center w-16 h-16 bg-white rounded-xl shadow-sm">
+          <div className="flex items-center justify-center w-16 h-16 bg-white dark:bg-gray-700 rounded-xl shadow-sm">
             <svg className="w-10 h-10" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -125,12 +125,12 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
             </svg>
           </div>
           <div>
-            <div className="text-3xl font-bold text-gray-800">{averageRating} out of 5</div>
+            <div className="text-3xl font-bold text-gray-800 dark:text-white">{averageRating} out of 5</div>
             <div className="flex gap-1 mt-1">
               {Array.from({ length: 5 }, (_, i) => (
                 <svg
                   key={i}
-                  className={`w-6 h-6 ${i < Math.floor(averageRating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                  className={`w-6 h-6 ${i < Math.floor(averageRating) ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -138,7 +138,7 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
                 </svg>
               ))}
             </div>
-            <div className="text-gray-600 mt-1">Based on {allReviews.length} reviews</div>
+            <div className="text-gray-600 dark:text-gray-400 mt-1">Based on {allReviews.length} reviews</div>
           </div>
         </div>
 
@@ -147,7 +147,7 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
             href="https://search.google.com/local/writereview?placeid=ChIJ81gT5P0VrjsRin99GBddcFE"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-white text-gray-800 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-300 hover:shadow-md flex items-center gap-2 border border-gray-200"
+            className="bg-white dark:bg-gray-700 text-gray-800 dark:text-white px-5 py-3 rounded-xl text-sm font-medium transition-all duration-300 hover:shadow-md flex items-center gap-2 border border-gray-200 dark:border-gray-600"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 16l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-8 8z"/>
@@ -177,28 +177,28 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
             onClick={() => setShowReviewOptions(false)}
           >
             <motion.div
-              className="bg-white rounded-2xl p-6 max-w-md w-full"
+              className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-xl font-bold text-gray-800 mb-4">How would you like to review?</h3>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">How would you like to review?</h3>
               <div className="space-y-4">
                 <a
                   href="https://search.google.com/local/writereview?placeid=ChIJ81gT5P0VrjsRin99GBddcFE"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:bg-blue-50 transition-colors"
+                  className="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                 >
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24">
                       <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 16l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-8 8z"/>
                     </svg>
                   </div>
                   <div>
-                    <div className="font-medium">Write on Google</div>
-                    <div className="text-sm text-gray-600">Share your experience publicly on Google</div>
+                    <div className="font-medium text-gray-900 dark:text-white">Write on Google</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Share your experience publicly on Google</div>
                   </div>
                 </a>
 
@@ -207,24 +207,23 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
                     setShowReviewOptions(false);
                     setShowTestimonialForm(true);
                   }}
-                  className="flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:bg-blue-50 transition-colors w-full text-left"
+                  className="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors w-full text-left"
                 >
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                     </svg>
                   </div>
                   <div>
-                    <div className="font-medium">Submit on our website</div>
-                    <div className="text-sm text-gray-600">Share your feedback directly with us</div>
+                    <div className="font-medium text-gray-900 dark:text-white">Submit on our website</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Share your feedback directly with us</div>
                   </div>
                 </button>
-
               </div>
 
               <button
                 onClick={() => setShowReviewOptions(false)}
-                className="mt-6 text-gray-500 hover:text-gray-700"
+                className="mt-6 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
               >
                 Cancel
               </button>
@@ -240,7 +239,7 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
             onClick={() => setShowTestimonialForm(false)}
           >
             <motion.div
-              className="bg-white rounded-2xl p-6 max-w-md w-full"
+              className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -250,11 +249,9 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
                 isOpen={showTestimonialForm}
                 onClose={() => setShowTestimonialForm(false)}
               />
-
             </motion.div>
           </motion.div>
         )}
-
       </AnimatePresence>
 
       <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6">
@@ -262,7 +259,7 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
           {displayedReviews.map((review, index) => (
             <motion.div
               key={review.id}
-              className="break-inside-avoid bg-white rounded-2xl shadow-sm p-6 mb-6 border border-gray-100 hover:shadow-md transition-all duration-300 overflow-hidden"
+              className="break-inside-avoid bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 mb-6 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300 overflow-hidden"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -271,7 +268,7 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
             >
               {/* Review Source Badge */}
               <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                <div className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
                   {review.source === "google" ? (
                     <>
                       <svg className="w-3 h-3" viewBox="0 0 24 24">
@@ -309,9 +306,9 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
                     </div>
                   )}
                   {review.source === "google" && (
-                    <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
-                      <div className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center">
-                        <svg className="w-3 h-3 text-blue-500" viewBox="0 0 24 24">
+                    <div className="absolute -bottom-1 -right-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm">
+                      <div className="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-900 flex items-center justify-center">
+                        <svg className="w-3 h-3 text-blue-500 dark:text-blue-400" viewBox="0 0 24 24">
                           <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 16l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-8 8z"/>
                         </svg>
                       </div>
@@ -319,8 +316,8 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
                   )}
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-800">{review.reviewer.displayName}</p>
-                  <p className="text-gray-500 text-sm">
+                  <p className="font-semibold text-gray-800 dark:text-white">{review.reviewer.displayName}</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
                     {new Date(review.createTime).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
@@ -334,7 +331,7 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
                 {Array.from({ length: 5 }, (_, i) => (
                   <svg
                     key={i}
-                    className={`w-5 h-5 ${i < review.starRating ? 'text-yellow-400' : 'text-gray-300'}`}
+                    className={`w-5 h-5 ${i < review.starRating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -344,13 +341,13 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
               </div>
 
               {review.title && (
-                <h4 className="font-semibold text-lg mb-2 text-gray-900">
+                <h4 className="font-semibold text-lg mb-2 text-gray-900 dark:text-white">
                   {review.title}
                 </h4>
               )}
 
               <div className="mb-4">
-                <p className="text-gray-700 leading-relaxed">
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                   {expandedReviews[review.id]
                     ? review.comment
                     : shouldTruncate(review.comment)
@@ -361,7 +358,7 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
                 {shouldTruncate(review.comment) && (
                   <button
                     onClick={(e) => toggleReviewExpansion(review.id, e)}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2 transition-colors"
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium mt-2 transition-colors"
                   >
                     {expandedReviews[review.id] ? 'Show less' : 'Read more'}
                   </button>
@@ -369,10 +366,10 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
               </div>
 
               {review.reviewReply?.comment && (
-                <div className="pt-3 border-t border-gray-100">
+                <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
                   <button
                     onClick={(e) => toggleReply(review.id, e)}
-                    className="flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                    className="flex items-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors"
                   >
                     {expandedReplies[review.id] ? 'Hide response' : 'View response'}
                     <motion.svg
@@ -390,7 +387,7 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
               <AnimatePresence>
                 {review.reviewReply?.comment && expandedReplies[review.id] && (
                   <motion.div
-                    className="bg-blue-50 p-4 rounded-xl mt-4 border border-blue-100"
+                    className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl mt-4 border border-blue-100 dark:border-blue-800"
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
@@ -404,10 +401,10 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
                       />
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-blue-800 font-medium text-sm">{businessAuthor.name}</p>
-                          <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">Owner</span>
+                          <p className="text-blue-800 dark:text-blue-200 font-medium text-sm">{businessAuthor.name}</p>
+                          <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-800 px-2 py-0.5 rounded-full">Owner</span>
                         </div>
-                        <p className="text-blue-700 text-sm mt-1">{review.reviewReply.comment}</p>
+                        <p className="text-blue-700 dark:text-blue-300 text-sm mt-1">{review.reviewReply.comment}</p>
                       </div>
                     </div>
                   </motion.div>
@@ -422,14 +419,14 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
         {hasMore && (
           <motion.button
             onClick={loadMore}
-            className="bg-white text-blue-600 border border-blue-200 px-6 py-3 rounded-xl font-medium hover:bg-blue-50 transition-colors flex items-center gap-2"
+            className="bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 px-6 py-3 rounded-xl font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center gap-2"
             whileHover={{ y: -2 }}
             whileTap={{ y: 0 }}
             disabled={isLoadingMore}
           >
             {isLoadingMore ? (
               <>
-                <svg className="animate-spin h-5 w-5 text-blue-600" viewBox="0 0 24 24">
+                <svg className="animate-spin h-5 w-5 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                 </svg>
@@ -449,7 +446,7 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
         {showLoadLess && (
           <motion.button
             onClick={loadLess}
-            className="bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors flex items-center gap-2"
+            className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
             whileHover={{ y: -2 }}
             whileTap={{ y: 0 }}
           >

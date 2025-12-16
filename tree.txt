@@ -1,0 +1,88 @@
+﻿-- .env
+-- .gitignore
+-- desktop.ini
+-- eslint.config.js
+-- hlg.png
+-- index.html
+-- netlify.toml
+-- package-lock.json
+-- package.json
+-- postcss.config.js
+-- tailwind.config.js
+-- tree.txt
+-- tsconfig.app.json
+-- tsconfig.json
+-- tsconfig.node.json
+-- vite.config.ts
+ public
+   -- ads.txt.txt
+   -- favicon.ico
+   -- logo-bimi.svg
+   -- robots.txt
+   -- sitemap.xml
+   -- _headers
+   -- _redirects
+    assets
+       image
+         -- apple-touch-icon.png
+         -- favicon-96x96.png
+         -- favicon.ico
+         -- favicon.svg
+         -- OG.jpg
+         -- site.webmanifest
+         -- web-app-manifest-192x192.png
+         -- web-app-manifest-512x512.png
+ src
+   -- App.tsx
+   -- index.css
+   -- main.tsx
+   -- vite-env.d.ts
+    components
+      -- FaviconUpdater.tsx
+      -- Hero.tsx
+      -- Reviews.tsx
+       auth
+         -- helper.tsx
+         -- Login.tsx
+         -- ProtectedRoute.tsx
+       common
+         -- Footer.tsx
+         -- Navbar.tsx
+         -- ThemeToggle.tsx
+         -- TitleUpdater.tsx
+       product
+         -- ProductCard.tsx
+         -- ProductModal.tsx
+       testimonials
+         -- TestimonialForm.tsx
+    config
+      -- cloudinary.ts
+      -- firebase.ts
+      -- googleSheets.ts
+      -- razorpay.ts
+    context
+      -- Auth.tsx
+      -- AuthContext.tsx
+      -- CartContext.tsx
+      -- ThemeContext.tsx
+    hooks
+      -- useSiteSettings.ts
+    pages
+      -- About.tsx
+      -- Cart.tsx
+      -- Catalogue.tsx
+      -- Contact.tsx
+      -- Estimate.tsx
+      -- Home.tsx
+      -- MaintenancePage.tsx
+      -- NotFound.tsx
+      -- OurWork.tsx
+      -- PrivacyPolicy.tsx
+      -- Profile.tsx
+      -- ResetPassword.tsx
+      -- Sitemap.tsx
+      -- Terms.tsx
+      -- Verified.tsx
+    types
+      -- index.ts
+      -- react-image-lightbox.d.ts

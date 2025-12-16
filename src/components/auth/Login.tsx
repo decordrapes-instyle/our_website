@@ -1,19 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendEmailVerification,
   sendPasswordResetEmail,
-  signOut,
   signInWithPopup,
   GoogleAuthProvider,
   User,
   onAuthStateChanged,
 } from 'firebase/auth';
 import {
-  getDatabase,
   ref,
   query,
   orderByChild,
@@ -22,7 +19,7 @@ import {
   set,
   update,
 } from 'firebase/database';
-import { Eye, EyeOff, Check, X } from 'lucide-react';
+import { Eye, EyeOff, Check, X, ExternalLink, User as UserIcon, Shield } from 'lucide-react';
 
 import { database as db, auth } from "../../config/firebase";
 const provider = new GoogleAuthProvider();
@@ -54,7 +51,6 @@ function firebaseErrorToMessage(errorCode: string): string {
   }
 }
 
-// Password validation function
 const validatePasswordStrength = (password: string) => {
   const requirements = {
     minLength: password.length >= 8,
@@ -75,7 +71,6 @@ const validatePasswordStrength = (password: string) => {
   };
 };
 
-// Compact password strength indicator
 const CompactPasswordStrength = ({ password }: { password: string }) => {
   const validation = validatePasswordStrength(password);
 
@@ -84,35 +79,31 @@ const CompactPasswordStrength = ({ password }: { password: string }) => {
   return (
     <div className="mt-2">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-medium text-gray-600">Strength:</span>
-        <span className={`text-xs font-medium ${
-          validation.isStrong ? 'text-green-600' :
-          validation.isValid ? 'text-yellow-600' :
-          'text-red-600'
-        }`}>
+        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Strength:</span>
+        <span className={`text-xs font-medium ${validation.isStrong ? 'text-green-600' :
+            validation.isValid ? 'text-yellow-600' :
+              'text-red-600'
+          }`}>
           {validation.isStrong ? 'Strong' :
-           validation.isValid ? 'Good' :
-           'Weak'}
+            validation.isValid ? 'Good' :
+              'Weak'}
         </span>
       </div>
-      <div className="w-full bg-gray-200 rounded-full h-1.5">
+      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
         <div
-          className={`h-1.5 rounded-full transition-all duration-300 ${
-            validation.isStrong ? 'bg-green-500 w-full' :
-            validation.isValid ? 'bg-yellow-500 w-3/4' :
-            'bg-red-500 w-1/3'
-          }`}
+          className={`h-1.5 rounded-full transition-all duration-300 ${validation.isStrong ? 'bg-green-500 w-full' :
+              validation.isValid ? 'bg-yellow-500 w-3/4' :
+                'bg-red-500 w-1/3'
+            }`}
         />
       </div>
     </div>
   );
 };
 
-// Compact password requirements - only shows when requirements aren't met
 const CompactPasswordRequirements = ({ password, showAll = false }: { password: string; showAll?: boolean }) => {
   const validation = validatePasswordStrength(password);
 
-  // Don't show anything if password is empty or all requirements are met
   if (!password || (validation.isValid && !showAll)) return null;
 
   const requiredMet = [
@@ -121,11 +112,10 @@ const CompactPasswordRequirements = ({ password, showAll = false }: { password: 
     validation.requirements.hasLowerCase,
   ].every(Boolean);
 
-  // Only show detailed requirements if the basic ones aren't met
   if (!requiredMet || showAll) {
     return (
-      <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-        <p className="text-xs font-medium text-gray-700 mb-2">Requirements:</p>
+      <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Requirements:</p>
         <div className="grid grid-cols-1 gap-1">
           <RequirementItem
             met={validation.requirements.minLength}
@@ -139,7 +129,7 @@ const CompactPasswordRequirements = ({ password, showAll = false }: { password: 
             met={validation.requirements.hasLowerCase}
             text="Lowercase letter"
           />
-          <div className="flex items-center text-xs text-gray-500 mt-1">
+          <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
             <Check size={12} className="mr-1 text-gray-400" />
             Numbers & special chars recommended
           </div>
@@ -153,16 +143,78 @@ const CompactPasswordRequirements = ({ password, showAll = false }: { password: 
 
 const RequirementItem = ({ met, text }: { met: boolean; text: string }) => (
   <div className="flex items-center">
-    <div className={`flex-shrink-0 w-3 h-3 rounded-full flex items-center justify-center mr-2 ${
-      met ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
-    }`}>
+    <div className={`flex-shrink-0 w-3 h-3 rounded-full flex items-center justify-center mr-2 ${met ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400' : 'bg-gray-100 text-gray-400 dark:bg-gray-700'
+      }`}>
       {met ? <Check size={10} /> : <X size={10} />}
     </div>
-    <span className={`text-xs ${met ? 'text-green-700' : 'text-gray-600'}`}>
+    <span className={`text-xs ${met ? 'text-green-700 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}`}>
       {text}
     </span>
   </div>
 );
+
+const AdminPrivilegeModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  user
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  user: any;
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-sm mx-4 animate-fadeIn">
+        <div className="flex items-center space-x-3 mb-4">
+          {user?.profileImage ? (
+            <img
+              src={user.profileImage}
+              alt="Avatar"
+              className="w-12 h-12 rounded-full object-cover border border-gray-300 dark:border-gray-600"
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 flex items-center justify-center border border-blue-200 dark:border-blue-700">
+              <UserIcon size={20} className="text-blue-600 dark:text-blue-400" />
+            </div>
+          )}
+          <div>
+            <h3 className="font-bold text-gray-900 dark:text-white">{user?.displayName || user?.email?.split('@')[0]}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
+              {user?.role} Privileges
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2 mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <Shield size={16} className="text-blue-600 dark:text-blue-400" />
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            You have administrative access. Would you like to proceed to the admin panel?
+          </p>
+        </div>
+
+        <div className="flex space-x-3">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors duration-200"
+          >
+            Stay on Main Site
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+          >
+            <span>Go to Admin</span>
+            <ExternalLink size={14} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -174,7 +226,7 @@ const Login = () => {
   >('email');
 
   const [email, setEmail] = useState('');
-  const [userExists, setUserExists] = useState(false);
+  const [_userExists, setUserExists] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [tempEmailError, setTempEmailError] = useState('');
 
@@ -193,24 +245,44 @@ const Login = () => {
 
   const [loading, setLoading] = useState(false);
 
-  const [verificationSent, setVerificationSent] = useState(false);
+  const [_verificationSent, setVerificationSent] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
 
   const [showGoogleError, setShowGoogleError] = useState('');
 
-  // Check authentication status
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminUser, setAdminUser] = useState<any>(null);
+  const [_isAdminUser, setIsAdminUser] = useState(false);
+  const [hasProcessedAdmin, setHasProcessedAdmin] = useState(false);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         if (user.emailVerified) {
-          // User is logged in and verified, redirect to profile
-          navigate('/profile');
+          const userRef = ref(db, `users/${user.uid}`);
+          const snapshot = await get(userRef);
+
+          if (snapshot.exists()) {
+            const userData = snapshot.val();
+            const hasAdminRole = ['admin', 'employee', 'production'].includes(userData.role);
+
+            if (hasAdminRole && !hasProcessedAdmin) {
+              setAdminUser(userData);
+              setIsAdminUser(true);
+              setShowAdminModal(true);
+              setHasProcessedAdmin(true);
+            } else {
+              navigate('/profile');
+            }
+          } else {
+            navigate('/profile');
+          }
         } else {
-          // If user is logged in but not verified, keep them on login page
           setAuthChecked(true);
         }
       } else {
         setAuthChecked(true);
+        setHasProcessedAdmin(false);
       }
     });
 
@@ -220,7 +292,7 @@ const Login = () => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [navigate]);
+  }, [navigate, hasProcessedAdmin]);
 
   async function isDisposableEmail(email: string) {
     try {
@@ -244,12 +316,10 @@ const Login = () => {
     const snapshot = await get(userRef);
 
     if (snapshot.exists()) {
-      // User already exists, update only lastLogin
       await update(userRef, {
         lastLogin: new Date().toISOString()
       });
     } else {
-      // Create new user entry with createdWith field
       const userData = {
         displayName: name || user.displayName || '',
         uid: user.uid,
@@ -257,7 +327,7 @@ const Login = () => {
         profileImage: '',
         createdAt: new Date().toISOString(),
         lastLogin: new Date().toISOString(),
-        createdWith: createdWith, // Add this field
+        createdWith: createdWith,
       };
       await set(userRef, userData);
     }
@@ -273,22 +343,18 @@ const Login = () => {
         lastLogin: new Date().toISOString()
       };
 
-      // Only update displayName if it's empty and we have a value from Google
       if ((!userData.displayName || userData.displayName === '') && user.displayName) {
         updates.displayName = user.displayName;
       }
 
-      // Only update profileImage if it's empty and we have a value from Google
       if ((!userData.profileImage || userData.profileImage === '') && user.photoURL) {
         updates.profileImage = user.photoURL;
       }
 
-      // Update only the fields that need updating
-      if (Object.keys(updates).length > 1) { // More than just lastLogin
+      if (Object.keys(updates).length > 1) {
         await update(userRef, updates);
       }
     } else {
-      // Create new user entry with createdWith: 'gmail'
       const userData = {
         displayName: user.displayName || '',
         uid: user.uid,
@@ -296,7 +362,7 @@ const Login = () => {
         profileImage: user.photoURL || '',
         createdAt: new Date().toISOString(),
         lastLogin: new Date().toISOString(),
-        createdWith: 'gmail', // Set createdWith for Google users
+        createdWith: 'gmail',
       };
       await set(userRef, userData);
     }
@@ -363,13 +429,6 @@ const Login = () => {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      if (!auth.currentUser?.emailVerified) {
-        setLoginError('Please verify your email before logging in.');
-        await signOut(auth);
-        setLoading(false);
-        return;
-      }
-      navigate('/profile');
     } catch (err: any) {
       setLoginError(firebaseErrorToMessage(err.code || ''));
     }
@@ -409,12 +468,11 @@ const Login = () => {
     e.preventDefault();
     setSignupError('');
 
-    // Validate password strength
     const validation = validatePasswordStrength(signupPassword);
 
     if (!validation.isValid) {
       setSignupError('Please meet the minimum password requirements to continue.');
-      setShowPasswordGuide(true); // Show guide if requirements aren't met
+      setShowPasswordGuide(true);
       return;
     }
 
@@ -427,7 +485,7 @@ const Login = () => {
     try {
       const newUser = await createUserWithEmailAndPassword(auth, email, signupPassword);
       await sendEmailVerification(newUser.user);
-      await saveUserToDB(newUser.user, displayName, 'email'); // createdWith: 'email'
+      await saveUserToDB(newUser.user, displayName, 'email');
       setVerificationSent(true);
       setStep('verify_email');
       pollEmailVerification(newUser.user);
@@ -442,8 +500,7 @@ const Login = () => {
     setLoading(true);
     try {
       const result = await signInWithPopup(auth, provider);
-      await handleGoogleUser(result.user); // createdWith: 'gmail' is set in handleGoogleUser
-      navigate('/profile');
+      await handleGoogleUser(result.user);
     } catch (err: any) {
       const errorMessage = firebaseErrorToMessage(err.code || '');
       setShowGoogleError(errorMessage);
@@ -452,19 +509,40 @@ const Login = () => {
     setLoading(false);
   };
 
+  const handleAdminRedirect = () => {
+    const sessionToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    const redirectData = {
+      token: sessionToken,
+      email: adminUser.email,
+      timestamp: Date.now(),
+      source: 'main_site'
+    };
+    sessionStorage.setItem('adminRedirectData', JSON.stringify(redirectData));
+    const adminUrl = `https://admin.decordrapesinstyle.com?token=${sessionToken}&email=${encodeURIComponent(adminUser.email)}&source=main_site`;
+    window.open(adminUrl, '_blank');
+
+    setShowAdminModal(false);
+    navigate('/profile');
+  };
+
+  const handleAdminModalClose = () => {
+    setShowAdminModal(false);
+    navigate('/profile');
+  };
+
   const VerificationStep = () => (
     <div className="text-center space-y-4">
-      <p className="text-lg font-semibold">
+      <p className="text-lg font-semibold text-gray-900 dark:text-white">
         Verification email sent to <strong>{email}</strong>.
       </p>
-      <p>Please check your inbox and verify your email.</p>
+      <p className="text-gray-600 dark:text-gray-400">Please check your inbox and verify your email.</p>
       {emailVerified ? (
         <p className="text-green-600 font-semibold">Email verified! Redirecting...</p>
       ) : (
-        <p className="text-gray-600 italic">Waiting for verification...</p>
+        <p className="text-gray-600 dark:text-gray-400 italic">Waiting for verification...</p>
       )}
       <button
-        className="mt-4 text-blue-600"
+        className="mt-4 text-blue-600 dark:text-blue-400 hover:underline"
         onClick={() => navigate('/')}
       >
         Verify later
@@ -474,229 +552,137 @@ const Login = () => {
 
   if (!authChecked) {
     return (
-      <div className="min-h-screen w-full bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen w-full bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Please wait...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Please wait...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full bg-gray-50 flex flex-col items-center justify-center px-4 py-12">
-      <div className="text-center mb-8">
-        <Link to="/" className="inline-block">
-          <img
-            src="https://res.cloudinary.com/ds6um53cx/image/upload/v1754572073/eold8lngapg8mqff7pti.png"
-            alt="Decor Drapes Instyle"
-            className="h-16 mx-auto mb-4"
-          />
-          <h1 className="text-2xl font-bold text-gray-800">Decor Drapes Instyle</h1>
-          <p className="text-sm text-gray-500 mt-1">Elegant Interiors. Effortlessly.</p>
-        </Link>
-      </div>
-
-      <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-6 md:p-8 lg:p-8 space-y-6">
-        <button
-          type="button"
-          onClick={handleGoogleSignIn}
-          className="w-full flex justify-center items-center gap-2 border border-gray-300 py-3 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
-          disabled={loading}
-        >
-          <img
-            src="https://res.cloudinary.com/ds6um53cx/image/upload/v1754730922/goypyiizaob8qcc6luzj.png"
-            alt="Google"
-            className="h-5 w-5"
-          />
-          <span className="text-sm font-medium text-gray-700">
-            {loading ? 'Signing in...' : 'Continue with Google'}
-          </span>
-        </button>
-        {showGoogleError && (
-          <p className="text-red-600 text-center mt-1">{showGoogleError}</p>
-        )}
-
-        <div className="flex items-center space-x-4 my-4">
-          <div className="flex-grow border-t border-gray-300"></div>
-          <span className="text-gray-400 text-sm">or</span>
-          <div className="flex-grow border-t border-gray-300"></div>
+    <>
+      <div className="min-h-screen w-full bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center px-4 py-12 transition-colors duration-200">
+        <div className="text-center mb-8">
+          <Link to="/" className="inline-block">
+            <img
+              src="https://res.cloudinary.com/dmiwq3l2s/image/upload/v1763815775/dchfnweml4bh0epchpjv.svg"
+              alt="Decor Drapes Instyle"
+              className="h-16 mx-auto mb-4"
+            />
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Blinds & curtains, Designed your way</p>
+          </Link>
         </div>
 
-        {step === 'email' && (
-          <form onSubmit={handleEmailSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your email"
-              />
-              {emailError && <p className="text-red-600 text-sm mt-1">{emailError}</p>}
-              {tempEmailError && <p className="text-red-600 text-sm mt-1">{tempEmailError}</p>}
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
-            >
-              {loading ? 'Checking...' : 'Continue'}
-            </button>
-          </form>
-        )}
+        <div className="w-full max-w-md bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 md:p-8 lg:p-8 space-y-6 transition-colors duration-200">
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            className="w-full flex justify-center items-center gap-2 border border-gray-300 dark:border-gray-600 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
+            disabled={loading}
+          >
+            <img
+              src="https://res.cloudinary.com/ds6um53cx/image/upload/v1754730922/goypyiizaob8qcc6luzj.png"
+              alt="Google"
+              className="h-5 w-5"
+            />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {loading ? 'Signing in...' : 'Continue with Google'}
+            </span>
+          </button>
+          {showGoogleError && (
+            <p className="text-red-600 text-center mt-1">{showGoogleError}</p>
+          )}
 
-        {step === 'login' && (
-          <form onSubmit={handleLoginSubmit} className="space-y-6">
-            <div className="text-sm text-gray-700 mb-2">
-              Signed in as <strong>{email}</strong>{' '}
-              <button
-                type="button"
-                className="text-blue-600 hover:underline ml-2"
-                onClick={() => {
-                  setStep('email');
-                  setEmail('');
-                  setPassword('');
-                  setLoginError('');
-                }}
-              >
-                Change
-              </button>
-            </div>
+          <div className="flex items-center space-x-4 my-4">
+            <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+            <span className="text-gray-400 dark:text-gray-500 text-sm">or</span>
+            <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+          </div>
 
-            <div className="relative">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your password"
-              />
-              <button
-                type="button"
-                className="absolute top-10 right-4 text-gray-500"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-              {loginError && <p className="text-red-600 text-sm mt-1">{loginError}</p>}
-            </div>
-
-            <div className="flex justify-between items-center">
-              <button
-                type="button"
-                className="text-sm text-blue-600 hover:underline"
-                onClick={() => {
-                  setForgotPasswordError('');
-                  setForgotPasswordSuccess('');
-                  setStep('forgot_password');
-                }}
-              >
-                Forgot password?
-              </button>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
-            >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </button>
-          </form>
-        )}
-
-        {step === 'forgot_password' && (
-          <form onSubmit={handleForgotPasswordSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="forgotEmail" className="block text-sm font-medium text-gray-700 mb-1">
-                Enter your email to reset password
-              </label>
-              <input
-                type="email"
-                id="forgotEmail"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Your email"
-              />
-              {forgotPasswordError && <p className="text-red-600 text-sm mt-1">{forgotPasswordError}</p>}
-              {forgotPasswordSuccess && <p className="text-green-600 text-sm mt-1">{forgotPasswordSuccess}</p>}
-            </div>
-
-            <div className="flex justify-between items-center">
-              <button
-                type="button"
-                className="text-sm text-gray-600 hover:underline"
-                onClick={() => {
-                  setForgotPasswordError('');
-                  setForgotPasswordSuccess('');
-                  setPassword('');
-                  setLoginError('');
-                  setStep('login');
-                }}
-              >
-                Back to login
-              </button>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
-            >
-              {loading ? 'Sending reset email...' : 'Send Reset Email'}
-            </button>
-          </form>
-        )}
-
-        {step === 'signup_name' && (
-          <>
-            <div className="text-sm text-gray-700 mb-4">
-              Creating account for <strong>{email}</strong>{' '}
-              <button
-                type="button"
-                className="text-blue-600 hover:underline ml-2"
-                onClick={() => {
-                  setStep('email');
-                  setEmail('');
-                  setDisplayName('');
-                  setSignupPassword('');
-                  setConfirmPassword('');
-                  setSignupError('');
-                }}
-              >
-                Change
-              </button>
-            </div>
-
-            <form onSubmit={handleSignupNameSubmit} className="space-y-6">
+          {step === 'email' && (
+            <form onSubmit={handleEmailSubmit} className="space-y-6">
               <div>
-                <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Email
                 </label>
                 <input
-                  type="text"
-                  id="displayName"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Your full name"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Enter your email"
                 />
-                {signupError && <p className="text-red-600 text-sm mt-1">{signupError}</p>}
+                {emailError && <p className="text-red-600 text-sm mt-1">{emailError}</p>}
+                {tempEmailError && <p className="text-red-600 text-sm mt-1">{tempEmailError}</p>}
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
+              >
+                {loading ? 'Checking...' : 'Continue'}
+              </button>
+            </form>
+          )}
+
+          {step === 'login' && (
+            <form onSubmit={handleLoginSubmit} className="space-y-6">
+              <div className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                Signed in as <strong>{email}</strong>{' '}
+                <button
+                  type="button"
+                  className="text-blue-600 dark:text-blue-400 hover:underline ml-2"
+                  onClick={() => {
+                    setStep('email');
+                    setEmail('');
+                    setPassword('');
+                    setLoginError('');
+                  }}
+                >
+                  Change
+                </button>
+              </div>
+
+              <div className="relative">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Password
+                </label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  className="absolute top-10 right-4 text-gray-500 dark:text-gray-400"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+                {loginError && <p className="text-red-600 text-sm mt-1">{loginError}</p>}
+              </div>
+
+              <div className="flex justify-between items-center">
+                <button
+                  type="button"
+                  className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                  onClick={() => {
+                    setForgotPasswordError('');
+                    setForgotPasswordSuccess('');
+                    setStep('forgot_password');
+                  }}
+                >
+                  Forgot password?
+                </button>
               </div>
 
               <button
@@ -704,108 +690,206 @@ const Login = () => {
                 disabled={loading}
                 className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
               >
-                Continue
+                {loading ? 'Signing in...' : 'Sign in'}
               </button>
             </form>
-          </>
-        )}
+          )}
 
-        {step === 'signup_password' && (
-          <>
-            <div className="text-sm text-gray-700 mb-4">
-              Creating account for <strong>{email}</strong>{' '}
-              <button
-                type="button"
-                className="text-blue-600 hover:underline ml-2"
-                onClick={() => {
-                  setStep('signup_name');
-                  setSignupError('');
-                  setShowPasswordGuide(false);
-                }}
-              >
-                Change
-              </button>
-            </div>
-
-            <form onSubmit={handleSignupPasswordSubmit} className="space-y-4">
-              <div className="relative">
-                <label htmlFor="signupPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
+          {step === 'forgot_password' && (
+            <form onSubmit={handleForgotPasswordSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="forgotEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Enter your email to reset password
                 </label>
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="signupPassword"
-                  value={signupPassword}
-                  onChange={(e) => setSignupPassword(e.target.value)}
-                  onFocus={() => setShowPasswordGuide(true)}
+                  type="email"
+                  id="forgotEmail"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Create a password"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Your email"
                 />
+                {forgotPasswordError && <p className="text-red-600 text-sm mt-1">{forgotPasswordError}</p>}
+                {forgotPasswordSuccess && <p className="text-green-600 text-sm mt-1">{forgotPasswordSuccess}</p>}
+              </div>
+
+              <div className="flex justify-between items-center">
                 <button
                   type="button"
-                  className="absolute top-10 right-4 text-gray-500"
-                  onClick={() => setShowPassword(!showPassword)}
-                  tabIndex={-1}
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:underline"
+                  onClick={() => {
+                    setForgotPasswordError('');
+                    setForgotPasswordSuccess('');
+                    setPassword('');
+                    setLoginError('');
+                    setStep('login');
+                  }}
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  Back to login
                 </button>
-
-                {/* Compact strength indicator - always shows when typing */}
-                <CompactPasswordStrength password={signupPassword} />
               </div>
 
-              {/* Compact requirements - only shows when focused or requirements not met */}
-              <CompactPasswordRequirements
-                password={signupPassword}
-                showAll={showPasswordGuide || signupError.includes('requirements')}
-              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
+              >
+                {loading ? 'Sending reset email...' : 'Send Reset Email'}
+              </button>
+            </form>
+          )}
 
-              <div className="relative">
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password
-                </label>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="confirmPassword"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Confirm your password"
-                />
-              </div>
-
-              {signupError && <p className="text-red-600 text-sm mt-1">{signupError}</p>}
-
-              <div className="flex justify-between items-center pt-2">
+          {step === 'signup_name' && (
+            <>
+              <div className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                Creating account for <strong>{email}</strong>{' '}
                 <button
                   type="button"
-                  className="text-gray-500 underline"
+                  className="text-blue-600 dark:text-blue-400 hover:underline ml-2"
+                  onClick={() => {
+                    setStep('email');
+                    setEmail('');
+                    setDisplayName('');
+                    setSignupPassword('');
+                    setConfirmPassword('');
+                    setSignupError('');
+                  }}
+                >
+                  Change
+                </button>
+              </div>
+
+              <form onSubmit={handleSignupNameSubmit} className="space-y-6">
+                <div>
+                  <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    id="displayName"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Your full name"
+                  />
+                  {signupError && <p className="text-red-600 text-sm mt-1">{signupError}</p>}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
+                >
+                  Continue
+                </button>
+              </form>
+            </>
+          )}
+
+          {step === 'signup_password' && (
+            <>
+              <div className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                Creating account for <strong>{email}</strong>{' '}
+                <button
+                  type="button"
+                  className="text-blue-600 dark:text-blue-400 hover:underline ml-2"
                   onClick={() => {
                     setStep('signup_name');
                     setSignupError('');
                     setShowPasswordGuide(false);
                   }}
                 >
-                  Back
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
-                >
-                  {loading ? 'Creating...' : 'Create Account'}
+                  Change
                 </button>
               </div>
-            </form>
-          </>
-        )}
 
-        {step === 'verify_email' && <VerificationStep />}
+              <form onSubmit={handleSignupPasswordSubmit} className="space-y-4">
+                <div className="relative">
+                  <label htmlFor="signupPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Password
+                  </label>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="signupPassword"
+                    value={signupPassword}
+                    onChange={(e) => setSignupPassword(e.target.value)}
+                    onFocus={() => setShowPasswordGuide(true)}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Create a password"
+                  />
+                  <button
+                    type="button"
+                    className="absolute top-10 right-4 text-gray-500 dark:text-gray-400"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+
+                  <CompactPasswordStrength password={signupPassword} />
+                </div>
+
+                <CompactPasswordRequirements
+                  password={signupPassword}
+                  showAll={showPasswordGuide || signupError.includes('requirements')}
+                />
+
+                <div className="relative">
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Confirm Password
+                  </label>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="confirmPassword"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Confirm your password"
+                  />
+                </div>
+
+                {signupError && <p className="text-red-600 text-sm mt-1">{signupError}</p>}
+
+                <div className="flex justify-between items-center pt-2">
+                  <button
+                    type="button"
+                    className="text-gray-500 dark:text-gray-400 underline"
+                    onClick={() => {
+                      setStep('signup_name');
+                      setSignupError('');
+                      setShowPasswordGuide(false);
+                    }}
+                  >
+                    Back
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
+                  >
+                    {loading ? 'Creating...' : 'Create Account'}
+                  </button>
+                </div>
+              </form>
+            </>
+          )}
+
+          {step === 'verify_email' && <VerificationStep />}
+        </div>
       </div>
-    </div>
+
+      <AdminPrivilegeModal
+        isOpen={showAdminModal}
+        onClose={handleAdminModalClose}
+        onConfirm={handleAdminRedirect}
+        user={adminUser}
+      />
+    </>
   );
 };
 

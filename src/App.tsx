@@ -16,7 +16,6 @@ import NotFound from "./pages/NotFound";
 import Home from "./pages/Home";
 import Login from "./components/auth/Login";
 import Catalogue from "./pages/Catalogue";
-import Cart from "./pages/Cart";
 import Profile from "./pages/Profile";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -50,7 +49,7 @@ function LayoutWrapper() {
 
   const hideHeaderFooter =
     !mainRoutes.includes(location.pathname) ||
-    location.pathname === "/login" ||
+    location.pathname === "/login" || location.pathname === "/privacy" || location.pathname === "/terms" ||
     location.pathname.startsWith("/auth/reset-password") ||
     location.pathname === "/auth/verified";
 
@@ -65,7 +64,6 @@ function LayoutWrapper() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/catalogue" element={<Catalogue />} />
-          <Route path="/cart" element={<Cart />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/estimate" element={<Estimate />} />

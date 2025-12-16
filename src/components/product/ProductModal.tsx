@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X } from "lucide-react";
+import { X, Star, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface RatingData {
   rating: number;
@@ -26,10 +26,10 @@ interface ProductWithRating {
 interface ProductDetailsModalProps {
   product: ProductWithRating;
   onClose: () => void;
-  onSubmitRating?: (rating: number, message: string) => Promise<void>; // 🔹 Optional now
+  onSubmitRating?: (rating: number, message: string) => Promise<void>;
 }
 
-const DEFAULT_IMG = 'https://via.placeholder.com/600x400?text=No+Image';
+const DEFAULT_IMG = 'https://via.placeholder.com/800x600?text=No+Image';
 
 function getUserId(): string {
   const auth = (window as any).firebase?.auth?.();
@@ -52,9 +52,21 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   const [ratingMessage, setRatingMessage] = useState("");
   const [ratingError, setRatingError] = useState<string | null>(null);
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+
+  // Get all media
+  const allMedia = [
+    ...(product.images && product.images.length > 0
+      ? product.images
+      : product.imageUrl
+        ? [product.imageUrl]
+        : [DEFAULT_IMG]
+    ),
+    ...(product.video ? [product.video] : [])
+  ];
 
   const handleSubmit = async () => {
-    if (!onSubmitRating) return; // 🔹 Skip if not provided
+    if (!onSubmitRating) return;
     if (ratingValue < 1 || ratingValue > 5) {
       setRatingError("Please select 1 to 5 stars.");
       return;
@@ -72,140 +84,266 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
     }
   };
 
-  return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 overflow-auto"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-2xl max-w-4xl w-full p-6 relative max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 text-gray-600 hover:text-gray-900"
-        >
-          <X size={28} />
-        </button>
+  const isVideo = (url: string) => {
+    return url === product.video || url.includes('.mp4') || url.includes('.webm') || url.includes('.ogg');
+  };
 
-        {/* Media */}
-        <div className="flex gap-4 overflow-x-auto mb-6 py-2 no-scrollbar">
-          {(product.images && product.images.length > 0
-            ? product.images
-            : product.imageUrl ? [product.imageUrl] : [DEFAULT_IMG]
-          ).map((img, idx) => (
-            <img
-              key={idx}
-              src={img}
-              alt={`${product.name} image ${idx + 1}`}
-              className="w-48 h-48 object-cover rounded-lg flex-shrink-0 shadow-md"
-            />
-          ))}
-          {product.video && (
-            <video controls className="w-48 h-48 rounded-lg flex-shrink-0 shadow-md">
-              <source src={product.video} type="video/mp4" />
-            </video>
-          )}
+  const nextMedia = () => {
+    setSelectedMediaIndex((prev) => (prev + 1) % allMedia.length);
+  };
+
+  const prevMedia = () => {
+    setSelectedMediaIndex((prev) => (prev - 1 + allMedia.length) % allMedia.length);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b dark:border-gray-800">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{product.name}</h1>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+          >
+            <X size={24} className="text-gray-600 dark:text-gray-400" />
+          </button>
         </div>
 
-        {/* Info */}
-        <h2 className="text-3xl font-bold mb-2">{product.name}</h2>
-        <p className="text-gray-700 whitespace-pre-line mb-6">{product.description}</p>
+        <div className="flex-1 overflow-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6">
+            {/* Image Gallery */}
+            <div className="space-y-4">
+              {/* Main Image */}
+              <div className="relative bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden aspect-square">
+                {isVideo(allMedia[selectedMediaIndex]) ? (
+                  <video
+                    controls
+                    className="w-full h-full object-contain"
+                    key={allMedia[selectedMediaIndex]}
+                  >
+                    <source src={allMedia[selectedMediaIndex]} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
+                  <img
+                    src={allMedia[selectedMediaIndex]}
+                    alt={product.name}
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = DEFAULT_IMG;
+                    }}
+                  />
+                )}
 
-        {/* Rating Summary */}
-        {product.averageRating !== undefined && (
-          <section className="border-t pt-6">
-            <h3 className="text-xl font-semibold mb-4">Overall Rating</h3>
-            <div className="flex items-center gap-3">
-              <div className="text-yellow-400 text-4xl font-bold select-none">
-                {(product.averageRating || 0).toFixed(1)}
-              </div>
-              <div>
-                <div className="flex gap-1 text-yellow-400 text-xl select-none">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <span
-                      key={star}
-                      className={star <= Math.round(product.averageRating || 0) ? '' : 'text-gray-300'}
-                    >
-                      ★
-                    </span>
-                  ))}
-                </div>
-                <div className="text-gray-600 text-sm">
-                  {product.ratingCount || 0} rating{(product.ratingCount || 0) !== 1 ? 's' : ''}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Your Rating (only if onSubmitRating is given) */}
-        {onSubmitRating && (
-          <section className="mt-8 border-t pt-6">
-            <h3 className="text-xl font-semibold mb-4">Rate This Product</h3>
-            {product.ratings && Object.keys(product.ratings).includes(getUserId()) ? (
-              <p className="text-green-600 mb-4">You have already rated this product.</p>
-            ) : (
-              <>
-                <div className="flex items-center justify-center gap-4 mb-4">
-                  {[1, 2, 3, 4, 5].map((star) => (
+                {/* Navigation Arrows */}
+                {allMedia.length > 1 && (
+                  <>
                     <button
-                      key={star}
-                      type="button"
-                      className={`text-5xl ${star <= ratingValue ? 'text-yellow-400' : 'text-gray-300'}`}
-                      onClick={() => setRatingValue(star)}
+                      onClick={prevMedia}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all"
                     >
-                      ★
+                      <ChevronLeft size={20} />
+                    </button>
+                    <button
+                      onClick={nextMedia}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all"
+                    >
+                      <ChevronRight size={20} />
+                    </button>
+                  </>
+                )}
+
+                {/* Image Counter */}
+                {allMedia.length > 1 && (
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                    {selectedMediaIndex + 1} / {allMedia.length}
+                  </div>
+                )}
+              </div>
+
+              {/* Thumbnail Strip */}
+              {allMedia.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {allMedia.map((media, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedMediaIndex(index)}
+                      className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                        index === selectedMediaIndex
+                          ? 'border-blue-500 dark:border-blue-400 ring-2 ring-blue-500/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
+                    >
+                      {isVideo(media) ? (
+                        <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                          <div className="w-4 h-4 bg-black/70 rounded-full flex items-center justify-center">
+                            <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          </div>
+                        </div>
+                      ) : (
+                        <img
+                          src={media}
+                          alt={`Thumbnail ${index + 1}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = DEFAULT_IMG;
+                          }}
+                        />
+                      )}
                     </button>
                   ))}
                 </div>
-                <textarea
-                  className="w-full border border-gray-300 rounded p-3 resize-none mb-4"
-                  placeholder="Leave a comment (optional)"
-                  rows={4}
-                  value={ratingMessage}
-                  onChange={(e) => setRatingMessage(e.target.value)}
-                />
-                {ratingError && <p className="text-red-600 mb-3">{ratingError}</p>}
-                <button
-                  onClick={handleSubmit}
-                  disabled={ratingSubmitting}
-                  className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700 disabled:bg-blue-300"
-                >
-                  {ratingSubmitting ? 'Submitting...' : 'Submit Rating'}
-                </button>
-              </>
-            )}
-          </section>
-        )}
+              )}
+            </div>
 
-        {/* User Ratings */}
-        {product.ratings && (
-          <section className="mt-8 border-t pt-6 max-h-64 overflow-y-auto no-scrollbar">
-            <h3 className="text-xl font-semibold mb-4">User Ratings</h3>
-            {Object.keys(product.ratings).length > 0 ? (
-              Object.values(product.ratings)
-                .sort((a, b) => b.timestamp - a.timestamp)
-                .map((r, i) => (
-                  <div key={i} className="mb-4 border-b pb-3 last:border-b-0 last:pb-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold text-sm uppercase select-none">
-                        {(r.userId ?? '').startsWith('anon-') ? 'A' : 'U'}
-                      </div>
-                      <div className="flex gap-1 text-yellow-400 select-none">
-                        {[1, 2, 3, 4, 5].map(star => (
-                          <span key={star} className={star <= r.rating ? '' : 'text-gray-300'}>★</span>
+            {/* Product Details */}
+            <div className="space-y-6">
+              {/* Category */}
+              {product.category && (
+                <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium">
+                  {product.category}
+                </div>
+              )}
+
+              {/* Rating Summary */}
+              {product.averageRating !== undefined && (
+                <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="text-2xl font-bold text-yellow-500">
+                      {(product.averageRating || 0).toFixed(1)}
+                    </div>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          size={16}
+                          className={`${
+                            star <= Math.round(product.averageRating || 0)
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300 dark:text-gray-600'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {product.ratingCount || 0} review{(product.ratingCount || 0) !== 1 ? 's' : ''}
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Description</h3>
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                  {product.description || "No description available."}
+                </p>
+              </div>
+
+              {/* Rating Section */}
+              {onSubmitRating && (
+                <div className="border-t dark:border-gray-800 pt-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Share Your Experience</h3>
+
+                  {product.ratings && Object.keys(product.ratings).includes(getUserId()) ? (
+                    <div className="text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                      You've already shared your feedback for this product.
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Star Rating */}
+                      <div className="flex justify-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            onClick={() => setRatingValue(star)}
+                            className="p-1 transform hover:scale-110 transition-transform"
+                          >
+                            <Star
+                              size={32}
+                              className={`${
+                                star <= ratingValue
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-gray-300 dark:text-gray-600 hover:text-yellow-300'
+                              }`}
+                            />
+                          </button>
                         ))}
                       </div>
+
+                      {/* Comment */}
+                      <textarea
+                        placeholder="Share your thoughts... (optional)"
+                        rows={3}
+                        value={ratingMessage}
+                        onChange={(e) => setRatingMessage(e.target.value)}
+                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+
+                      {ratingError && (
+                        <div className="text-red-600 dark:text-red-400 text-sm">{ratingError}</div>
+                      )}
+
+                      <button
+                        onClick={handleSubmit}
+                        disabled={ratingSubmitting || ratingValue === 0}
+                        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors"
+                      >
+                        {ratingSubmitting ? 'Sharing...' : 'Share Review'}
+                      </button>
                     </div>
-                    {r.message && <p className="text-gray-700">{r.message}</p>}
+                  )}
+                </div>
+              )}
+
+              {/* User Reviews */}
+              {product.ratings && Object.keys(product.ratings).length > 0 && (
+                <div className="border-t dark:border-gray-800 pt-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    Customer Reviews ({Object.keys(product.ratings).length})
+                  </h3>
+                  <div className="space-y-4 max-h-64 overflow-y-auto">
+                    {Object.values(product.ratings)
+                      .sort((a, b) => b.timestamp - a.timestamp)
+                      .map((rating, index) => (
+                        <div key={index} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium uppercase">
+                              {(rating.userId ?? '').startsWith('anon-') ? 'A' : 'U'}
+                            </div>
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map(star => (
+                                <Star
+                                  key={star}
+                                  size={14}
+                                  className={`${
+                                    star <= rating.rating
+                                      ? 'fill-yellow-400 text-yellow-400'
+                                      : 'text-gray-300 dark:text-gray-600'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm text-gray-500 dark:text-gray-400 ml-auto">
+                              {new Date(rating.timestamp).toLocaleDateString()}
+                            </span>
+                          </div>
+                          {rating.message && (
+                            <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
+                              {rating.message}
+                            </p>
+                          )}
+                        </div>
+                      ))}
                   </div>
-                ))
-            ) : (
-              <p className="text-gray-500">No ratings yet.</p>
-            )}
-          </section>
-        )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -119,7 +119,7 @@ const Estimate: React.FC = () => {
   };
 
   const recalcItem = (item: QuotationItem): QuotationItem => {
-    const { base, gst, total } = calcBaseGst(item);
+    const { total } = calcBaseGst(item);
     return { 
       ...item, 
       total,

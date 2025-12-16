@@ -3,7 +3,7 @@ import { ThemeContext } from "../../context/ThemeContext";
 import { Sun, Moon, Monitor, ChevronDown } from "lucide-react";
 
 const ThemeToggle: React.FC = () => {
-  const { theme, setTheme, resolvedTheme } = useContext(ThemeContext);
+  const { theme, setTheme } = useContext(ThemeContext);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -30,22 +30,20 @@ const ThemeToggle: React.FC = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const activeOption =
-    options.find((opt) => opt.value === theme) ||
-    options.find((opt) => opt.value === resolvedTheme);
+  const activeOption = options.find((opt) => opt.value === theme);
 
   return (
     <>
       {/* MOBILE (inline buttons) */}
-      <div className="flex md:hidden items-center gap-2">
+      <div className="flex md:hidden items-center gap-1">
         {options.map((opt) => (
           <button
             key={opt.value}
             onClick={() => setTheme(opt.value as any)}
-            className={`p-2 rounded-xl transition ${
+            className={`p-2 rounded-lg transition-all duration-200 ${
               theme === opt.value
-                ? "bg-gray-200 dark:bg-gray-700"
-                : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
             }`}
             title={opt.label}
           >
@@ -59,23 +57,23 @@ const ThemeToggle: React.FC = () => {
         <button
           ref={buttonRef}
           onClick={() => setOpen((prev) => !prev)}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
           aria-haspopup="true"
           aria-expanded={open}
         >
           {activeOption?.icon}
-          <span className="text-sm capitalize">
+          <span className="text-sm font-medium capitalize">
             {activeOption?.label || "Theme"}
           </span>
           <ChevronDown
-            className={`w-4 h-4 transition-transform ${
+            className={`w-4 h-4 transition-transform duration-200 ${
               open ? "rotate-180" : ""
             }`}
           />
         </button>
 
         {open && (
-          <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-[#1a1816] border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 animate-fadeIn z-50">
+          <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-2 z-50 animate-fadeIn">
             {options.map((opt) => (
               <button
                 key={opt.value}
@@ -83,10 +81,10 @@ const ThemeToggle: React.FC = () => {
                   setTheme(opt.value as any);
                   setOpen(false);
                 }}
-                className={`flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md transition-all ${
+                className={`flex items-center gap-3 w-full px-3 py-2 text-sm transition-all duration-200 ${
                   theme === opt.value
-                    ? "bg-gray-100 dark:bg-gray-800 text-[#b38b59] dark:text-[#d2a46c]"
-                    : "hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200"
+                    ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium"
+                    : "hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                 }`}
               >
                 {opt.icon}
@@ -99,10 +97,18 @@ const ThemeToggle: React.FC = () => {
 
       <style>{`
         @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-4px); }
-          to { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(-8px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
         }
-        .animate-fadeIn { animation: fadeIn 0.15s ease-out; }
+        .animate-fadeIn {
+          animation: fadeIn 0.2s ease-out;
+        }
       `}</style>
     </>
   );

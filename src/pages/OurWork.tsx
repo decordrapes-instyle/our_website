@@ -99,7 +99,7 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
   );
 
   // Render individual item card
-  const renderItem = (item: WorkItem, i: number) => {
+  const renderItem = (item: WorkItem, _i: number) => {
     return (
       <div 
         key={item.id}
