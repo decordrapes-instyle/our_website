@@ -275,7 +275,7 @@ const Navbar: React.FC = () => {
                 className="flex items-center space-x-2 flex-shrink-0"
               >
                 <img
-                  src="https://res.cloudinary.com/dmiwq3l2s/image/upload/v1764652764/rvviqyfeuud02wmq0jcr.png"
+                  src="https://res.cloudinary.com/dmiwq3l2s/image/upload/v1764768203/vfw82jmca7zl5p86czhy.png"
                   alt="Decor Drapes Logo"
                   className="w-7 h-7 sm:w-10 sm:h-10 object-cover "
                 />
