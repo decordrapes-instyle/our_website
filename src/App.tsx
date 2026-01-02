@@ -11,8 +11,6 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import OurWorkPublic from "./pages/OurWork";
 import TermsPage from "./pages/Terms";
 import Profile from "./pages/Profile";
-import Quotations from "./pages/Quotations";
-import QuotationDetail from "./pages/QuotationDetail"; // Added import
 import NotFound from "./pages/NotFound";
 import MaintenancePage from "./pages/MaintenancePage";
 const Login = lazy(() => import("./components/auth/Login"));
@@ -86,23 +84,6 @@ function LayoutWrapper() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/quotations"
-              element={
-                <ProtectedRoute>
-                  <Quotations />
-                </ProtectedRoute>
-              }
-            />
-            <Route // Added this route
-              path="/quotations/:quotationId"
-              element={
-                <ProtectedRoute>
-                  <QuotationDetail />
-                </ProtectedRoute>
-              }
-            />
-
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

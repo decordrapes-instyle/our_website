@@ -72,32 +72,6 @@ export interface CartItem {
   userId: string;
 }
 
-export interface InventoryItem {
-  id: string;
-  sku: string;
-  name: string;
-  description: string;
-  category: string;
-  unit: string;
-  costPrice: number;
-  sellingPrice: number;
-  pricePerUnit: number;
-  unitType: 'sqft' | 'meter' | 'piece' | 'kg' | 'liter';
-  currentStock: number;
-  minimumStock: number;
-  gst: number;
-  reorderLevel: number;
-  location: string;
-  supplier: string;
-  barcode?: string;
-  imageUrl?: string;
-  groupTag?: string;
-  lastUpdated: string;
-  updatedBy: string;
-  createdAt: string;
-  isActive: boolean;
-}
-
 export interface InventoryTransaction {
   id: string;
   inventoryItemId: string;
@@ -184,46 +158,6 @@ export interface Message {
   attachments?: string[];
   createdAt: string;
   updatedAt?: string;
-}
-
-export interface Quotation {
-  id: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  description: string;
-  items: QuotationItem[];
-  subtotal: number;
-  tax: number;
-  discount: number;
-  total: number;
-  status: 'draft' | 'sent' | 'approved' | 'rejected' | 'converted';
-  validUntil: string;
-  notes?: string;
-  createdBy: string;
-  assignedEmployee?: string;
-  createdAt: string;
-  updatedAt: string;
-  approvedBy?: string;
-  approvedAt?: string;
-  paymentStatus?: 'pending' | 'paid' | 'failed';
-  razorpayOrderId?: string;
-}
-
-export interface QuotationItem {
-  id: string;
-  inventoryItemId: string;
-  name: string;
-  description: string;
-  quantity: number;
-  width?: number;
-  height?: number;
-  area?: number;
-  gstRate?: number;
-  unitPrice: number;
-  pricePerUnit: number;
-  unitType: string;
-  total: number;
 }
 
 export interface Order {
