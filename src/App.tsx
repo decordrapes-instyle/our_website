@@ -74,7 +74,7 @@ function LayoutWrapper() {
             <Route path="/login" element={<Login />} />
             <Route path="/auth/reset-password" element={<ResetPassword />} />
             <Route path="/auth/verified" element={<Verified />} />
-            <Route path="/auth/login" element={<AuthHandler />} />
+            <Route path="/auth" element={<AuthHandler />} />
 
             <Route
               path="/profile"
