@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ref, push, onValue } from 'firebase/database';
+import { ref, push, onValue } from '../config/firebase';
 import { database } from '../config/firebase';
 import { Mail, Phone, MapPin, Send, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -125,14 +125,14 @@ const Contact: React.FC = () => {
     }
   };
 
-  const storeName = getSetting('store_name') || 'Our Shop';
-  const storeEmail = getSetting('primary_email') || 'contact@shop.com';
-  const primaryPhone = getSetting('primary_phone') || '+1 (555) 123-4567';
-  const storeAddress = getSetting('store_address') || '123 Main Street, City, Country';
-  const storeHours = getSetting('store_hours') || 'Mon-Fri: 9AM-6PM\nSat: 10AM-4PM\nSun: Closed';
+  const storeName = getSetting('store_name');
+  const storeEmail = getSetting('primary_email');
+  const primaryPhone = getSetting('primary_phone');
+  const storeAddress = getSetting('store_address');
+  const storeHours = getSetting('store_hours');
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
+    <div className="min-h-screen bg-white dark:bg-neutral-950 transition-colors duration-200">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Header */}
         <div className="text-center mb-16">

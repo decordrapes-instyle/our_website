@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import {
   getAuth,
   sendPasswordResetEmail,
   verifyPasswordResetCode,
   confirmPasswordReset,
 } from "firebase/auth";
-import { Mail, Lock, AlertTriangle, CheckCircle } from "lucide-react";
+import { Mail, Lock, AlertTriangle, CheckCircle, ArrowLeft } from "lucide-react";
 
 export default function ResetPassword() {
   const auth = getAuth();
@@ -27,14 +27,16 @@ export default function ResetPassword() {
     const code = searchParams.get("oobCode");
     if (code) {
       setOobCode(code);
+      setLoading(true);
       verifyPasswordResetCode(auth, code)
         .then((email) => {
           setVerifiedEmail(email);
           setError("");
         })
         .catch(() => {
-          setError("Invalid or expired password reset link.");
-        });
+          setError("Invalid or expired password reset link. Please try again.");
+        })
+        .finally(() => setLoading(false));
     } else {
       setOobCode(null);
       setVerifiedEmail(null);
@@ -91,22 +93,32 @@ export default function ResetPassword() {
         navigate("/login");
       }, 3000);
     } catch (err: any) {
-      setError(err.message || "Failed to reset password.");
+        setError(err.message || "Failed to reset password.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-lg p-6 sm:p-10">
-        <h2 className="text-2xl font-semibold mb-6 text-center text-gray-900">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-neutral-950 px-4 transition-colors">
+      <div className="relative w-full max-w-lg bg-white dark:bg-neutral-900 rounded-2xl p-6 sm:p-10 border dark:border-neutral-800">
+        <div className="absolute top-4 left-4">
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+            >
+              <ArrowLeft size={16} className="mr-2" />
+              Back to Home
+            </Link>
+        </div>
+
+        <h2 className="text-2xl font-semibold mb-6 text-center text-gray-900 dark:text-white pt-8">
           Reset Password
         </h2>
 
         {error && (
           <div className="flex justify-center mb-4">
-            <div className="flex items-center gap-2 px-4 py-3 bg-red-50 text-red-700 text-sm rounded-md">
+            <div className="flex items-center gap-2 px-4 py-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm rounded-md">
               <AlertTriangle size={18} className="shrink-0" />
               <span>{error}</span>
             </div>
@@ -115,7 +127,7 @@ export default function ResetPassword() {
 
         {message && (
           <div className="flex justify-center mb-4">
-            <div className="flex items-center gap-2 px-4 py-3 bg-green-50 text-green-700 text-sm rounded-md">
+            <div className="flex items-center gap-2 px-4 py-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 text-sm rounded-md">
               <CheckCircle size={18} className="shrink-0" />
               <span>{message}</span>
             </div>
@@ -124,24 +136,23 @@ export default function ResetPassword() {
 
         {oobCode && verifiedEmail ? (
           <>
-            <p className="mb-6 text-center text-gray-700 text-base">
+            <p className="mb-6 text-center text-gray-700 dark:text-neutral-300 text-base">
               Reset password for{" "}
-              <strong className="text-blue-600">{verifiedEmail}</strong>
+              <strong className="text-blue-600 dark:text-blue-400">{verifiedEmail}</strong>
             </p>
 
             <form onSubmit={handleResetPassword} className="space-y-5">
-              {/* Password */}
               <div className="relative">
                 <Lock
                   size={18}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-neutral-500"
                 />
                 <input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200 rounded-lg focus:outline-none focus:border-blue-500 text-sm transition-colors"
                   placeholder="Enter new password"
                   required
                   minLength={6}
@@ -149,24 +160,21 @@ export default function ResetPassword() {
                 />
               </div>
 
-              {/* Password instruction */}
-              <div className="bg-blue-50 text-blue-700 text-xs p-3 rounded-lg">
-                Your password must be at least 6 characters and include a mix
-                of letters, numbers, and special characters for better security.
+              <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs p-3 rounded-lg">
+                Your password must be at least 6 characters.
               </div>
 
-              {/* Confirm Password */}
               <div className="relative">
                 <Lock
                   size={18}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-neutral-500"
                 />
                 <input
                   id="confirmPassword"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200 rounded-lg focus:outline-none focus:border-blue-500 text-sm transition-colors"
                   placeholder="Confirm new password"
                   required
                   minLength={6}
@@ -174,52 +182,53 @@ export default function ResetPassword() {
                 />
               </div>
 
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition text-sm font-medium"
-              >
-                {loading ? "Resetting..." : "Reset Password"}
-              </button>
+              <div className="pt-2 flex justify-center">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-neutral-800 text-white hover:bg-neutral-900 dark:bg-neutral-200 dark:text-neutral-900 dark:hover:bg-neutral-300 py-2.5 px-8 rounded-full transition text-sm font-medium disabled:opacity-50"
+                >
+                  {loading ? "Resetting..." : "Reset Password"}
+                </button>
+              </div>
             </form>
           </>
         ) : (
           <>
-            <p className="mb-4 text-center text-gray-700 text-base">
-              Forgot your password? Enter your email below to receive a reset
-              link.
-            </p>
-            {!emailSent ? (
+            {!message && (
+                <p className="mb-4 text-center text-gray-700 dark:text-neutral-300 text-base">
+                  Forgot your password? Enter your email below to receive a reset
+                  link.
+                </p>
+            )}
+            {!emailSent && (
               <form onSubmit={handleSendResetEmail} className="space-y-5">
                 <div className="relative">
                   <Mail
                     size={18}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-neutral-500"
                   />
                   <input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-200 rounded-lg focus:outline-none focus:border-blue-500 text-sm transition-colors"
                     placeholder="Enter your email"
                     required
                     autoComplete="email"
                   />
                 </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition text-sm font-medium"
-                >
-                  {loading ? "Sending..." : "Send Reset Link"}
-                </button>
+                <div className="pt-2 flex justify-center">
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="bg-neutral-800 text-white hover:bg-neutral-900 dark:bg-neutral-200 dark:text-neutral-900 dark:hover:bg-neutral-300 py-2.5 px-8 rounded-full transition text-sm font-medium disabled:opacity-50"
+                    >
+                      {loading ? "Sending..." : "Send Reset Link"}
+                    </button>
+                </div>
               </form>
-            ) : (
-              <p className="text-center text-green-600 font-medium text-sm">
-                Password reset email sent! Please check your inbox.
-              </p>
             )}
           </>
         )}

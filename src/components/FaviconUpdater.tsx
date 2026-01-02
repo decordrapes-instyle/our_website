@@ -5,7 +5,7 @@ const FaviconUpdater: React.FC = () => {
   const { settings, get } = useSiteSettings();
 
   useEffect(() => {
-    if (!settings) return; // not loaded yet
+    if (!settings) return;
     const url = get('favicon');
     if (url) {
       const link: HTMLLinkElement | null = document.getElementById('dynamic-favicon') as any;

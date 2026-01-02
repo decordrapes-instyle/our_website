@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ref, push } from 'firebase/database';
+import { ref, push } from '../../config/firebase';
 import { database } from '../../config/firebase';
 import { useAuth } from '../../context/AuthContext';
 import { Star, Send, X } from 'lucide-react';
@@ -56,20 +56,20 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ isOpen, onClose }) =>
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full p-6">
+      <div className="bg-white dark:bg-neutral-800 shadow-lg rounded-lg max-w-md w-full p-6">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold text-gray-900">Share Your Experience</h3>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Share Your Experience</h3>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
               Rating
             </label>
             <div className="flex space-x-1">
@@ -78,13 +78,13 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ isOpen, onClose }) =>
                   key={star}
                   type="button"
                   onClick={() => setFormData({ ...formData, rating: star })}
-                  className="p-1 hover:scale-110 transition-transform"
+                  className="p-1 hover:scale-110 transition-transform focus:outline-none"
                 >
                   <Star
                     className={`w-6 h-6 ${
                       star <= formData.rating
                         ? 'text-yellow-400 fill-current'
-                        : 'text-gray-300'
+                        : 'text-gray-300 dark:text-gray-600'
                     }`}
                   />
                 </button>
@@ -93,7 +93,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ isOpen, onClose }) =>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
               Review Title
             </label>
             <input
@@ -101,13 +101,13 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ isOpen, onClose }) =>
               required
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-0 focus:border-gray-500 dark:focus:border-gray-400 bg-transparent dark:text-white"
               placeholder="Give your review a title"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
               Your Review
             </label>
             <textarea
@@ -115,7 +115,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ isOpen, onClose }) =>
               rows={4}
               value={formData.content}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-0 focus:border-gray-500 dark:focus:border-gray-400 bg-transparent dark:text-white"
               placeholder="Tell us about your experience..."
             />
           </div>
@@ -124,14 +124,32 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ isOpen, onClose }) =>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors"
+              className="
+                flex-1 flex items-center justify-center
+                bg-neutral-200 dark:bg-neutral-700
+                text-neutral-900 dark:text-neutral-200
+                py-2 px-4 rounded-lg font-medium
+                hover:bg-neutral-300 dark:hover:bg-neutral-600
+                transition-colors duration-200
+                focus:outline-none focus:ring-0
+              "
             >
               Cancel
             </button>
+
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center justify-center"
+              className="
+                flex-1 flex items-center justify-center
+                bg-neutral-900 dark:bg-neutral-100
+                text-neutral-100 dark:text-neutral-900
+                py-2 px-4 rounded-lg font-medium
+                hover:bg-neutral-800 dark:hover:bg-neutral-200
+                transition-colors duration-200
+                disabled:opacity-50 disabled:cursor-not-allowed
+                focus:outline-none focus:ring-0
+              "
             >
               {loading ? (
                 'Submitting...'

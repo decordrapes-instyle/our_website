@@ -98,13 +98,13 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-neutral-900 rounded-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b dark:border-gray-800">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{product.name}</h1>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors focus:outline-none focus:ring-0"
           >
             <X size={24} className="text-gray-600 dark:text-gray-400" />
           </button>
@@ -141,13 +141,13 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   <>
                     <button
                       onClick={prevMedia}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all focus:outline-none focus:ring-0"
                     >
                       <ChevronLeft size={20} />
                     </button>
                     <button
                       onClick={nextMedia}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all focus:outline-none focus:ring-0"
                     >
                       <ChevronRight size={20} />
                     </button>
@@ -171,7 +171,7 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                       onClick={() => setSelectedMediaIndex(index)}
                       className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
                         index === selectedMediaIndex
-                          ? 'border-blue-500 dark:border-blue-400 ring-2 ring-blue-500/20'
+                          ? 'border-blue-500 dark:border-blue-400'
                           : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                       }`}
                     >
@@ -260,7 +260,7 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                           <button
                             key={star}
                             onClick={() => setRatingValue(star)}
-                            className="p-1 transform hover:scale-110 transition-transform"
+                            className="p-1 transform hover:scale-110 transition-transform focus:outline-none focus:ring-0"
                           >
                             <Star
                               size={32}
@@ -280,7 +280,7 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                         rows={3}
                         value={ratingMessage}
                         onChange={(e) => setRatingMessage(e.target.value)}
-                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-0 focus:border-gray-500 dark:focus:border-gray-400"
                       />
 
                       {ratingError && (
@@ -290,7 +290,7 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                       <button
                         onClick={handleSubmit}
                         disabled={ratingSubmitting || ratingValue === 0}
-                        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors"
+                        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors focus:outline-none focus:ring-0"
                       >
                         {ratingSubmitting ? 'Sharing...' : 'Share Review'}
                       </button>

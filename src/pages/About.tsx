@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue } from '../config/firebase';
 import { database } from '../config/firebase';
 import { SiteSettings, TeamMember } from '../types';
 import { Users, Target, Award, Heart, MapPin, Phone, Mail } from 'lucide-react';
@@ -47,12 +47,11 @@ const About: React.FC = () => {
     return setting?.value || '';
   };
 
-  const storeName = getSetting('store_name') || 'Our Shop';
-  const storeDescription = getSetting('site_description') || 
-    'We are a passionate team dedicated to providing high-quality products and exceptional customer service.';
+  const storeName = getSetting('store_name');
+  const storeDescription = getSetting('site_description');
 
   return (
-    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 transition-colors duration-200">
+    <div className="min-h-screen bg-gray-50/50 dark:bg-neutral-950 transition-colors duration-200">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
         {/* Hero Section */}
         <div className="text-center mb-16 md:mb-24">

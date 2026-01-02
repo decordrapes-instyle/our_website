@@ -5,7 +5,6 @@ import {
   MapPin, Briefcase, CheckCircle, RefreshCw
 } from 'lucide-react';
 
-// Define types for AuthContext to include email verification
 interface AuthUser {
   uid: string;
   email: string;

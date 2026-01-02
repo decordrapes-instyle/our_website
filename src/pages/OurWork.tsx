@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue } from '../config/firebase';
 import { database as db } from '../config/firebase';
 import Lightbox from 'yet-another-react-lightbox';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
@@ -23,17 +23,19 @@ interface OurWorkPublicProps {
   horizontalPreview?: boolean;
   previewCount?: number;
   items?: WorkItem[];
+  showTitle?: boolean;
 }
 
 const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
   horizontalPreview = false,
   previewCount,
-  items: propItems
+  items: propItems,
+  showTitle = true
 }) => {
   const [items, setItems] = useState<WorkItem[]>(propItems || []);
   const [loading, setLoading] = useState(propItems ? false : true);
   const [index, setIndex] = useState<number | null>(null);
-  const [columns, setColumns] = useState(2); // Default to 2 columns for mobile
+  const [columns, setColumns] = useState(2);
 
   // Calculate column count based on screen size
   useEffect(() => {
@@ -41,10 +43,10 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
     
     const updateColumns = () => {
       const width = window.innerWidth;
-      if (width < 640) setColumns(2);        // Mobile
-      else if (width < 768) setColumns(3);   // Small screens
-      else if (width < 1024) setColumns(4);  // Tablets
-      else setColumns(5);                     // Desktops
+      if (width < 640) setColumns(2);
+      else if (width < 768) setColumns(3);
+      else if (width < 1024) setColumns(4);
+      else setColumns(5);
     };
 
     updateColumns();
@@ -90,23 +92,24 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
     return columnsArr;
   }, [items, columns, horizontalPreview]);
 
-  // Skeleton loader with random heights for masonry feel
+  // Skeleton loader
   const Skeleton = () => (
     <div 
-      className="animate-pulse bg-gray-300 rounded-lg w-full"
+      className="animate-pulse bg-neutral-200 dark:bg-neutral-800 rounded-2xl w-full"
       style={{ height: `${200 + Math.random() * 200}px` }}
     />
   );
 
   // Render individual item card
-  const renderItem = (item: WorkItem, _i: number) => {
+  const renderItem = (item: WorkItem) => {
     return (
       <div 
         key={item.id}
         className={`
-          bg-white rounded-2xl shadow-md overflow-hidden
-          transform transition-transform duration-300 hover:scale-[1.02] hover:shadow-lg
-          ${horizontalPreview ? 'flex-shrink-0 w-72' : 'w-full mb-4'}
+          group relative bg-white dark:bg-neutral-900 
+          rounded-2xl shadow-lg hover:shadow-2xl dark:shadow-neutral-800/50 
+          overflow-hidden transition-all duration-300
+          ${horizontalPreview ? 'flex-shrink-0 w-72 mx-2' : 'w-full mb-4'}
         `}
         onClick={() => {
           if (item.type === 'image') {
@@ -115,8 +118,21 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
           }
         }}
       >
+        {/* Media type indicator */}
+        <div className="absolute top-3 right-3 z-10">
+          <div className={`
+            px-3 py-1 rounded-full text-xs font-medium
+            ${item.type === 'video' 
+              ? 'bg-red-500/90 text-white' 
+              : 'bg-white/90 dark:bg-neutral-800/90 text-neutral-700 dark:text-neutral-300'
+            }
+          `}>
+            {item.type === 'video' ? 'Video' : 'Image'}
+          </div>
+        </div>
+
         {item.type === 'video' && item.videoUrl ? (
-          <div className="relative pb-[56.25%]"> {/* 16:9 aspect for videos */}
+          <div className="relative pb-[56.25%]">
             <iframe
               src={item.videoUrl}
               className="absolute inset-0 w-full h-full object-cover rounded-t-2xl"
@@ -127,46 +143,80 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
             />
           </div>
         ) : (
-          // Images with original aspect ratio
-          <div className="w-full">
+          <div className="relative overflow-hidden">
             <img 
               src={item.url || '/placeholder-work.jpg'} 
               alt={item.title || 'Our work item'} 
-              className="w-full rounded-t-2xl"
-              style={{ height: 'auto' }}
+              className="w-full h-auto rounded-t-2xl group-hover:scale-105 transition-transform duration-500"
               loading="lazy"
             />
+            {/* View overlay for images */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 rounded-t-2xl" />
           </div>
         )}
-        <div className="p-4">
-          
+        
+        <div className="p-3">
           {item.caption && (
-            <p className="text-gray-600 text-sm line-clamp-2">{item.caption}</p>
+            <p className="text-neutral-600 dark:text-neutral-400 text-sm ">
+              {item.caption}
+            </p>
           )}
           {item.category && (
-            <span className="inline-block mt-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+            <button className="
+              bg-neutral-100 dark:bg-neutral-800 
+              hover:bg-neutral-200 dark:hover:bg-neutral-700
+              text-neutral-700 dark:text-neutral-300 
+              text-sm px-4 py-2 rounded-full transition-colors
+            ">
               {item.category}
-            </span>
+            </button>
           )}
         </div>
+
+        {/* View button overlay for images */}
+        {item.type === 'image' && (
+          <div className="
+            absolute inset-0 flex items-center justify-center
+            opacity-0 group-hover:opacity-100 transition-opacity duration-300
+            bg-black/20 rounded-2xl pointer-events-none
+          ">
+            <div className="
+              bg-white/90 dark:bg-neutral-900/90 
+              text-neutral-900 dark:text-white
+              px-6 py-3 rounded-full font-medium shadow-lg
+            ">
+              View Full Size
+            </div>
+          </div>
+        )}
       </div>
     );
   };
 
   return (
-    <div className={horizontalPreview ? "w-full" : "max-w-7xl mx-auto px-4 py-8"}>
-      {!horizontalPreview && (
-        <h1 className="text-3xl font-bold text-center mb-8">
-          Our Work
-        </h1>
+    <div className={horizontalPreview ? "w-full" : "dark:bg-neutral-950 bg-neutral-50 max-w-7xl mx-auto px-4 py-8"}>
+      {/* Header */}
+      {!horizontalPreview && showTitle && (
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-3">
+            Our Work
+          </h1>
+          <p className="text-neutral-600 dark:text-neutral-400 text-lg">
+            Explore our latest projects and creative work
+          </p>
+        </div>
       )}
 
       {/* Horizontal preview mode */}
       {horizontalPreview ? (
-        <div className="flex gap-4 w-full overflow-x-auto pb-4 hide-scrollbar">
+        <div className="flex gap-4 w-full overflow-x-auto pb-6 hide-scrollbar px-4">
           {loading
-            ? Array(previewCount || 8).fill(0).map((_, i) => <Skeleton key={i} />)
-            : items.map((item, i) => renderItem(item, i))}
+            ? Array(previewCount || 8).fill(0).map((_, i) => (
+                <div key={i} className="flex-shrink-0 w-72">
+                  <Skeleton />
+                </div>
+              ))
+            : items.map((item) => renderItem(item))}
         </div>
       ) : (
         /* Masonry grid mode */
@@ -174,16 +224,33 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
           className="masonry-grid"
           style={{
             '--columns': columns,
-            '--gap': '1rem',
+            '--gap': '1.5rem',
           } as React.CSSProperties}
         >
           {columnsArray.map((column, colIndex) => (
             <div key={`col-${colIndex}`} className="masonry-column">
               {loading
                 ? Array(5).fill(0).map((_, i) => <Skeleton key={`skeleton-${colIndex}-${i}`} />)
-                : column.map((item) => renderItem(item, items.findIndex(i => i.id === item.id)))}
+                : column.map((item) => renderItem(item))}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && items.length === 0 && (
+        <div className="text-center py-16">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+            <svg className="w-10 h-10 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
+            No Work Available
+          </h3>
+          <p className="text-neutral-500 dark:text-neutral-500">
+            Check back soon for our latest projects
+          </p>
         </div>
       )}
 
@@ -195,6 +262,9 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
           index={index}
           close={() => setIndex(null)}
           plugins={[Zoom, Thumbnails]}
+          styles={{
+            container: { backgroundColor: 'rgba(0, 0, 0, 0.9)' },
+          }}
         />
       )}
 
@@ -219,10 +289,16 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
           scrollbar-width: none;
         }
         
+        /* Better image loading */
         img {
           display: block;
           max-width: 100%;
           height: auto;
+        }
+        
+        /* Smooth transitions */
+        * {
+          transition: background-color 0.3s ease, border-color 0.3s ease;
         }
       `}</style>
     </div>

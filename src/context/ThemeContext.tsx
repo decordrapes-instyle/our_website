@@ -1,11 +1,10 @@
-// src/context/ThemeContext.tsx
 import React, { createContext, useEffect, useState, useCallback } from "react";
 
 type Theme = "light" | "dark" | "system";
 
 interface ThemeContextProps {
   theme: Theme;
-  resolvedTheme: "light" | "dark";
+  resolvedTheme: "light" | "dark" | "system";
   setTheme: (theme: Theme) => void;
 }
 
@@ -17,11 +16,8 @@ export const ThemeContext = createContext<ThemeContextProps>({
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
-    // Check localStorage first, then system preference
     const saved = localStorage.getItem("theme") as Theme;
     if (saved) return saved;
-
-    // Check system preference
     const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     return systemDark ? "dark" : "light";
   });

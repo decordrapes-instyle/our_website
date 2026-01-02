@@ -14,10 +14,8 @@
   "dependencies": {
     "cloudinary": "^2.7.0",
     "firebase": "^12.2.1",
-    "firebase-admin": "^13.4.0",
     "framer-motion": "^12.23.12",
     "gapi-script": "^1.2.0",
-    "googleapis": "^154.0.0",
     "jspdf": "^3.0.2",
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.344.0",

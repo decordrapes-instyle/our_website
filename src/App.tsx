@@ -1,131 +1,154 @@
-import { useEffect } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  useLocation,
-} from "react-router-dom";
-import { Toaster } from "react-hot-toast";
+import { BrowserRouter as Router, Routes, Route, useLocation, } from "react-router-dom";
+import { Suspense, lazy } from "react";
 import { AuthProvider } from "./context/AuthContext";
-import { CartProvider } from "./context/CartContext";
-import Verified from "./pages/Verified";
-import Navbar from "./components/common/Navbar";
-import Footer from "./components/common/Footer";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import NotFound from "./pages/NotFound";
 import Home from "./pages/Home";
-import Login from "./components/auth/Login";
 import Catalogue from "./pages/Catalogue";
-import Profile from "./pages/Profile";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Estimate from "./pages/Estimate";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
-import FaviconUpdater from "./components/FaviconUpdater";
-import Auth from "../src/context/Auth";
 import OurWorkPublic from "./pages/OurWork";
-import { gapi } from "gapi-script";
 import TermsPage from "./pages/Terms";
-import ResetPassword from "./pages/ResetPassword";
-import TitleUpdater from "./components/common/TitleUpdater";
-import AuthHandler from "../src/context/Auth";
-import Sitemap from "./pages/Sitemap";
+import Profile from "./pages/Profile";
+import Quotations from "./pages/Quotations";
+import QuotationDetail from "./pages/QuotationDetail"; // Added import
+import NotFound from "./pages/NotFound";
 import MaintenancePage from "./pages/MaintenancePage";
+const Login = lazy(() => import("./components/auth/Login"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Verified = lazy(() => import("./pages/Verified"));
+const AuthHandler = lazy(() => import("./context/Auth"));
+const Navbar = lazy(() => import("./components/common/Navbar"));
+const Footer = lazy(() => import("./components/common/Footer"));
+const TitleUpdater = lazy(() => import("./components/common/TitleUpdater"));
+const FaviconUpdater = lazy(() => import("./components/FaviconUpdater"));
+const Toaster = lazy(() =>
+  import("react-hot-toast").then((m) => ({ default: m.Toaster }))
+);
 
 function LayoutWrapper() {
   const location = useLocation();
+
   const mainRoutes = [
     "/",
     "/catalogue",
     "/terms",
-    "/cart",
     "/about",
     "/contact",
     "/estimate",
     "/privacy",
     "/our-work",
     "/profile",
+    "/quotations",
+    // Dynamic route for quotation detail will be handled by startsWith in hideHeaderFooter
   ];
 
   const hideHeaderFooter =
-    !mainRoutes.includes(location.pathname) ||
-    location.pathname === "/login" || location.pathname === "/privacy" || location.pathname === "/terms" ||
-    location.pathname.startsWith("/auth/reset-password") ||
-    location.pathname === "/auth/verified";
+    (!mainRoutes.includes(location.pathname) &&
+    !location.pathname.startsWith("/quotations/")) || // Added this check
+    location.pathname === "/login" ||
+    location.pathname.startsWith("/auth");
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <TitleUpdater />
+    <div className="min-h-screen bg-gray-50 dark:bg-neutral-950 transition-colors duration-200">
+      <Suspense fallback={null}>
+        <TitleUpdater />
+      </Suspense>
 
-      {!hideHeaderFooter && <Navbar />}
+      {!hideHeaderFooter && (
+        <Suspense fallback={null}>
+          <Navbar />
+        </Suspense>
+      )}
+
       <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/terms" element={<TermsPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/catalogue" element={<Catalogue />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/estimate" element={<Estimate />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/our-work" element={<OurWorkPublic />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/sitemap" element={<Sitemap />} />
-          <Route path="/auth/reset-password" element={<ResetPassword />} />
-          <Route path="/auth/verified" element={<Verified />} />
-          <Route path="/auth/login" element={<AuthHandler />} />
+        <Suspense fallback={null}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/catalogue" element={<Catalogue />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/estimate" element={<Estimate />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/our-work" element={<OurWorkPublic />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
+            <Route path="/auth/verified" element={<Verified />} />
+            <Route path="/auth/login" element={<AuthHandler />} />
 
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/quotations"
+              element={
+                <ProtectedRoute>
+                  <Quotations />
+                </ProtectedRoute>
+              }
+            />
+            <Route // Added this route
+              path="/quotations/:quotationId"
+              element={
+                <ProtectedRoute>
+                  <QuotationDetail />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </main>
-      {!hideHeaderFooter && <Footer />}
 
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 3000,
-          style: { background: "#363636", color: "#fff" },
-        }}
-      />
+      {!hideHeaderFooter && (
+        <Suspense fallback={null}>
+          <Footer />
+        </Suspense>
+      )}
+
+      <Suspense fallback={null}>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            className:
+              "bg-neutral-900 text-neutral-100 dark:bg-neutral-100 dark:text-neutral-900 border border-neutral-800 dark:border-neutral-200",
+          }}
+        />
+      </Suspense>
     </div>
   );
 }
 
 function App() {
-  useEffect(() => {
-    function start() {
-      gapi.client.init({
-        clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-      });
-    }
-    gapi.load("client:auth2", start);
-  }, []);
-
-  // ✅ Maintenance mode toggle (from .env)
-  const isMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === "true";
+  const isMaintenanceMode =
+    import.meta.env.VITE_MAINTENANCE_MODE === "true";
 
   if (isMaintenanceMode) {
-    // ✅ Show maintenance page and skip everything else
-    return <MaintenancePage />;
+    return (
+      <Suspense fallback={null}>
+        <MaintenancePage />
+      </Suspense>
+    );
   }
 
   return (
     <AuthProvider>
-      <FaviconUpdater />
-      <CartProvider>
-        <Router>
-          <LayoutWrapper />
-        </Router>
-      </CartProvider>
+      <Suspense fallback={null}>
+        <FaviconUpdater />
+      </Suspense>
+
+      <Router>
+        <LayoutWrapper />
+      </Router>
     </AuthProvider>
   );
 }

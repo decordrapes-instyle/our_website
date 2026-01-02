@@ -8,7 +8,7 @@ import {
   sendEmailVerification as firebaseSendEmailVerification,
   reload as firebaseReloadUser
 } from 'firebase/auth';
-import { ref, get, set } from 'firebase/database';
+import { ref, get, set } from '../config/firebase';
 import { auth, database } from '../config/firebase';
 import { uploadToCloudinary } from '../config/cloudinary';
 import { User } from '../types';
@@ -25,7 +25,7 @@ interface AuthContextType {
   reloadUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -44,12 +44,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = async (email: string, password: string) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      
-      // Check if user is admin and redirect to admin subdomain
-      if (currentUser?.role === 'admin') {
-        window.location.href = 'https://admin.decordrapesinstyle.com';
-        return;
-      }
       
       toast.success('Logged in successfully!');
     } catch (error: any) {
@@ -183,11 +177,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             };
             setCurrentUser(user);
             
-            // Redirect admin users to admin subdomain
-            if (user.role === 'admin' && !window.location.hostname.includes('admin.')) {
-              window.location.href = 'https://admin.decordrapesinstyle.com';
-              return;
-            }
           } else {
             // Create new user in database if not exists
             const userData: User = {

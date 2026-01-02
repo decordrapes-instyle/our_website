@@ -53,47 +53,59 @@ const ThemeToggle: React.FC = () => {
       </div>
 
       {/* DESKTOP (dropdown) */}
-      <div className="hidden md:block relative" ref={menuRef}>
-        <button
-          ref={buttonRef}
-          onClick={() => setOpen((prev) => !prev)}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
-          aria-haspopup="true"
-          aria-expanded={open}
-        >
-          {activeOption?.icon}
-          <span className="text-sm font-medium capitalize">
-            {activeOption?.label || "Theme"}
-          </span>
-          <ChevronDown
-            className={`w-4 h-4 transition-transform duration-200 ${
-              open ? "rotate-180" : ""
-            }`}
-          />
-        </button>
+<div className="hidden md:block relative" ref={menuRef}>
+  {/* Trigger Button */}
+  <button
+    ref={buttonRef}
+    onClick={() => setOpen((prev) => !prev)}
+    className="
+      flex items-center gap-2
+      px-4 py-2
+      rounded-full
+      border border-gray-300 dark:border-neutral-600
+      bg-neutral-50 dark:bg-neutral-800
+      text-neutral-900 dark:text-neutral-100
+      font-medium
+      shadow-sm hover:shadow-md
+      transition-all duration-200
+    "
+    aria-haspopup="true"
+    aria-expanded={open}
+  >
+    {activeOption?.icon}
+    <span className="text-sm capitalize">{activeOption?.label || "Theme"}</span>
+    <ChevronDown
+      className={`w-4 h-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+    />
+  </button>
 
-        {open && (
-          <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-2 z-50 animate-fadeIn">
-            {options.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => {
-                  setTheme(opt.value as any);
-                  setOpen(false);
-                }}
-                className={`flex items-center gap-3 w-full px-3 py-2 text-sm transition-all duration-200 ${
-                  theme === opt.value
-                    ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium"
-                    : "hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-                }`}
-              >
-                {opt.icon}
-                <span>{opt.label}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+  {/* Dropdown Menu */}
+  {open && (
+    <div className="absolute right-0 mt-2 w-32 bg-neutral-50 dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-lg z-50 animate-fadeIn">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => {
+            setTheme(opt.value as any);
+            setOpen(false);
+          }}
+          className={`
+            flex items-center gap-3 w-full px-4 py-2.5 text-sm rounded-lg transition-all duration-200
+            ${
+              theme === opt.value
+                ? "bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 font-semibold"
+                : "hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200"
+            }
+          `}
+        >
+          {opt.icon}
+          <span>{opt.label}</span>
+        </button>
+      ))}
+    </div>
+  )}
+</div>
+
 
       <style>{`
         @keyframes fadeIn {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue } from '../config/firebase';
 import { database } from '../config/firebase';
 
 export function useSiteSettings() {

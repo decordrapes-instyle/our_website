@@ -14,7 +14,6 @@ export default function Auth() {
     const oobCode = searchParams.get("oobCode");
     const continueUrl = searchParams.get("continueUrl") || "/";
 
-    // Case 1: Email verification / password reset links
     if (mode && oobCode) {
       if (mode === "verifyEmail") {
         navigate(
@@ -32,7 +31,6 @@ export default function Auth() {
       return;
     }
 
-    // Case 2: Google login redirect (no mode/oobCode, but path is /auth/login)
     if (location.pathname === "/auth/login") {
       getRedirectResult(auth)
         .then((result) => {
