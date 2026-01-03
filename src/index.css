@@ -2,184 +2,196 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  
+@keyframes slideUp {
+  from {
+    transform: translateY(100%)
+  }
 
-  /* Mobile responsiveness */
-  @media (max-width: 380px) {
+  to {
+    transform: translateY(0)
+  }
+}
+
+.animate-slideUp {
+  animation: .25s ease-out slideUp
+}
+
+@layer base {
+  @media (max-width:380px) {
     html {
-      font-size: 90%;
+      font-size: 90%
     }
 
     body {
       zoom: 0.95;
-      -moz-transform: scale(0.95);
-      -moz-transform-origin: top left;
+      -moz-transform: scale(.95);
+      -moz-transform-origin: top left
     }
   }
 }
 
-@layer components {
-  /* Common component styles */
-  .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200;
-  }
-
-  .btn-secondary {
-    @apply bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded-lg transition-colors duration-200;
-  }
-
-  .card {
-    @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700;
-  }
-
-  .input-field {
-    @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-gray-500 dark:focus:border-gray-400 transition-colors duration-200;
-  }
-}
-
-/* ========== ANIMATIONS ========== */
-
-/* Fade In Animation */
 @keyframes fade-in {
   0% {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(16px)
   }
+
   100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0)
   }
 }
 
 .animate-fade-in {
-  animation: fade-in 0.5s ease forwards;
+  animation: .5s forwards fade-in
 }
 
-/* Float Animation */
 @keyframes floaty {
-  0% {
-    transform: translateY(0) scale(1);
-  }
-  50% {
-    transform: translateY(-10px) scale(1.02);
-  }
+
+  0%,
   100% {
-    transform: translateY(0) scale(1);
+    transform: translateY(0) scale(1)
+  }
+
+  50% {
+    transform: translateY(-10px) scale(1.02)
   }
 }
 
 @keyframes softFloat {
-  0% {
-    transform: translateY(0) scale(1);
-  }
-  50% {
-    transform: translateY(-8px) scale(1.01);
-  }
+
+  0%,
   100% {
-    transform: translateY(0) scale(1);
+    transform: translateY(0) scale(1)
+  }
+
+  50% {
+    transform: translateY(-8px) scale(1.01)
   }
 }
 
 .blob {
   filter: blur(36px);
-  opacity: 0.55;
+  opacity: .55;
   transform-origin: center;
-  animation: floaty 7s ease-in-out infinite;
+  animation: 7s ease-in-out infinite floaty
 }
 
 .blob-float {
-  animation: softFloat 6s ease-in-out infinite;
+  animation: 6s ease-in-out infinite softFloat
 }
 
-.blob-delay-1 { animation-delay: 0s; }
-.blob-delay-2 { animation-delay: 1.5s; }
-.blob-delay-3 { animation-delay: 3s; }
+.blob-delay-1 {
+  animation-delay: 0s
+}
 
-/* Slide In Right - For Mobile Sidebar */
+.blob-delay-2 {
+  animation-delay: 1.5s
+}
+
+.blob-delay-3 {
+  animation-delay: 3s
+}
+
 @keyframes slideInRight {
   from {
     transform: translateX(100%);
-    opacity: 0;
+    opacity: 0
   }
+
   to {
     transform: translateX(0);
-    opacity: 1;
+    opacity: 1
   }
 }
 
 .animate-slideInRight {
-  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: .3s cubic-bezier(.16, 1, .3, 1) forwards slideInRight
 }
 
-/* Fade In - For Dropdowns */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(-8px) scale(0.95);
+    transform: translateY(-8px) scale(.95)
   }
+
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0) scale(1)
   }
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.2s ease-out forwards;
+  animation: .2s ease-out forwards fadeIn
 }
 
-/* Scale In */
 @keyframes scaleIn {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(.9)
   }
+
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1)
   }
 }
 
 .animate-scaleIn {
-  animation: scaleIn 0.15s ease-out;
+  animation: .15s ease-out scaleIn
 }
 
-/* Background effects */
 .hero-vignette {
-  background: radial-gradient(1200px 600px at 50% 40%, rgba(255, 255, 255, 0) 0%, rgba(0, 0, 0, 0.02) 40%, rgba(0, 0, 0, 0.04) 100%);
-  pointer-events: none;
+  background: radial-gradient(1200px 600px at 50% 40%, rgba(255, 255, 255, 0) 0, rgba(0, 0, 0, .02) 40%, rgba(0, 0, 0, .04) 100%);
+  pointer-events: none
 }
 
 .dark .hero-vignette {
-  background: radial-gradient(1200px 600px at 50% 40%, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.1) 40%, rgba(0, 0, 0, 0.2) 100%);
+  background: radial-gradient(1200px 600px at 50% 40%, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, .1) 40%, rgba(0, 0, 0, .2) 100%)
 }
 
 .decor-silhouette {
-  opacity: 0.06;
-  filter: blur(.2px);
+  opacity: .06;
+  filter: blur(.2px)
 }
 
 .center-pattern {
-  background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(0, 0, 0, .03) 1px, transparent 1px);
   background-size: 22px 22px;
-  opacity: 0.12;
-  pointer-events: none;
+  opacity: .12;
+  pointer-events: none
 }
 
 .dark .center-pattern {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(255, 255, 255, .05) 1px, transparent 1px)
 }
 
-/* Pulse animation for loading */
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
+
+  0%,
+  100% {
+    opacity: 1
   }
+
   50% {
-    opacity: 0.5;
+    opacity: .5
   }
 }
 
 .animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: 2s cubic-bezier(.4, 0, .6, 1) infinite pulse
+}
+
+
+@keyframes marquee-reverse {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+.animate-marquee-reverse {
+  animation: marquee-reverse 22s linear infinite;
 }

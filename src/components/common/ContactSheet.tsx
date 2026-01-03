@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { X, Mail, Github, Linkedin, Instagram, Heart } from "lucide-react"
 import { database } from "../../config/firebase"
 import { ref, get } from "../../config/firebase"
@@ -10,118 +10,142 @@ interface ContactSheetProps {
 }
 
 const LIKE_PATH = "like/fromFooter"
+const SWIPE_CLOSE_THRESHOLD = 80
 
 export default function ContactSheet({
   open,
   onClose,
   variant = "default",
 }: ContactSheetProps) {
-  const [totalLikes, setTotalLikes] = useState<number>(0)
+  const [totalLikes, setTotalLikes] = useState(0)
+  const [translateY, setTranslateY] = useState(0)
 
-  // Fetch total likes
+  const startY = useRef<number | null>(null)
+
+  /* Fetch likes */
   useEffect(() => {
     if (!open) return
     const likeRef = ref(database, LIKE_PATH)
-    get(likeRef)
-      .then((snapshot) => {
-        if (snapshot.exists()) {
-          setTotalLikes(snapshot.val().count || 0)
-        } else {
-          setTotalLikes(0)
-        }
-      })
-      .catch(console.error)
+    get(likeRef).then((snap) => {
+      setTotalLikes(snap.exists() ? snap.val().count || 0 : 0)
+    })
   }, [open])
+
+  /* Back button / ESC */
+  useEffect(() => {
+    if (!open) return
+
+    const handler = () => onClose()
+    window.addEventListener("popstate", handler)
+    window.addEventListener("keydown", (e) => e.key === "Escape" && onClose())
+
+    history.pushState(null, "", location.href)
+
+    return () => {
+      window.removeEventListener("popstate", handler)
+    }
+  }, [open, onClose])
+
+  /* Touch gestures */
+  const onTouchStart = (e: React.TouchEvent) => {
+    startY.current = e.touches[0].clientY
+  }
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (startY.current === null) return
+    const delta = e.touches[0].clientY - startY.current
+    if (delta > 0) setTranslateY(delta)
+  }
+
+  const onTouchEnd = () => {
+    if (translateY > SWIPE_CLOSE_THRESHOLD) {
+      onClose()
+    }
+    setTranslateY(0)
+    startY.current = null
+  }
 
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       {/* Backdrop */}
       <div
         onClick={onClose}
         className="absolute inset-0 bg-black/40"
       />
 
-      {/* Card / Sheet */}
+      {/* Sheet */}
       <div
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{ transform: `translateY(${translateY}px)` }}
         className="
           relative
+          w-full sm:max-w-md
           bg-white dark:bg-neutral-900
           rounded-t-2xl sm:rounded-2xl
-          w-full sm:max-w-md
           p-6 sm:p-8
-          shadow-lg sm:shadow-xl
-          flex flex-col items-center gap-4
+          shadow-xl
+          transition-transform duration-200
+          animate-slideUp
         "
       >
+        {/* Drag handle */}
+        <div className="sm:hidden mx-auto mb-3 h-1.5 w-12 rounded-full bg-neutral-300 dark:bg-neutral-700" />
+
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 transition"
+          className="absolute top-3 right-3 text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* Profile Image */}
+        {/* Profile */}
         <img
           src="https://avatars.githubusercontent.com/u/125809323?v=4"
           alt="Pankaj"
-          className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-2 border-neutral-300 dark:border-neutral-700"
+          className="w-24 h-24 rounded-full mx-auto border-2 border-neutral-300 dark:border-neutral-700"
         />
 
-        {/* Name & Variant */}
-        <h3 className="text-lg sm:text-xl font-semibold text-neutral-800 dark:text-neutral-200 text-center">
+        <h3 className="mt-3 text-lg font-semibold text-center text-neutral-800 dark:text-neutral-200">
           {variant === "like-limit" ? "Thanks for the love ❤️" : "Pankaj"}
         </h3>
 
-        {/* Like-limit message */}
         {variant === "like-limit" && (
-          <p className="text-center text-sm sm:text-base text-neutral-600 dark:text-neutral-400">
-            Looks like you’re enjoying this a lot. If you’d like to connect or share
-            feedback, I’d genuinely love to hear from you.
+          <p className="text-center text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+            If you’d like to connect or share feedback, I’d love to hear from you.
           </p>
         )}
 
-        {/* Total likes display */}
-        <div className="flex items-center gap-2 mt-1 text-sm sm:text-base text-neutral-700 dark:text-neutral-300">
-          <Heart className="w-5 h-5 fill-red-500 text-red-500" /> {totalLikes} people liked this site
+        <div className="flex justify-center items-center gap-2 mt-3 text-sm text-neutral-700 dark:text-neutral-300">
+          <Heart className="w-5 h-5 fill-red-500 text-red-500" />
+          {totalLikes} people liked this site
         </div>
 
-        {/* Contact Links */}
-        <div className="flex flex-col w-full gap-3 mt-4">
-          <a
-            href="mailto:pkumar8782744.pku@gmail.com"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition font-medium text-sm sm:text-base"
-          >
-            <Mail className="w-5 h-5 text-red-500" /> Gmail
-          </a>
-          <a
-            href="https://github.com/pankaj8782"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition font-medium text-sm sm:text-base"
-          >
-            <Github className="w-5 h-5 text-neutral-700 dark:text-neutral-300" /> Github
-          </a>
-          <a
-            href="https://linkedin.com/in/pankaj8782"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition font-medium text-sm sm:text-base"
-          >
-            <Linkedin className="w-5 h-5 text-blue-600" /> Linkedin
-          </a>
-          <a
-            href="https://instagram.com/pankajshah.1"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition font-medium text-sm sm:text-base"
-          >
-            <Instagram className="w-5 h-5 text-pink-500" /> Instagram
-          </a>
+        {/* Links */}
+        <div className="flex flex-col gap-3 mt-5">
+          <ContactLink href="mailto:pkumar8782744.pku@gmail.com" icon={<Mail />} label="Gmail" />
+          <ContactLink href="https://github.com/pankaj8782" icon={<Github />} label="Github" />
+          <ContactLink href="https://linkedin.com/in/pankaj8782" icon={<Linkedin />} label="LinkedIn" />
+          <ContactLink href="https://instagram.com/pankajshah.1" icon={<Instagram />} label="Instagram" />
         </div>
       </div>
     </div>
+  )
+}
+
+function ContactLink({ href, icon, label }: any) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition font-medium"
+    >
+      {icon} {label}
+    </a>
   )
 }

@@ -388,7 +388,7 @@ const Navbar: React.FC = () => {
           {/* Sidebar */}
           <div
             className="
-  fixed right-0 top-0 h-full w-64
+  fixed right-0 top-0 h-full w-72
   bg-white dark:bg-neutral-950
   shadow-xl
   border-l border-neutral-200 dark:border-neutral-700

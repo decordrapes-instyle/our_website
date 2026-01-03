@@ -6,7 +6,7 @@ import { ref, get, set, runTransaction } from "../../config/firebase"
 
 const LIKE_PATH = "like/fromFooter"
 const LOCAL_QUEUE_KEY = "footer-like-queue"
-const MAX_CLICK_SAFE = 10 // threshold for highlight
+const MAX_CLICK_SAFE = 10
 
 export default function FooterMadeWith() {
   const [liked, setLiked] = useState(false)
@@ -19,7 +19,6 @@ export default function FooterMadeWith() {
   const clickCountRef = useRef(0)
   const [highlightContact, setHighlightContact] = useState(false)
 
-  // Fetch initial likes
   useEffect(() => {
     const likeRef = ref(database, LIKE_PATH)
     get(likeRef)
@@ -31,7 +30,6 @@ export default function FooterMadeWith() {
       .catch(console.error)
   }, [])
 
-  // Flush buffer instantly (0.1s) to Firebase
   const flushBuffer = () => {
     if (bufferRef.current === 0) return
     const toAdd = bufferRef.current
@@ -46,35 +44,25 @@ export default function FooterMadeWith() {
   }
 
   const handleLike = () => {
-    // Heart fill animation
     setLiked(true)
     if (heartTimeout.current) clearTimeout(heartTimeout.current)
     heartTimeout.current = setTimeout(() => setLiked(false), 300)
-
-    // Show contact micro hint briefly
     setShowContactHint(true)
     if (hideHintTimeout.current) clearTimeout(hideHintTimeout.current)
     hideHintTimeout.current = setTimeout(() => setShowContactHint(false), 2000)
-
-    // Buffer the like for Firebase
     bufferRef.current += 1
     localStorage.setItem(LOCAL_QUEUE_KEY, String(bufferRef.current))
-
-    // Flush buffer fast (0.1s)
     if (flushTimeout.current) clearTimeout(flushTimeout.current)
     flushTimeout.current = setTimeout(flushBuffer, 100)
-
-    // Track click count for highlighting
     clickCountRef.current += 1
     if (clickCountRef.current >= MAX_CLICK_SAFE) {
-      setHighlightContact(true) // highlight the contact button
+      setHighlightContact(true)
     }
   }
 
   return (
     <>
       <div className="bg-neutral-100 dark:bg-neutral-900 border-t border-neutral-300 dark:border-neutral-800 py-3 flex justify-center items-center gap-1 text-xs text-neutral-600 dark:text-neutral-400">
-        {/* Heart clickable */}
         <button
           onClick={handleLike}
           className="flex items-center gap-1 focus:outline-none"
@@ -88,8 +76,6 @@ export default function FooterMadeWith() {
             }`}
           /> by
         </button>
-
-        {/* Name clickable */}
         <span
           onClick={handleLike}
           className="font-medium text-neutral-800 dark:text-neutral-200 cursor-pointer select-none"
@@ -97,7 +83,6 @@ export default function FooterMadeWith() {
           Pankaj
         </span>
 
-        {/* Contact hint button */}
         {showContactHint && (
           <button
             onClick={(e) => {
@@ -115,7 +100,6 @@ export default function FooterMadeWith() {
         )}
       </div>
 
-      {/* Contact sheet */}
       <ContactSheet open={open} onClose={() => setOpen(false)} />
     </>
   )
