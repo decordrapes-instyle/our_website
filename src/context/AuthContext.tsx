@@ -6,7 +6,8 @@ import {
   createUserWithEmailAndPassword, 
   signOut,
   sendEmailVerification as firebaseSendEmailVerification,
-  reload as firebaseReloadUser
+  reload as firebaseReloadUser,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { ref, get, set } from '../config/firebase';
 import { auth, database } from '../config/firebase';
@@ -23,6 +24,7 @@ interface AuthContextType {
   updateProfile: (displayName: string, profileImage?: File, additionalData?: any) => Promise<void>;
   sendEmailVerification: () => Promise<void>;
   reloadUser: () => Promise<void>;
+  resetPassword: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -160,6 +162,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       throw error;
     }
   };
+  
+  const resetPassword = async () => {
+    if (!currentUser) {
+      throw new Error('No user logged in');
+    }
+    try {
+      await sendPasswordResetEmail(auth, currentUser.email);
+      toast.success('Password reset email sent! Please check your inbox.');
+    } catch (error: any) {
+      toast.error(`Failed to send password reset email: ${error.message}`);
+      throw error;
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
@@ -188,7 +203,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             };
             
             await set(userRef, userData);
-            setCurrentUser(userData);
+setCurrentUser(userData);
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
@@ -212,6 +227,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     updateProfile,
     sendEmailVerification,
     reloadUser,
+    resetPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

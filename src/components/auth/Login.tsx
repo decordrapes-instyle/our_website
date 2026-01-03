@@ -302,6 +302,8 @@ const Login = () => {
 
   const [_verificationSent, setVerificationSent] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
+  const [verificationRequired, setVerificationRequired] = useState(false);
+  const [emailForVerification, setEmailForVerification] = useState("");
 
   const [showGoogleError, setShowGoogleError] = useState("");
 
@@ -313,6 +315,7 @@ const Login = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        await user.reload(); // Make sure to get the latest user state
         if (user.emailVerified) {
           const userRef = ref(db, `users/${user.uid}`);
           const snapshot = await get(userRef);
@@ -335,7 +338,9 @@ const Login = () => {
             navigate("/profile");
           }
         } else {
-          setAuthChecked(true);
+          setEmailForVerification(user.email || "");
+          await auth.signOut();
+          setVerificationRequired(true);
         }
       } else {
         setAuthChecked(true);
@@ -640,7 +645,7 @@ const Login = () => {
     </div>
   );
 
-  if (!authChecked) {
+  if (!authChecked && !verificationRequired) {
     return (
       <div className="min-h-screen w-full bg-gray-50 dark:bg-neutral-900 flex items-center justify-center">
         <div className="text-center">
@@ -655,6 +660,28 @@ const Login = () => {
 
   return (
     <>
+      {verificationRequired ? (
+      <div className="min-h-screen w-full bg-gray-50 dark:bg-neutral-950 flex flex-col items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md bg-white dark:bg-neutral-900 shadow-xl rounded-2xl p-8 space-y-6">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Email Verification Required</h2>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
+              Your email <span className="font-medium">{emailForVerification}</span> is not verified. Please verify your email before logging in.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setVerificationRequired(false);
+              setEmailForVerification("");
+              setStep("login");
+            }}
+            className="w-full bg-neutral-900 text-neutral-100 py-3 rounded-full font-medium hover:bg-neutral-800 transition"
+          >
+            I have verified my email
+          </button>
+        </div>
+      </div>
+    ) : (
       <div className="min-h-screen w-full bg-gray-50 dark:bg-neutral-950 flex flex-col items-center justify-center px-4 py-12 transition-colors duration-200 relative">
         {step === "email" && (
           <Link
@@ -1157,7 +1184,7 @@ dark:hover:bg-neutral-200
           {step === "verify_email" && <VerificationStep />}
         </div>
       </div>
-
+)}
       <AdminPrivilegeModal
         isOpen={showAdminModal}
         onClose={handleAdminModalClose}
