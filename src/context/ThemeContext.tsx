@@ -35,12 +35,20 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setResolvedTheme(activeTheme);
 
+    const themeColorMeta = document.querySelector("meta[name='theme-color']");
+
     if (activeTheme === "dark") {
       document.documentElement.classList.add("dark");
       document.documentElement.style.colorScheme = "dark";
+      if (themeColorMeta) {
+        themeColorMeta.setAttribute("content", "#0a0a0a");
+      }
     } else {
       document.documentElement.classList.remove("dark");
       document.documentElement.style.colorScheme = "light";
+      if (themeColorMeta) {
+        themeColorMeta.setAttribute("content", "#ffffff");
+      }
     }
 
     // Listen to system changes if using system theme
@@ -52,6 +60,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setResolvedTheme(newSystemTheme);
         document.documentElement.classList.toggle("dark", e.matches);
         document.documentElement.style.colorScheme = e.matches ? "dark" : "light";
+        if (themeColorMeta) {
+          themeColorMeta.setAttribute("content", e.matches ? "#0a0a0a" : "#ffffff");
+        }
       }
     };
 

@@ -81,7 +81,7 @@ export default function Estimate() {
           >
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-neutral-900 dark:text-white mb-6">
               Professional
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-cyan-500">
                 Quotation Preview
               </span>
             </h1>
@@ -248,7 +248,7 @@ export default function Estimate() {
                     Website Design
                   </span>
                   <span className="text-neutral-600 dark:text-neutral-400">
-                    1 × $2,500
+                    1 × ₹2,500
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -256,7 +256,7 @@ export default function Estimate() {
                     SEO Optimization
                   </span>
                   <span className="text-neutral-600 dark:text-neutral-400">
-                    1 × $800
+                    1 × ₹800
                   </span>
                 </div>
                 <div className="border-t border-neutral-200 dark:border-neutral-700 pt-3">
@@ -265,7 +265,7 @@ export default function Estimate() {
                       Subtotal
                     </span>
                     <span className="text-neutral-900 dark:text-white">
-                      $3,300
+                      ₹3,300
                     </span>
                   </div>
                 </div>
@@ -297,7 +297,7 @@ export default function Estimate() {
                     Subtotal
                   </span>
                   <span className="text-neutral-900 dark:text-white">
-                    $4,300.00
+                    ₹4,300
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -305,7 +305,7 @@ export default function Estimate() {
                     Tax (10%)
                   </span>
                   <span className="text-neutral-900 dark:text-white">
-                    $430.00
+                    ₹430
                   </span>
                 </div>
                 <div className="flex justify-between pt-3 border-t border-neutral-200 dark:border-neutral-700 text-lg font-bold">
@@ -313,7 +313,7 @@ export default function Estimate() {
                     Total
                   </span>
                   <span className="text-purple-600 dark:text-purple-400">
-                    $4,730.00
+                    ₹4,730
                   </span>
                 </div>
               </div>
