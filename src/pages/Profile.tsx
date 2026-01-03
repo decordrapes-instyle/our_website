@@ -125,18 +125,18 @@ const Profile: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10 px-4">
+    <div className="min-h-screen bg-gray-100 dark:bg-neutral-950 py-10 px-4">
       <div className="max-w-4xl mx-auto space-y-6">
         
         {/* Profile Completion Bar */}
-        <div className="bg-white p-4 rounded-xl shadow flex items-center justify-between">
+        <div className="bg-white dark:bg-neutral-800 p-4 rounded-xl shadow flex items-center justify-between">
           <div className="flex-1 mr-4">
-            <p className="text-sm font-medium text-gray-700 mb-1">
+            <p className="text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
               Profile Completion: {profileCompletion}%
             </p>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2">
               <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${profileCompletion}%` }}
               />
             </div>
@@ -144,7 +144,7 @@ const Profile: React.FC = () => {
           {profileCompletion < 100 && !isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className="text-sm text-blue-600 hover:underline font-medium"
+              className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium"
             >
               Complete Now
             </button>
@@ -152,7 +152,7 @@ const Profile: React.FC = () => {
         </div>
 
         {/* Profile Header */}
-        <div className="bg-white p-6 rounded-xl shadow flex flex-col md:flex-row items-center md:items-start md:space-x-6">
+        <div className="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow flex flex-col md:flex-row items-center md:items-start md:space-x-6">
           <div className="relative">
             {currentUser.profileImage || previewImage ? (
               <img
@@ -161,34 +161,34 @@ const Profile: React.FC = () => {
                 className="w-28 h-28 rounded-full object-cover border"
               />
             ) : (
-              <div className="w-28 h-28 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+              <div className="w-28 h-28 rounded-full bg-gray-200 dark:bg-neutral-700 flex items-center justify-center text-gray-500 dark:text-neutral-400">
                 <User className="w-10 h-10" />
               </div>
             )}
             {isEditing && (
-              <label className="absolute bottom-0 right-0 bg-gray-800 p-2 rounded-full cursor-pointer">
+              <label className="absolute bottom-0 right-0 bg-gray-800 dark:bg-neutral-700 p-2 rounded-full cursor-pointer">
                 <Camera className="w-4 h-4 text-white" />
                 <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
               </label>
             )}
           </div>
           <div className="mt-4 md:mt-0 text-center md:text-left flex-1">
-            <h1 className="text-xl font-semibold text-gray-800">
+            <h1 className="text-xl font-semibold text-gray-800 dark:text-neutral-100">
               {currentUser.displayName || 'User Profile'}
             </h1>
             
             {/* Email Verification Section */}
             <div className="mt-1 flex flex-col items-center md:items-start">
               <div className="flex items-center">
-                <Mail className="w-4 h-4 text-gray-500 mr-1" />
-                <span className="text-sm text-gray-500">{currentUser.email}</span>
+                <Mail className="w-4 h-4 text-gray-500 dark:text-neutral-400 mr-1" />
+                <span className="text-sm text-gray-500 dark:text-neutral-400">{currentUser.email}</span>
                 
                 {currentUser.emailVerified ? (
-                  <span className="ml-2 flex items-center text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                  <span className="ml-2 flex items-center text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full">
                     <CheckCircle className="w-3 h-3 mr-1" /> Verified
                   </span>
                 ) : (
-                  <span className="ml-2 flex items-center text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
+                  <span className="ml-2 flex items-center text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300 px-2 py-0.5 rounded-full">
                     Unverified
                   </span>
                 )}
@@ -201,8 +201,8 @@ const Profile: React.FC = () => {
                     disabled={verificationLoading || verificationSent}
                     className={`text-xs flex items-center ${
                       verificationSent 
-                        ? 'text-green-600' 
-                        : 'text-blue-600 hover:underline'
+                        ? 'text-green-600 dark:text-green-400' 
+                        : 'text-blue-600 dark:text-blue-400 hover:underline'
                     }`}
                   >
                     {verificationLoading ? (
@@ -221,7 +221,7 @@ const Profile: React.FC = () => {
               )}
             </div>
             
-            <div className="mt-2 flex flex-wrap gap-2 text-sm text-gray-600">
+            <div className="mt-2 flex flex-wrap gap-2 text-sm text-gray-600 dark:text-neutral-300">
               <span className="flex items-center gap-1">
                 <Shield className="w-4 h-4" /> {currentUser.role}
               </span>
@@ -234,7 +234,7 @@ const Profile: React.FC = () => {
           {!isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className="mt-4 md:mt-0 bg-gray-800 hover:bg-gray-700 text-white py-2 px-4 rounded-lg flex items-center gap-2"
+              className="mt-4 md:mt-0 bg-gray-800 dark:bg-blue-600 hover:bg-gray-700 dark:hover:bg-blue-700 text-white py-2 px-4 rounded-lg flex items-center gap-2"
             >
               <Edit className="w-4 h-4" />
               Edit
@@ -243,8 +243,8 @@ const Profile: React.FC = () => {
         </div>
 
         {/* Profile Info Section */}
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Personal Information</h2>
+        <div className="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-neutral-100 mb-4">Personal Information</h2>
 
           {!isEditing ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
@@ -271,7 +271,7 @@ const Profile: React.FC = () => {
                   rows={3}
                   value={formData.bio}
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2 mt-1"
+                  className="w-full border dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 rounded-lg px-3 py-2 mt-1"
                   placeholder="Tell us something about yourself"
                 />
               </div>
@@ -297,11 +297,11 @@ const Profile: React.FC = () => {
 
 // Reusable Info display component
 const Info = ({ label, value, icon: Icon, multiline = false }: { label: string; value: string; icon: any; multiline?: boolean }) => (
-  <div className="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
-    <Icon className="w-5 h-5 text-gray-500 mt-1" />
+  <div className="flex items-start gap-3 bg-gray-50 dark:bg-neutral-700 p-3 rounded-lg">
+    <Icon className="w-5 h-5 text-gray-500 dark:text-neutral-400 mt-1" />
     <div>
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className={`text-sm font-medium ${multiline ? 'whitespace-pre-line' : ''}`}>{value || 'Not provided'}</p>
+      <p className="text-sm text-gray-500 dark:text-neutral-400">{label}</p>
+      <p className={`text-sm font-medium dark:text-neutral-200 ${multiline ? 'whitespace-pre-line' : ''}`}>{value || 'Not provided'}</p>
     </div>
   </div>
 );
@@ -314,7 +314,7 @@ const Input = ({ label, value, onChange }: { label: string; value: string; onCha
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full border px-3 py-2 mt-1 rounded-lg"
+      className="w-full border dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 px-3 py-2 mt-1 rounded-lg"
       placeholder={`Enter your ${label.toLowerCase()}`}
     />
   </div>
