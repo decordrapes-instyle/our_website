@@ -20,7 +20,6 @@ const AuthHandler = lazy(() => import("./context/Auth"));
 const Navbar = lazy(() => import("./components/common/Navbar"));
 const Footer = lazy(() => import("./components/common/Footer"));
 const TitleUpdater = lazy(() => import("./components/common/TitleUpdater"));
-const FaviconUpdater = lazy(() => import("./components/FaviconUpdater"));
 const Toaster = lazy(() =>
   import("react-hot-toast").then((m) => ({ default: m.Toaster }))
 );
@@ -123,10 +122,6 @@ function App() {
 
   return (
     <AuthProvider>
-      <Suspense fallback={null}>
-        <FaviconUpdater />
-      </Suspense>
-
       <Router>
         <LayoutWrapper />
       </Router>
