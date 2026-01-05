@@ -12,7 +12,7 @@ import {
   ChevronRight,
   Star,
   Sparkles,
-  } from "lucide-react";
+} from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { ref, onValue } from "../../config/firebase";
 import { database } from "../../config/firebase";
@@ -205,7 +205,7 @@ const Navbar: React.FC = () => {
                   <span className="hidden sm:block font-semibold text-xl text-neutral-800 dark:text-white">
                     {storeName}
                   </span>
-                  
+
                   {/* Mobile: Two lines */}
                   <div className="sm:hidden text-neutral-900 dark:text-white leading-tight">
                     <span className="font-bold text-2xl text-uppercase">
@@ -419,17 +419,38 @@ const Navbar: React.FC = () => {
               {/* User Info */}
               <div className="p-4 border-b border-neutral-200 dark:border-neutral-700">
                 {!authLoading && currentUser ? (
-                  <div className="space-y-1">
-                    <div className="text-sm font-bold text-neutral-900 dark:text-white">
-                      {displayName}
+                  <>
+                    <div className="flex items-center space-x-3">
+                      {currentUser.profileImage ? (
+                        <img
+                          src={currentUser.profileImage}
+                          alt="Avatar"
+                          className="w-10 h-10 rounded-full object-cover border border-neutral-300 dark:border-neutral-600"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neutral-100 to-neutral-200 dark:from-neutral-800 dark:to-neutral-700 flex items-center justify-center border border-neutral-300 dark:border-neutral-600">
+                          <UserIcon
+                            size={20}
+                            className="text-neutral-600 dark:text-neutral-400"
+                          />
+                        </div>
+                      )}
+                      <div className="flex flex-col">
+                        <div className="flex items-center space-x-2">
+                          <div className="text-sm font-bold text-neutral-900 dark:text-white">
+                            {displayName}
+                          </div>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200 capitalize">
+                            {currentUser.role || "Member"}
+                          </span>
+                        </div>
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                          {userEmail}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                      {userEmail}
-                    </div>
-                    <div className="text-xs text-neutral-500 dark:text-neutral-400 capitalize font-medium">
-                      {currentUser.role || "Member"} Account
-                    </div>
-                  </div>
+                    <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1"></div>
+                  </>
                 ) : (
                   <div>
                     <div className="text-sm font-bold text-neutral-900 dark:text-white">
