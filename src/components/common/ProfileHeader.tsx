@@ -52,9 +52,12 @@ const ProfileHeader: React.FC = () => {
         <div className="sm:hidden">
             <div className="bg-white dark:bg-neutral-900 p-4 rounded-b-2xl shadow-lg mb-6 flex items-center justify-between sticky top-0 z-30">
                 {/* Back button - always visible */}
-                <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-700">
+                <Link to="/" >
+                <button className="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-700">
                     <ArrowLeft className="w-6 h-6 text-gray-800 dark:text-neutral-100" />
                 </button>
+                </Link>
+
 
                 {/* Mobile Title */}
                 <h1 className="text-xl font-bold text-gray-800 dark:text-neutral-100">
