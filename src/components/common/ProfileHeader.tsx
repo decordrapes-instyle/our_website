@@ -50,7 +50,7 @@ const ProfileHeader: React.FC = () => {
 
     return (
         <div className="sm:hidden">
-            <div className="bg-white dark:bg-neutral-800 p-4 rounded-b-2xl shadow-lg mb-6 flex items-center justify-between sticky top-0 z-30">
+            <div className="bg-white dark:bg-neutral-900 p-4 rounded-b-2xl shadow-lg mb-6 flex items-center justify-between sticky top-0 z-30">
                 {/* Back button - always visible */}
                 <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-700">
                     <ArrowLeft className="w-6 h-6 text-gray-800 dark:text-neutral-100" />

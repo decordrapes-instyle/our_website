@@ -174,7 +174,7 @@ const Profile: React.FC = () => {
       <ProfileHeader />
       
       {/* Page content */}
-      <div className="relative px-4 pb-10">
+      <div className="relative px-4">
         {/* Desktop-only floating back button */}
         <button 
           onClick={() => navigate(-1)} 
