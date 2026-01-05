@@ -26,7 +26,7 @@ export default function TitleUpdater() {
 
   useEffect(() => {
     const newTitle =
-      routeTitles[location.pathname] || "Decor Drapes Instyle"; // Default Title
+      routeTitles[location.pathname] || "Decor Drapes Instyle";
     document.title = newTitle;
   }, [location.pathname]);
 

@@ -1,7 +1,6 @@
-// src/pages/Auth.tsx
 import { useEffect } from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
-import { getAuth, getRedirectResult } from "firebase/auth";
+import { getAuth, getRedirectResult } from "../config/firebase";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();

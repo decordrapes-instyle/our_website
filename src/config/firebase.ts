@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, applyActionCode} from 'firebase/auth';
+import { getAuth, applyActionCode, sendPasswordResetEmail, verifyPasswordResetCode, onAuthStateChanged, confirmPasswordReset, getRedirectResult, createUserWithEmailAndPassword, reload, sendEmailVerification, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { getDatabase, ref, get, set, runTransaction, onValue,  query, orderByChild, equalTo, update, push } from 'firebase/database';
 
 const firebaseConfig = {
@@ -16,4 +16,28 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const database = getDatabase(app);
 export default app;
-export { ref, get, set, runTransaction, onValue, query, orderByChild, equalTo, update, push, applyActionCode, getAuth };
+export { 
+  ref,
+  get,
+  set,
+  runTransaction,
+  onValue,
+  query,
+  orderByChild,
+  equalTo,
+  update,
+  push,
+  applyActionCode,
+  getAuth,
+  sendPasswordResetEmail,
+  verifyPasswordResetCode,
+  confirmPasswordReset,
+  onAuthStateChanged,
+  getRedirectResult,
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut,
+  sendEmailVerification,
+  reload
+};
+export type { User } from "firebase/auth";

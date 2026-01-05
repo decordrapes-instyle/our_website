@@ -1,8 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
-import { AuthProvider } from "./context/AuthContext";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
-
 import Home from "./pages/Home";
 import Catalogue from "./pages/Catalogue";
 import About from "./pages/About";
@@ -13,7 +10,7 @@ import OurWorkPublic from "./pages/OurWork";
 import TermsPage from "./pages/Terms";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
-import MaintenancePage from "./pages/MaintenancePage";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const Login = lazy(() => import("./components/auth/Login"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -26,7 +23,7 @@ const Toaster = lazy(() =>
   import("react-hot-toast").then((m) => ({ default: m.Toaster }))
 );
 
-function LayoutWrapper() {
+function App() {
   const location = useLocation();
 
   const hideHeaderFooter =
@@ -34,7 +31,8 @@ function LayoutWrapper() {
     location.pathname === "/terms" ||
     location.pathname === "/privacy" ||
     location.pathname === "/login" ||
-    location.pathname.startsWith("/auth");
+    location.pathname.startsWith("/auth") ||
+    location.pathname === "/notfound";
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-neutral-950 transition-colors duration-200">
@@ -74,7 +72,8 @@ function LayoutWrapper() {
               }
             />
 
-            <Route path="*" element={<NotFound />} />
+            <Route path="/notfound" element={<NotFound />} />
+            <Route path="*" element={<Navigate to="/notfound" />} />
           </Routes>
         </Suspense>
       </main>
@@ -99,24 +98,6 @@ function LayoutWrapper() {
   );
 }
 
-function App() {
-  const isMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === "true";
 
-  if (isMaintenanceMode) {
-    return (
-      <Suspense fallback={null}>
-        <MaintenancePage />
-      </Suspense>
-    );
-  }
-
-  return (
-    <AuthProvider>
-      <Router>
-        <LayoutWrapper />
-      </Router>
-    </AuthProvider>
-  );
-}
 
 export default App;

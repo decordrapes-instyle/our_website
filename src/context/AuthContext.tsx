@@ -8,7 +8,7 @@ import {
   sendEmailVerification as firebaseSendEmailVerification,
   reload as firebaseReloadUser,
   sendPasswordResetEmail
-} from 'firebase/auth';
+} from '../config/firebase';
 import { ref, get, set } from '../config/firebase';
 import { auth, database } from '../config/firebase';
 import { uploadToCloudinary } from '../config/cloudinary';

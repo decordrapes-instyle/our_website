@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
-import {
-  getAuth,
-  sendPasswordResetEmail,
-  verifyPasswordResetCode,
-  confirmPasswordReset,
-} from "firebase/auth";
+import { getAuth, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset } from "../config/firebase";
 import { Mail, Lock, AlertTriangle, CheckCircle, ArrowLeft } from "lucide-react";
 
 export default function ResetPassword() {

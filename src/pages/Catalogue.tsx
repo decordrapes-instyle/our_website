@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ref, onValue, runTransaction, set, get } from '../config/firebase';
-import { getAuth, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, User as FirebaseUser } from '../config/firebase';
 import { database } from '../config/firebase';
 import { X } from 'lucide-react';
 

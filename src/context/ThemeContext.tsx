@@ -61,7 +61,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         document.documentElement.classList.toggle("dark", e.matches);
         document.documentElement.style.colorScheme = e.matches ? "dark" : "light";
         if (themeColorMeta) {
-          themeColorMeta.setAttribute("content", e.matches ? "#0a0a0a" : "#ffffff");
+          themeColorMeta.setAttribute("content", e.matches ? "#171717" : "#ffffff");
         }
       }
     };
