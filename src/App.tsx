@@ -1,7 +1,8 @@
-import { BrowserRouter as Router, Routes, Route, useLocation, } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+
 import Home from "./pages/Home";
 import Catalogue from "./pages/Catalogue";
 import About from "./pages/About";
@@ -13,6 +14,7 @@ import TermsPage from "./pages/Terms";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import MaintenancePage from "./pages/MaintenancePage";
+
 const Login = lazy(() => import("./components/auth/Login"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Verified = lazy(() => import("./pages/Verified"));
@@ -27,23 +29,10 @@ const Toaster = lazy(() =>
 function LayoutWrapper() {
   const location = useLocation();
 
-  const mainRoutes = [
-    "/",
-    "/catalogue",
-    "/terms",
-    "/about",
-    "/contact",
-    "/estimate",
-    "/privacy",
-    "/our-work",
-    "/profile",
-    "/quotations",
-    // Dynamic route for quotation detail will be handled by startsWith in hideHeaderFooter
-  ];
-
   const hideHeaderFooter =
-    (!mainRoutes.includes(location.pathname) &&
-    !location.pathname.startsWith("/quotations/")) || // Added this check
+    location.pathname.startsWith("/profile") ||
+    location.pathname === "/terms" ||
+    location.pathname === "/privacy" ||
     location.pathname === "/login" ||
     location.pathname.startsWith("/auth");
 
@@ -71,6 +60,7 @@ function LayoutWrapper() {
             <Route path="/our-work" element={<OurWorkPublic />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/login" element={<Login />} />
+
             <Route path="/auth/reset-password" element={<ResetPassword />} />
             <Route path="/auth/verified" element={<Verified />} />
             <Route path="/auth" element={<AuthHandler />} />
@@ -83,6 +73,7 @@ function LayoutWrapper() {
                 </ProtectedRoute>
               }
             />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
@@ -109,8 +100,7 @@ function LayoutWrapper() {
 }
 
 function App() {
-  const isMaintenanceMode =
-    import.meta.env.VITE_MAINTENANCE_MODE === "true";
+  const isMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === "true";
 
   if (isMaintenanceMode) {
     return (
