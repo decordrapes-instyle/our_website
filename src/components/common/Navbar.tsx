@@ -1,4 +1,3 @@
-// src/components/common/Navbar.tsx
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -12,10 +11,8 @@ import {
   Phone,
   ChevronRight,
   Star,
-  Palette,
   Sparkles,
-  Wrench,
-} from "lucide-react";
+  } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { ref, onValue } from "../../config/firebase";
 import { database } from "../../config/firebase";
@@ -38,7 +35,6 @@ const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Scroll handler for floating navbar
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.scrollY;
@@ -151,11 +147,6 @@ const Navbar: React.FC = () => {
       icon: <Home size={14} />,
     },
     {
-      label: "Features",
-      to: "/features",
-      icon: <Palette size={14} />,
-    },
-    {
       label: "Our Work",
       to: "/our-work",
       icon: <Star size={14} />,
@@ -170,6 +161,11 @@ const Navbar: React.FC = () => {
       to: "/contact",
       icon: <Phone size={14} />,
     },
+    {
+      label: "Estimate",
+      to: "/estimate",
+      icon: <Sparkles size={14} />,
+    },
   ];
 
   // Quick action links for features (used in mobile sidebar only)
@@ -178,11 +174,6 @@ const Navbar: React.FC = () => {
       label: "Browse Catalogue",
       to: "/catalogue",
       icon: <Sparkles size={12} />,
-    },
-    {
-      label: "Our Services",
-      to: "/services",
-      icon: <Wrench size={12} />,
     },
   ];
 
