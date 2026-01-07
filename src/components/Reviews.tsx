@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import TestimonialForm from "./testimonials/TestimonialForm";
 import { Review, ReviewsProps } from "../types";
+import { BadgeCheckIcon } from "lucide-react";
 
 const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
   const [googleReviews, setGoogleReviews] = useState<Review[]>([]);
@@ -464,18 +465,8 @@ border border-neutral-200 dark:border-neutral-700
                     </div>
                   )}
                   {review.source === "google" && (
-                    <div className="absolute -bottom-1 -right-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm">
-                      <div className="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-900 flex items-center justify-center">
-                        <svg
-                          className="w-3 h-3 text-blue-500 dark:text-blue-400"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            fill="currentColor"
-                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 16l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-8 8z"
-                          />
-                        </svg>
-                      </div>
+                    <div className="absolute -bottom-1 -right-1 bg-white dark:bg-blue-600 rounded-full p-0.5 shadow-sm">
+                        <BadgeCheckIcon className="w-4 h-4 text-blue-600 dark:text-white" />
                     </div>
                   )}
                 </div>
