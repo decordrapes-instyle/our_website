@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 const quotaionImageUrl =
-  "https://res.cloudinary.com/ds6um53cx/image/upload/v1767439623/aduvouzvmvmex5rof5ej.jpg";
+  "https://res.cloudinary.com/ds6um53cx/image/upload/v1767854182/utegoz4baqwjeyac10qd.jpg";
 export default function Estimate() {
   const [isVisible, setIsVisible] = useState(false);
 
