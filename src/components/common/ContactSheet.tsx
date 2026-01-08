@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { X, Mail, Github, Linkedin, Instagram, Heart } from "lucide-react"
+import { X, Mail, Heart } from "lucide-react"
 import { database } from "../../config/firebase"
 import { ref, get } from "../../config/firebase"
 
@@ -125,27 +125,19 @@ export default function ContactSheet({
           {totalLikes} people liked this site
         </div>
 
-        {/* Links */}
-        <div className="flex flex-col gap-3 mt-5">
-          <ContactLink href="mailto:pkumar8782744.pku@gmail.com" icon={<Mail />} label="Gmail" />
-          <ContactLink href="https://github.com/pankaj8782" icon={<Github />} label="Github" />
-          <ContactLink href="https://linkedin.com/in/pankaj8782" icon={<Linkedin />} label="LinkedIn" />
-          <ContactLink href="https://instagram.com/pankajshah.1" icon={<Instagram />} label="Instagram" />
+        {/* Link */}
+        <div className="flex justify-center mt-6">
+          <a
+            href="mailto:pkumar8782744.pku@gmail.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-3 px-6 py-3 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition font-semibold"
+          >
+            <Mail className="w-5 h-5" />
+            <span>Contact via Email</span>
+          </a>
         </div>
       </div>
     </div>
-  )
-}
-
-function ContactLink({ href, icon, label }: any) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition font-medium"
-    >
-      {icon} {label}
-    </a>
   )
 }

@@ -9,15 +9,20 @@ const LOCAL_QUEUE_KEY = "footer-like-queue"
 const MAX_CLICK_SAFE = 10
 
 export default function FooterMadeWith() {
-  const [liked, setLiked] = useState(false)
+  const [hasLiked, setHasLiked] = useState(false)
   const [showContactHint, setShowContactHint] = useState(false)
   const [open, setOpen] = useState(false)
   const bufferRef = useRef(0)
   const flushTimeout = useRef<NodeJS.Timeout | null>(null)
   const hideHintTimeout = useRef<NodeJS.Timeout | null>(null)
-  const heartTimeout = useRef<NodeJS.Timeout | null>(null)
   const clickCountRef = useRef(0)
   const [highlightContact, setHighlightContact] = useState(false)
+
+  useEffect(() => {
+    if (localStorage.getItem("hasLiked") === "true") {
+      setHasLiked(true);
+    }
+  }, []);
 
   useEffect(() => {
     const likeRef = ref(database, LIKE_PATH)
@@ -44,12 +49,17 @@ export default function FooterMadeWith() {
   }
 
   const handleLike = () => {
-    setLiked(true)
-    if (heartTimeout.current) clearTimeout(heartTimeout.current)
-    heartTimeout.current = setTimeout(() => setLiked(false), 300)
     setShowContactHint(true)
     if (hideHintTimeout.current) clearTimeout(hideHintTimeout.current)
     hideHintTimeout.current = setTimeout(() => setShowContactHint(false), 2000)
+
+    if (hasLiked) {
+      return;
+    }
+
+    setHasLiked(true);
+    localStorage.setItem("hasLiked", "true");
+
     bufferRef.current += 1
     localStorage.setItem(LOCAL_QUEUE_KEY, String(bufferRef.current))
     if (flushTimeout.current) clearTimeout(flushTimeout.current)
@@ -70,8 +80,8 @@ export default function FooterMadeWith() {
           Made with
           <Heart
             className={`w-4 h-4 transition-transform duration-100 ease-out ${
-              liked
-                ? "fill-red-500 text-red-500 scale-125 animate-pulse"
+              hasLiked
+                ? "fill-red-500 text-red-500"
                 : "text-red-500 dark:text-red-400"
             }`}
           /> by
