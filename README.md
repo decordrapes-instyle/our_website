@@ -5,7 +5,7 @@
   <img src="https://img.shields.io/badge/frontend-React-61DAFB.svg" alt="React" />
   <img src="https://img.shields.io/badge/backend-Firebase-FFCA28.svg" alt="Firebase" />
   <img src="https://img.shields.io/badge/auth-Google%20OAuth-4285F4.svg" alt="Google OAuth" />
-  <img src="https://img.shields.io/badge/license-Trademark-yellow.svg" alt="License" />
+  <img src="https://img.shields.io/badge/license-Registered-green.svg" alt="License" />
 </p>
 
 ---
