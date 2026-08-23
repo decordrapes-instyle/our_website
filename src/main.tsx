@@ -7,7 +7,7 @@ import { AuthProvider } from './context/AuthContext.tsx'
 import { BrowserRouter as Router } from 'react-router-dom'
 import MaintenancePage from './pages/MaintenancePage.tsx'
 
-const isMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === "true";
+const isMaintenanceMode = true; // import.meta.env.VITE_MAINTENANCE_MODE === "true";
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
