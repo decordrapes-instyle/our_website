@@ -20,13 +20,13 @@ export default function MaintenancePage() {
           Please try again later.
         </p>
 
-        {/* Compact Status */}
-        <div className="mt-6 inline-flex items-center gap-3 rounded-lg border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950 px-3.5 py-2.5 font-mono text-xs">
+        {/* System Status */}
+        <div className="mt-6 inline-flex items-center gap-3 rounded-full border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950 px-4 py-2.5 font-mono text-xs">
           <span className="text-gray-500 dark:text-gray-500">
             STATUS
           </span>
 
-          <span className="text-gray-900 dark:text-white font-semibold">
+          <span className="font-semibold text-gray-900 dark:text-white">
             500
           </span>
 
@@ -35,16 +35,6 @@ export default function MaintenancePage() {
           <span className="text-red-600 dark:text-red-400">
             FAILED TO LOAD
           </span>
-        </div>
-
-        {/* Try Again */}
-        <div>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-6 px-5 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
-          >
-            Try Again
-          </button>
         </div>
 
       </div>
