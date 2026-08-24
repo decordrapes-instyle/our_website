@@ -62,7 +62,7 @@ export default function MaintenancePage() {
           <div className="space-y-4 max-w-md w-full">
             <h1 className="flex flex-col items-center w-full text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
               Coming Back Soon!
-            </h1>
+            </div>
             <p className="text-gray-600 text-sm sm:text-base leading-relaxed text-center">
               We're currently upgrading our site with new designs and features.
               Please check back shortly.
