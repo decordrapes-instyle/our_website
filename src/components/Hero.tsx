@@ -201,7 +201,7 @@ const Hero: React.FC = () => {
 
       <div className="relative z-10">
         {/* Main Content */}
-        <div className="container mx-auto px-4 pt-8 sm:pt-16 pb-20">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 pt-8 sm:pt-16 pb-20">
           {/* Trust Badge */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
