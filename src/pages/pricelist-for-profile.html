@@ -1,0 +1,2355 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    accesskeycontent="Explore the updated price list for our products and services at Decor Drapes Instyle. Clear, detailed, and easy to navigate." />
+
+  <!-- FAVICONS -->
+  <link rel="icon" href="/assets/img/favicons/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicons/favicon-16x16.png" />
+  <link rel="apple-touch-icon" href="/assets/img/favicons/apple-touch-icon.png" />
+  <link rel="manifest" href="assets/img/favicons/site.webmanifest" />
+  <meta name="theme-color" content="#ffffff" />
+
+  <!-- OPEN GRAPH -->
+  <meta property="og:title" content="Decor Drapes Instyle - Price List" />
+  <meta property="og:description"
+    content="Browse our updated price list for window treatments, fabrics, and installation services." />
+  <meta property="og:image" content="https://pricelist.decordrapesinstyle.com/assets/img/social/og_image.png" />
+  <meta property="og:url" content="https://pricelist.decordrapesinstyle.com" />
+  <meta property="og:type" content="website" />
+
+  <!-- TWITTER CARD -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Price List | Decor Drapes Instyle" />
+  <meta name="twitter:description"
+    content="Browse our updated price list for window treatments, fabrics, and installation services." />
+  <meta name="twitter:image" content="https://pricelist.decordrapesinstyle.com/assets/img/social/og_image.png" />
+
+  <title>Price List | Decor Drapes Instyle</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" ref="styles.css" />
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              ink: "#172033",
+              sky: "#38bdf8",
+              gold: "#b8860b",
+            },
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    :root {
+      --primary-color: #1a202c;
+      --primary-light: #f7fafc;
+      --accent-color: #2d3748;
+      --text-dark: #2d3748;
+      --text-light: #718096;
+      --bg-white: #ffffff;
+      --bg-gray: #f7fafc;
+
+      --gold-strong: #b8860b;
+      --skyblue-vibrant: #38bdf8;
+      --skyblue-muted: #a8d4e6;
+      --gold-for-skyblue: #b68b2a;
+      --gold-muted: #b89a55;
+      --gold-light-muted: #e6d7a8;
+      --gold-darkest: #4f3b00;
+
+      --border-color: #e2e8f0;
+      --shadow:
+        0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      --shadow-lg:
+        0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-card:
+        0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+        Cantarell, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-white);
+      color: var(--text-dark);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Keep the polished homepage header persistent on every view. */
+    #main-header {
+      position: fixed !important;
+      top: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      font-family: "Manrope", sans-serif;
+    }
+
+    body>main {
+      padding-top: 72px;
+    }
+
+    #category-details-view {
+      min-height: calc(100vh - 72px);
+    }
+
+    .product-name {
+      color: var(--skyblue-vibrant);
+    }
+
+    /* Homepage is redesigned with Tailwind utility classes.
+           Detail/product/PDF styles below are intentionally retained. */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    /* Keep only the old container behavior needed by the existing detail UI. */
+    @media (max-width: 480px) {
+      body>main {
+        padding-top: 68px;
+      }
+
+      .container {
+        padding: 0.75rem;
+      }
+    }
+
+    .category-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .category-image-fallback {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+      color: #94a3b8;
+    }
+
+    .category-image-fallback svg {
+      width: 42px;
+      height: 42px;
+    }
+
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      background: none;
+      border: none;
+      color: var(--primary-color);
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 1rem;
+      padding: 0.5rem 0;
+      font-size: 0.9rem;
+      transition: color 0.2s ease;
+    }
+
+    .back-button:hover {
+      color: var(--accent-color);
+    }
+
+    .back-button svg {
+      margin-right: 0.5rem;
+    }
+
+    .category-details {
+      background-color: rgba(255, 255, 255, 0.94);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      border-radius: 1rem;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+    }
+
+    .category-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .category-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+
+    .page-title {
+      margin: 0 0 1.5rem;
+      color: #172033;
+      font-family: "Manrope", sans-serif;
+      font-size: 1.75rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+    }
+
+    .top-nav .back-button {
+      margin-bottom: 0;
+    }
+
+    .export-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      min-height: 40px;
+      padding: 0.5rem 1rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.96);
+      color: #475569;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
+    }
+
+    .export-btn:hover {
+      transform: translateY(-1px);
+      border-color: #bae6fd;
+      color: #0284c7;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    }
+
+    .export-btn:focus-visible {
+      outline: 2px solid #38bdf8;
+      outline-offset: 2px;
+    }
+
+    .export-btn svg {
+      margin-right: 0.5rem;
+    }
+
+    .products-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .products-table th {
+      text-align: left;
+      padding: 1rem;
+      background-color: var(--bg-gray);
+      font-weight: 600;
+      color: var(--text-dark);
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.9rem;
+    }
+
+    .products-table td {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.9rem;
+    }
+
+    .products-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .products-table tr:hover {
+      background-color: var(--bg-gray);
+    }
+
+    .products-cards {
+      display: none;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .product-card {
+      background-color: var(--bg-white);
+      border-radius: 8px;
+      padding: 1.25rem;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--border-color);
+      transition: all 0.2s ease;
+    }
+
+    .product-card:hover {
+      box-shadow: var(--shadow);
+    }
+
+    .product-header-row {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      align-items: center;
+      font-size: 1rem;
+      color: var(--text-dark);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+
+    .product-gst {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--gold-light-muted);
+      color: var(--gold-darkest);
+      font-size: 0.7rem;
+      font-weight: 600;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+
+    .product-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .detail-item {
+      display: flex;
+      gap: 0.5rem;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .product-details:has(.detail-item:nth-last-child(1):first-child) .detail-item {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    .detail-label {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .detail-value {
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    .detail-icon {
+      width: 14px;
+      height: 14px;
+    }
+
+    .terms-section {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .terms-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--primary-color);
+    }
+
+    .terms-list {
+      padding-left: 1.5rem;
+    }
+
+    .terms-list li {
+      margin-bottom: 0.5rem;
+      color: var(--text-light);
+    }
+
+    #toolbar-sentinel {
+      height: 1px;
+    }
+
+    .top-nav {
+      min-height: 73px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: nowrap;
+      gap: 1rem;
+
+      position: sticky;
+      top: 0;
+      z-index: 1001;
+      background: transparent;
+      border-radius: 0;
+      border-bottom: 1px solid transparent;
+      box-sizing: border-box;
+      transition:
+        background-color 0.25s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease;
+    }
+
+    .top-nav.is-stuck {
+      background: rgba(255, 255, 255, 0.94);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+
+      box-shadow: 0 8px 20px -14px rgba(15, 23, 42, 0.25);
+
+      border-bottom-color: rgba(226, 232, 240, 0.9);
+
+      margin-left: calc(50% - 50vw);
+      margin-right: calc(50% - 50vw);
+
+      padding-left: max(1rem, calc((100vw - 1200px) / 2));
+      padding-right: max(1rem, calc((100vw - 1200px) / 2));
+    }
+
+    @media (max-width: 480px) {
+      .top-nav {
+        top: 0px;
+        min-height: 73px;
+        margin-bottom: 0.75rem;
+        padding: 0.75rem 0;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .top-nav {
+        top: 0px;
+        min-height: 73px;
+        margin-bottom: 0.75rem;
+        padding: 0.75rem 0;
+      }
+
+      .products-table {
+        display: none;
+      }
+
+      .products-cards {
+        display: flex;
+      }
+
+      .product-details {
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      }
+    }
+
+    @media (max-width: 480px) {
+      .product-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        gap: 8px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .categories-details {
+        padding: 0.5rem;
+      }
+
+      .product-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        gap: 8px;
+      }
+    }
+
+    .empty-state {
+      width: 100%;
+      min-height: 350px;
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+      text-align: center;
+      padding: 3rem 1.5rem;
+      box-sizing: border-box;
+    }
+
+    .empty-state svg {
+      display: block;
+      width: 160px;
+      height: 160px;
+      margin: 0 auto 1.25rem;
+    }
+
+    .empty-state-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .empty-state-content h3 {
+      margin: 0 0 0.45rem;
+
+      font-size: 1.05rem;
+      font-weight: 600;
+      line-height: 1.4;
+
+      color: #374151;
+    }
+
+    .empty-state-content p {
+      margin: 0;
+
+      max-width: 360px;
+
+      font-size: 0.9rem;
+      line-height: 1.6;
+
+      color: #9ca3af;
+    }
+
+    .retry-btn {
+      margin-top: 1.25rem;
+
+      border: 0;
+      border-radius: 8px;
+
+      padding: 0.65rem 1.1rem;
+
+      background: #111827;
+      color: white;
+
+      font-size: 0.85rem;
+      font-weight: 500;
+
+      cursor: pointer;
+
+      transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+    }
+
+    .retry-btn:hover {
+      background: #374151;
+      transform: translateY(-1px);
+    }
+
+    .retry-btn:active {
+      transform: translateY(0);
+    }
+
+    #pdf-content {
+      display: none;
+    }
+
+    .last-updated {
+      font-size: 0.85rem;
+      color: var(--text-light);
+    }
+
+    /* PDF print styles */
+    @media print {
+      :root {
+        --bg-gray: #ffffff;
+      }
+
+      @page {
+        margin: 0.5in;
+        size: A4;
+        background-color: white;
+      }
+
+      body {
+        background: #ffffff !important;
+      }
+
+      body>* {
+        visibility: hidden;
+      }
+
+      #pdf-content,
+      #pdf-content * {
+        visibility: visible;
+      }
+
+      #pdf-content {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        display: block;
+        padding: 0;
+        margin: 0;
+      }
+
+      .pdf-page {
+        page-break-after: always;
+        break-after: page;
+        page-break-inside: avoid;
+        break-inside: avoid;
+        background: #ffffff;
+      }
+
+      .pdf-page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      .pdf-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .pdf-logo {
+        width: auto;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        border-radius: 4px;
+      }
+
+      .pdf-info {
+        text-align: right;
+        font-size: 12px;
+        color: #64748b;
+      }
+
+      .pdf-category {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #1e293b;
+      }
+
+      .pdf-date {
+        font-size: 12px;
+        color: #64748b;
+      }
+
+      .pdf-address {
+        margin-top: 0.5rem;
+        font-size: 10px;
+      }
+
+      .pdf-table-container {
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      .pdf-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        font-size: 12px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .pdf-table thead {
+        display: table-header-group;
+      }
+
+      .pdf-table th {
+        text-align: left;
+        padding: 0.75rem;
+        background-color: #f1f5f9;
+        font-weight: 600;
+        color: #475569;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .pdf-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .pdf-table tr {
+        page-break-inside: avoid;
+      }
+
+      .pdf-terms {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .pdf-terms-title {
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 0.75rem;
+        color: #1e293b;
+      }
+
+      .pdf-terms-list {
+        font-size: 10px;
+        padding-left: 1rem;
+      }
+
+      .pdf-terms-list li {
+        margin-bottom: 0.25rem;
+      }
+    }
+
+    /* Responsive styles */
+    @media (max-width: 768px) {
+      body>main {
+        padding-top: 72px;
+      }
+
+      .top-nav {
+        align-items: center;
+        flex-wrap: nowrap;
+      }
+
+      .category-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .page-title {
+        margin-bottom: 1.25rem;
+        font-size: 1.5rem;
+      }
+
+      .export-btn {
+        align-self: center;
+      }
+
+      .header {
+        padding: 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body>main {
+        padding-top: 68px;
+      }
+
+      .container {
+        padding: 0.75rem;
+      }
+
+      .page-title {
+        font-size: 1.5rem;
+      }
+
+      .brand-logo {
+        height: 60px;
+      }
+
+      .category-card {
+        padding: 1rem 0.5rem;
+        min-height: 100px;
+      }
+
+      .category-details {
+        padding: 1.25rem;
+      }
+
+      .category-image-fallback svg {
+        width: 32px;
+        height: 32px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .category-details {
+        padding: 0.75rem;
+      }
+    }
+
+    .fullscreen-shimmer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 300px;
+      width: 100%;
+      text-align: center;
+      margin: 2rem 0;
+    }
+
+    .shimmer-text {
+      font-size: 28px;
+      font-weight: 600;
+      color: transparent;
+      background-size: 200% 100%;
+      background-repeat: no-repeat;
+      -webkit-background-clip: text;
+      background-clip: text;
+      animation: shimmerText 1.5s ease-in-out infinite;
+      padding: 0.5rem 1rem;
+    }
+
+    @keyframes shimmerText {
+      0% {
+        background-position: -200% 0;
+      }
+
+      100% {
+        background-position: 200% 0;
+      }
+    }
+
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
+  <!-- =========================
+         MAIN HOMEPAGE HEADER
+         ========================= -->
+  <header id="main-header"
+    class="fixed top-0 left-0 right-0 z-[1000] w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+    <div class="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <!-- Square logo -->
+      <a href="./index.html" class="flex items-center gap-3.5" aria-label="Price list home">
+        <div class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-lg bg-white sm:h-12 sm:w-12">
+          <img src="https://res.cloudinary.com/dmiwq3l2s/image/upload/v1764768203/vfw82jmca7zl5p86czhy.png"
+            alt="Decor Drapes Instyle" class="h-full w-full object-contain p-1.5" />
+        </div>
+
+        <div class="hidden sm:block">
+          <div class="whitespace-nowrap text-sm font-medium leading-tight tracking-[-0.01em] text-slate-700">
+            Decor Drapes Instyle
+            <span class="mx-1 text-slate-300">/</span>
+            <span class="text-slate-400">Product Price List</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="https://www.decordrapesinstyle.com" target="_blank" rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 shadow-sm sm:px-4 sm:text-sm">
+        <span>Visit Website</span>
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M5.5 14.5 14.5 5.5M7 5.5h7.5V13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </a>
+
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl px-4 pb-16 pt-[104px] sm:px-6 sm:pt-[112px] lg:px-8">
+    <!-- Homepage intro -->
+    <section id="categories-view">
+      <div class="mb-6 flex flex-col gap-5 sm:mb-7 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
+        <div>
+          <p class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-500">
+            Decor Drapes Instyle
+          </p>
+          <h1 id="main-title" class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Price List
+          </h1>
+          <p class="mt-1.5 max-w-xl text-sm leading-6 text-slate-500">
+            Browse our products and view the latest pricing by category.
+          </p>
+        </div>
+
+        <!-- =========================
+                 HOMEPAGE PRODUCT SEARCH
+                 ========================= -->
+        <div class="relative z-20 w-full lg:mb-0 lg:max-w-md" id="search-wrap">
+          <div class="relative">
+            <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400"
+              width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.7" />
+              <path d="M17 17l-3.2-3.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </svg>
+            <input type="text" id="product-search-input" autocomplete="off"
+              placeholder="Search products across all categories…"
+              class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-11 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100" />
+            <button id="search-clear-btn" type="button" aria-label="Clear search"
+              class="absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded-full p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+            </button>
+          </div>
+
+          <div id="search-results"
+            class="absolute left-0 right-0 top-full z-30 mt-2 hidden max-h-[65vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl">
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 lg:gap-5 xl:grid-cols-5 xl:gap-6"
+        id="categories-container">
+        <!-- Categories here -->
+      </div>
+    </section>
+
+    <!-- =========================
+             EXISTING DETAIL UI
+             DO NOT CHANGE PRODUCT/PDF DESIGN
+             ========================= -->
+    <div id="category-details-view" style="display: none">
+      <div id="toolbar-sentinel" aria-hidden="true"></div>
+      <div class="top-nav" id="category-toolbar">
+        <button class="back-button" id="back-button">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" />
+          </svg>
+          Categories
+        </button>
+        <button class="export-btn" id="export-pdf-btn">
+          <span>Export PDF</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M14 10V12.6667C14 13.0203 13.8595 13.3594 13.6095 13.6095C13.3594 13.8595 13.0203 14 12.6667 14H3.33333C2.97971 14 2.64057 13.8595 2.39052 13.6095C2.14048 13.3594 2 13.0203 2 12.6667V10"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M4.66675 6.66667L8.00008 10L11.3334 6.66667" stroke="currentColor" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M8 10V2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+      </div>
+
+      <h2 class="page-title" id="category-page-title">Category Name</h2>
+
+      <div class="category-details">
+        <div class="category-header">
+          <div id="last-updated-container">
+            <!-- Last updated date -->
+          </div>
+        </div>
+        <div id="products-container">
+          <!-- Products table -->
+        </div>
+        <div id="terms-container" class="terms-section">
+          <!-- Terms and conditions -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="relative overflow-hidden border-t border-slate-200 bg-[#f7f9fb]">
+    <!-- =====================================================
+       GEOMETRIC BACKGROUND
+       ===================================================== -->
+    <div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      <!-- Large geometric lines -->
+      <svg class="absolute -right-24 -top-28 h-[430px] w-[430px] text-sky-500/[0.055]" viewBox="0 0 430 430"
+        fill="none">
+        <path d="M215 15 410 128v225L215 465 20 353V128L215 15Z" stroke="currentColor" stroke-width="1" />
+
+        <path d="M215 65 367 153v175L215 416 63 328V153L215 65Z" stroke="currentColor" stroke-width="1" />
+
+        <path d="M215 116 323 178v124L215 364 107 302V178L215 116Z" stroke="currentColor" stroke-width="1" />
+
+        <path d="M20 128 215 241l195-113" stroke="currentColor" stroke-width="1" />
+
+        <path d="M20 353 215 241l195 112" stroke="currentColor" stroke-width="1" />
+      </svg>
+
+      <!-- Small golden geometry -->
+      <svg class="absolute -bottom-28 -left-24 h-[300px] w-[300px] text-amber-500/[0.045]" viewBox="0 0 300 300"
+        fill="none">
+        <path d="M150 18 282 94v152l-132 76L18 246V94L150 18Z" stroke="currentColor" stroke-width="1" />
+
+        <path d="M150 72 235 121v98l-85 49-85-49v-98l85-49Z" stroke="currentColor" stroke-width="1" />
+      </svg>
+    </div>
+
+    <!-- =====================================================
+       MAIN
+       ===================================================== -->
+    <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div
+        class="grid min-h-[185px] gap-8 py-10 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_auto] lg:items-center lg:gap-10">
+        <!-- =================================================
+           BRAND
+           ================================================= -->
+        <div class="text-center lg:text-left">
+          <a href="#" aria-label="Home" class="inline-flex">
+            <img src="https://res.cloudinary.com/ds6um53cx/image/upload/v1787827798/fpqfpm0epjsyl6tz4ubx.svg"
+              alt="Company Logo" class="h-12 w-auto max-w-[225px] object-contain" />
+          </a>
+
+          <p class="mx-auto mt-3 max-w-md text-[11px] leading-5 text-slate-500 lg:mx-0">
+            Digital product price list for quick access to products,
+            categories and pricing.
+          </p>
+        </div>
+
+        <!-- =================================================
+           DEVELOPER
+           ================================================= -->
+        <div class="flex justify-center lg:justify-self-center">
+          <div class="flex items-center gap-2.5">
+            <!-- Small developer photo -->
+            <div
+              class="h-9 w-9 shrink-0 overflow-hidden rounded-full border-2 border-white bg-slate-200 shadow-sm ring-1 ring-slate-200">
+              <img src="https://avatars.githubusercontent.com/u/125809323?v=4&size=64" alt="Developer"
+                class="h-full w-full object-cover" loading="lazy" />
+            </div>
+
+            <div class="leading-tight">
+              <p class="text-[9px] font-medium uppercase tracking-[0.14em] text-slate-400">
+                Developed by
+              </p>
+
+              <p class="mt-1 text-xs font-bold text-slate-700">Pankaj</p>
+
+              <a href="mailto:pankajsah1@proton.me"
+                class="mt-0.5 block text-[10px] text-slate-400 transition-colors hover:text-sky-600">
+                pankajsah1@proton.me
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================
+     COMPACT DOWNLOAD + UPDATE
+     ================================================= -->
+        <div class="flex items-center justify-center lg:justify-self-end">
+          <button id="download-all-pdf-btn" type="button"
+            class="group inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:shadow-md active:translate-y-0">
+            <!-- Icon -->
+            <span
+              class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-50 text-sky-600 transition-colors duration-200 group-hover:bg-sky-600 group-hover:text-white">
+              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 4v10m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path d="M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+            </span>
+
+            <!-- Title -->
+            <span class="text-[11px] font-semibold text-slate-700">
+              Full Pricelist
+            </span>
+
+            <!-- Update -->
+            <span class="text-[9px] font-medium text-slate-400"> • </span>
+
+            <span id="site-last-updated" class="whitespace-nowrap text-[9px] font-medium text-slate-400">
+              Update date unavailable
+            </span>
+          </button>
+        </div>
+
+        <!-- Existing JS compatibility -->
+        <button id="download-all-pdf-btn-mobile" type="button" class="hidden" aria-hidden="true" tabindex="-1">
+          Full Pricelist
+        </button>
+      </div>
+    </div>
+
+    <!-- =====================================================
+         BOTTOM BAR
+         ===================================================== -->
+    <div
+      class="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-3 border-t border-slate-200/70 px-4 py-4 text-center sm:flex-row sm:px-6 sm:text-left lg:px-8">
+      <p class="text-[10px] font-medium text-slate-400">
+        ©
+        <span id="footer-year"></span>
+        All rights reserved.
+      </p>
+
+      <p class="text-[10px] text-slate-400">
+        Prices may change without prior notice.
+      </p>
+    </div>
+  </footer>
+
+  <div id="pdf-content"></div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAD4piXNNzWi3z1riCEl07NHnjg2IHcFhc",
+      authDomain: "decor-drapes.firebaseapp.com",
+      databaseURL:
+        "https://decor-drapes-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "decor-drapes",
+      storageBucket: "decor-drapes.firebasestorage.app",
+      messagingSenderId: "175917446618",
+      appId: "1:175917446618:web:1567dfe6a9d9c43e873ce3",
+      measurementId: "G-8W8BZMLVZC",
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    const categoriesView = document.getElementById("categories-view");
+    const categoryDetailsView = document.getElementById(
+      "category-details-view",
+    );
+    const categoriesContainer = document.getElementById(
+      "categories-container",
+    );
+    const backButton = document.getElementById("back-button");
+    const mainTitle = document.getElementById("main-title");
+    const categoryPageTitle = document.getElementById("category-page-title");
+    const lastUpdatedContainer = document.getElementById(
+      "last-updated-container",
+    );
+    const productsContainer = document.getElementById("products-container");
+    const termsContainer = document.getElementById("terms-container");
+    const exportPdfBtn = document.getElementById("export-pdf-btn");
+    const downloadAllPdfBtn = document.getElementById("download-all-pdf-btn");
+    const downloadAllPdfBtnMobile = document.getElementById(
+      "download-all-pdf-btn-mobile",
+    );
+    const siteLastUpdated = document.getElementById("site-last-updated");
+    const mainHeader = document.getElementById("main-header");
+    const pdfContent = document.getElementById("pdf-content");
+    const searchInput = document.getElementById("product-search-input");
+    const searchResults = document.getElementById("search-results");
+    const searchClearBtn = document.getElementById("search-clear-btn");
+    const searchWrap = document.getElementById("search-wrap");
+
+    let currentCategory = null;
+    let allPriceListData = {};
+    let columnNames = [];
+    let termsAndConditions = [];
+
+    const fieldIcons = {
+      price: `<svg xmlns="http://www.w3.org/2000/svg" class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-indian-rupee-icon lucide-indian-rupee"><path d="M6 3h12"/><path d="M6 8h12"/><path d="m6 13 8.5 8"/><path d="M6 13h3"/><path d="M9 13c6.667 0 6.667-10 0-10"/></svg>`,
+      "simple price": `<svg xmlns="http://www.w3.org/2000/svg" class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-indian-rupee-icon lucide-indian-rupee"><path d="M6 3h12"/><path d="M6 8h12"/><path d="m6 13 8.5 8"/><path d="M6 13h3"/><path d="M9 13c6.667 0 6.667-10 0-10"/></svg>`,
+      "premium price": `<svg xmlns="http://www.w3.org/2000/svg" class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-indian-rupee-icon lucide-indian-rupee"><path d="M6 3h12"/><path d="M6 8h12"/><path d="m6 13 8.5 8"/><path d="M6 13h3"/><path d="M9 13c6.667 0 6.667-10 0-10"/></svg>`,
+      gst: `<svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>`,
+      media: `<svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`,
+      roller: `<svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>`,
+      uv: `<svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>`,
+      "regular print": `<svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><path d="M9 20h6"></path><rect x="4" y="7" width="16" height="13" rx="2"></rect></svg>`,
+      "uv print": `<svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`,
+      "with pelmet": `<svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>`,
+      default: `<svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>`,
+    };
+
+    const categoryIcons = {
+      Sunscreens: `<svg class="category-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`,
+      Blinds: `<svg class="category-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>`,
+      Wallpapers: `<svg class="category-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`,
+      Curtains: `<svg class="category-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h20M2 17h20M12 7v10M2 7l4 10M22 7l-4 10"/></svg>`,
+      Fabrics: `<svg class="category-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>`,
+      default: `<svg class="category-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9m3 10H5m13-5H5m14 5H9"/></svg>`,
+    };
+
+    function formatRelativeTime(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+
+      const startOfDayDate = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+      );
+      const startOfDayNow = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+      );
+
+      const diffTime = startOfDayNow - startOfDayDate;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 0) return "Today";
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays < 7) return `${diffDays} days ago`;
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+      if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+      return `${Math.floor(diffDays / 365)} years ago`;
+    }
+
+    function formatFullDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    }
+
+    function generateProductId(categoryName, productName) {
+      return `${categoryName.toLowerCase().replace(/\s+/g, "-")}-${productName.toLowerCase().replace(/\s+/g, "-")}`;
+    }
+
+    function getFieldIcon(fieldName) {
+      return fieldIcons[fieldName.toLowerCase()] || fieldIcons.default;
+    }
+
+    function getCategoryIcon(categoryName) {
+      return categoryIcons[categoryName] || categoryIcons.default;
+    }
+
+    function formatFieldName(fieldName) {
+      if (fieldName === "product name") return "Product";
+      if (fieldName === "simple price") return "Price";
+      if (fieldName === "preimum price") return "Premium";
+      if (fieldName === "with pelmet") return "With Pelmet";
+      if (fieldName === "regular print") return "Regular Print";
+      if (fieldName === "uv print") return "UV Print";
+      return fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+    }
+
+    function formatFieldValue(fieldName, value) {
+      if (fieldName.toLowerCase().includes("price")) {
+        return `₹${value}`;
+      }
+      if (fieldName.toLowerCase() === "gst") {
+        return `${(value * 100).toFixed(0)}%`;
+      }
+      if (value === 0) {
+        return "-";
+      }
+      return value;
+    }
+
+    function fetchTermsAndConditions() {
+      database
+        .ref("quotations/meta/termsAndConditions")
+        .once("value", (snapshot) => {
+          const data = snapshot.val();
+          if (data && Array.isArray(data)) {
+            termsAndConditions = data;
+          } else {
+            termsAndConditions = [
+              "Prices are subject to change without notice",
+              "All prices are exclusive of applicable taxes",
+              "Minimum order quantity may apply",
+              "Delivery charges extra",
+            ];
+          }
+        });
+    }
+
+    function handleUrlParams() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const category = urlParams.get("category");
+      const product = urlParams.get("product");
+
+      if (category) {
+        database.ref(`pricelist/${category}`).once("value", (snapshot) => {
+          const categoryData = snapshot.val();
+          if (categoryData) {
+            showCategoryDetails(category, categoryData);
+
+            if (product) {
+              setTimeout(() => {
+                const productElement = document.getElementById(product);
+                if (productElement) {
+                  productElement.scrollIntoView({ behavior: "smooth" });
+                  productElement.style.backgroundColor =
+                    "var(--primary-light)";
+                  setTimeout(() => {
+                    productElement.style.backgroundColor = "";
+                  }, 2000);
+                }
+              }, 500);
+            }
+          }
+        });
+      }
+    }
+
+    const footerYear = document.getElementById("footer-year");
+
+    if (footerYear) {
+      footerYear.textContent = new Date().getFullYear();
+    }
+
+    function getRelativeTime(date) {
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+
+      // Future date protection
+      if (diffMs < 0) return "Just now";
+
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const diffWeeks = Math.floor(diffDays / 7);
+      const diffMonths = Math.floor(diffDays / 30);
+
+      if (diffMinutes < 1) {
+        return "Just now";
+      }
+
+      if (diffMinutes < 60) {
+        return `${diffMinutes} min ago`;
+      }
+
+      if (diffHours < 24) {
+        return `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
+      }
+
+      if (diffDays === 1) {
+        return "Yesterday";
+      }
+
+      if (diffDays < 7) {
+        return `${diffDays} days ago`;
+      }
+
+      if (diffWeeks < 4) {
+        return `${diffWeeks} ${diffWeeks === 1 ? "week" : "weeks"} ago`;
+      }
+
+      if (diffMonths < 12) {
+        return `${diffMonths} ${diffMonths === 1 ? "month" : "months"} ago`;
+      }
+
+      return date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    }
+
+    function updateGlobalLastUpdated(data) {
+      const dates = Object.values(data || {})
+        .map((category) => category?.lastUpdated)
+        .filter(Boolean)
+        .map((value) => new Date(value))
+        .filter((date) => !Number.isNaN(date.getTime()));
+
+      if (!dates.length) {
+        siteLastUpdated.textContent = "Last updated —";
+        return;
+      }
+
+      const latest = new Date(
+        Math.max(...dates.map((date) => date.getTime())),
+      );
+
+      siteLastUpdated.textContent = `Last updated ${getRelativeTime(latest)}`;
+    }
+
+    // Fallback "we'll be right back" UI, shown when /pricelist can't be
+    // read from Firebase for any reason (permission denied, offline, etc).
+    // Takes over the ENTIRE document body so no partial/broken UI shows.
+    function showPricelistUnavailable() {
+      document.documentElement.style.height = "100%";
+      document.body.style.margin = "0";
+      document.body.style.height = "100%";
+      document.body.style.overflow = "hidden";
+      document.body.className = "bg-[#f7f7f5] text-slate-900";
+
+      document.body.innerHTML = `
+          <div class="flex h-dvh w-full items-center justify-center px-6">
+            <div class="w-auto max-w-md text-center">
+
+              <div class="mb-7 flex justify-center">
+                <img
+                  src="https://res.cloudinary.com/dmiwq3l2s/image/upload/v1764322049/zrsn9atwtn42z5ivn4d8.svg"
+                  alt="Decor Drapes Instyle"
+                  class="h-14 w-auto object-contain sm:h-14">
+              </div>
+
+              <div class="mx-auto mb-5 flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-500 shadow-sm">
+                <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                Pricelist is temporarily unavailable
+              </div>
+
+              <h1 class="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                We'll be right back
+              </h1>
+
+              <p class="mx-auto mt-4 max-w-sm text-sm leading-6 text-slate-500 sm:text-base">
+                We're updating our price list to keep everything accurate and up to date.
+                Please check back shortly.
+              </p>
+
+              <button
+                id="pl-contactBtn"
+                type="button"
+                class="mt-7 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-700">
+                Contact us
+              </button>
+
+              <div
+                id="pl-contactModal"
+                class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/30 px-5 backdrop-blur-sm">
+                <div
+                  id="pl-contactCard"
+                  class="w-full max-w-sm scale-95 rounded-3xl border border-white/80 bg-white p-6 opacity-0 shadow-2xl transition-all duration-200">
+
+                  <div class="flex items-start justify-between">
+                    <div>
+                      <p class="text-xs font-medium uppercase tracking-widest text-slate-400">
+                        Get in touch
+                      </p>
+                      <h2 class="mt-1 text-xl font-semibold tracking-tight text-slate-900">
+                        How would you like to contact us?
+                      </h2>
+                    </div>
+                  </div>
+
+                  <div class="mt-6 space-y-2.5">
+                    <a href="https://wa.me/919738101408"
+                      class="group flex items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-3.5 transition hover:border-slate-200 hover:bg-slate-100">
+                      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm">
+                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.6 6.31999C16.8669 5.58141 15.9943 4.99596 15.033 4.59767C14.0716 4.19938 13.0406 3.99622 12 3.99999C10.6089 4.00135 9.24248 4.36819 8.03771 5.06377C6.83294 5.75935 5.83208 6.75926 5.13534 7.96335C4.4386 9.16745 4.07046 10.5335 4.06776 11.9246C4.06507 13.3158 4.42793 14.6832 5.12 15.89L4 20L8.2 18.9C9.35975 19.5452 10.6629 19.8891 11.99 19.9C14.0997 19.9001 16.124 19.0668 17.6222 17.5816C19.1205 16.0965 19.9715 14.0796 19.99 11.97C19.983 10.9173 19.7682 9.87634 19.3581 8.9068C18.948 7.93725 18.3505 7.05819 17.6 6.31999ZM12 18.53C10.8177 18.5308 9.65701 18.213 8.64 17.61L8.4 17.46L5.91 18.12L6.57 15.69L6.41 15.44C5.55925 14.0667 5.24174 12.429 5.51762 10.8372C5.7935 9.24545 6.64361 7.81015 7.9069 6.80322C9.1702 5.79628 10.7589 5.28765 12.3721 5.37368C13.9853 5.4597 15.511 6.13441 16.66 7.26999C17.916 8.49818 18.635 10.1735 18.66 11.93C18.6442 13.6859 17.9355 15.3645 16.6882 16.6006C15.441 17.8366 13.756 18.5301 12 18.53ZM15.61 13.59C15.41 13.49 14.44 13.01 14.26 12.95C14.08 12.89 13.94 12.85 13.81 13.05C13.6144 13.3181 13.404 13.5751 13.18 13.82C13.07 13.96 12.95 13.97 12.75 13.82C11.6097 13.3694 10.6597 12.5394 10.06 11.47C9.85 11.12 10.26 11.14 10.64 10.39C10.6681 10.3359 10.6827 10.2759 10.6827 10.215C10.6827 10.1541 10.6681 10.0941 10.64 10.04C10.64 9.93999 10.19 8.95999 10.03 8.56999C9.87 8.17999 9.71 8.23999 9.58 8.22999H9.19C9.08895 8.23154 8.9894 8.25465 8.898 8.29776C8.8066 8.34087 8.72546 8.403 8.66 8.47999C8.43562 8.69817 8.26061 8.96191 8.14676 9.25343C8.03291 9.54495 7.98287 9.85749 8 10.17C8.0627 10.9181 8.34443 11.6311 8.81 12.22C9.6622 13.4958 10.8301 14.5293 12.2 15.22C12.9185 15.6394 13.7535 15.8148 14.58 15.72C14.8552 15.6654 15.1159 15.5535 15.345 15.3915C15.5742 15.2296 15.7667 15.0212 15.91 14.78C16.0428 14.4856 16.0846 14.1583 16.03 13.84C15.94 13.74 15.81 13.69 15.61 13.59Z" fill="#000000"></path></svg>
+                      </div>
+                      <div class="flex-1 text-left">
+                        <p class="text-sm font-semibold text-slate-800">WhatsApp</p>
+                        <p class="text-xs text-slate-400">Chat with us</p>
+                      </div>
+                      <span class="text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-slate-500">→</span>
+                    </a>
+
+                    <a href="mailto:decordrapes.instyle@gmail.com"
+                      class="group flex items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-3.5 transition hover:border-slate-200 hover:bg-slate-100">
+                      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16v12H4z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M4 7l8 6 8-6" />
+                        </svg>
+                      </div>
+                      <div class="flex-1 text-left">
+                        <p class="text-sm font-semibold text-slate-800">Email</p>
+                        <p class="text-xs text-slate-400">Send us an email</p>
+                      </div>
+                      <span class="text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-slate-500">→</span>
+                    </a>
+
+                    <a href="tel:+919738101408"
+                      class="group flex items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-3.5 transition hover:border-slate-200 hover:bg-slate-100">
+                      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1.9.3 1.8.7 2.6a2 2 0 01-.5 2.1L8 9.7a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.5c.8.4 1.7.6 2.6.7a2 2 0 012 2.3z" />
+                        </svg>
+                      </div>
+                      <div class="flex-1 text-left">
+                        <p class="text-sm font-semibold text-slate-800">Call us</p>
+                        <p class="text-xs text-slate-400">Speak with us directly</p>
+                      </div>
+                      <span class="text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-slate-500">→</span>
+                    </a>
+                  </div>
+
+                  <p class="mt-5 text-center text-[11px] text-slate-400">
+                    Choose your preferred way to reach us.
+                  </p>
+                </div>
+              </div>
+
+              <p class="mt-8 text-[11px] text-slate-400">
+                © 2026 Decor Drapes Instyle
+              </p>
+
+            </div>
+          </div>
+        `;
+
+      const contactBtn = document.getElementById("pl-contactBtn");
+      const contactModal = document.getElementById("pl-contactModal");
+      const contactCard = document.getElementById("pl-contactCard");
+
+      function openModal() {
+        contactModal.classList.remove("hidden");
+        contactModal.classList.add("flex");
+        requestAnimationFrame(() => {
+          contactCard.classList.remove("scale-95", "opacity-0");
+          contactCard.classList.add("scale-100", "opacity-100");
+        });
+      }
+
+      function closeContactModal() {
+        contactCard.classList.remove("scale-100", "opacity-100");
+        contactCard.classList.add("scale-95", "opacity-0");
+        setTimeout(() => {
+          contactModal.classList.remove("flex");
+          contactModal.classList.add("hidden");
+        }, 200);
+      }
+
+      contactBtn.addEventListener("click", openModal);
+      contactModal.addEventListener("click", (event) => {
+        if (event.target === contactModal) closeContactModal();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeContactModal();
+      });
+    }
+
+    function fetchCategories() {
+      categoriesContainer.innerHTML = `
+                <div class="fullscreen-shimmer">
+                    <div class="shimmer-text">Loading categories...</div>
+                </div>
+            `;
+
+      database.ref("pricelist").on(
+        "value",
+        (snapshot) => {
+          const data = snapshot.val() || {};
+          allPriceListData = data;
+          updateGlobalLastUpdated(data);
+          renderCategories(data);
+
+          handleUrlParams();
+        },
+        (error) => {
+          // Covers permission-denied and any other read failure on /pricelist.
+          console.error("Error fetching data:", error);
+          showPricelistUnavailable();
+        },
+      );
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function getCategoryImageUrl(categoryData) {
+      if (!categoryData || typeof categoryData !== "object") return "";
+      return typeof categoryData.imageUrl === "string"
+        ? categoryData.imageUrl.trim()
+        : "";
+    }
+
+    function categoryFallbackSvg(categoryName) {
+      const icon = getCategoryIcon(categoryName);
+      return icon.replace('class="category-icon"', 'aria-hidden="true"');
+    }
+
+    function renderCategories(data) {
+      if (!data) {
+        categoriesContainer.innerHTML = `
+                    <div class="col-span-full rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+                        <p class="text-sm font-medium text-slate-600">No categories found.</p>
+                    </div>
+                `;
+        return;
+      }
+
+      categoriesContainer.innerHTML = "";
+
+      Object.entries(data).forEach(([categoryName, categoryData]) => {
+        const safeCategoryName = escapeHtml(categoryName);
+        const productCount = categoryData?.products
+          ? Object.keys(categoryData.products).length
+          : 0;
+
+        const imageUrl = getCategoryImageUrl(categoryData);
+
+        const categoryCard = document.createElement("div");
+        categoryCard.className =
+          "group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl lg:rounded-[1.25rem] lg:border-transparent lg:shadow-md lg:shadow-slate-900/10 lg:hover:shadow-2xl lg:hover:shadow-slate-900/20";
+        categoryCard.setAttribute("role", "button");
+        categoryCard.setAttribute("tabindex", "0");
+        categoryCard.setAttribute("aria-label", `Open ${categoryName}`);
+
+        const imageWrap = document.createElement("div");
+        imageWrap.className =
+          "relative aspect-[1/1] w-full overflow-hidden bg-slate-100 sm:aspect-square lg:aspect-[4/5]";
+
+        if (imageUrl) {
+          const img = document.createElement("img");
+          img.className =
+            "category-image transition duration-500 ease-out group-hover:scale-105 lg:group-hover:scale-110";
+          img.src = imageUrl;
+          img.alt = categoryName;
+          img.loading = "lazy";
+          img.decoding = "async";
+
+          img.addEventListener("error", () => {
+            imageWrap.innerHTML = `
+                            <div class="category-image-fallback">
+                                ${categoryFallbackSvg(categoryName)}
+                            </div>
+                            <div class="pointer-events-none absolute inset-x-0 bottom-0 hidden h-2/3 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent lg:block"></div>
+                        `;
+          });
+
+          imageWrap.appendChild(img);
+        } else {
+          imageWrap.innerHTML = `
+                        <div class="category-image-fallback">
+                            ${categoryFallbackSvg(categoryName)}
+                        </div>
+                    `;
+        }
+
+        // Gradient scrim so the overlaid text/badge stay readable on the
+        // large-screen image tile. Hidden on mobile where text sits below
+        // the image on a plain white card.
+        const scrim = document.createElement("div");
+        scrim.className =
+          "pointer-events-none absolute inset-x-0 bottom-0 hidden h-2/3 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-transparent lg:block";
+        imageWrap.appendChild(scrim);
+
+        const content = document.createElement("div");
+        content.className =
+          "static flex min-h-[88px] flex-col p-3 sm:min-h-[116px] sm:p-4 lg:absolute lg:inset-x-0 lg:bottom-0 lg:z-10 lg:min-h-0 lg:p-5";
+
+        content.innerHTML = `
+                    <div
+                        class="line-clamp-2 min-h-[34px] break-words text-[12.5px] font-semibold leading-[1.35] tracking-[-0.01em] text-slate-900 sm:min-h-[42px] sm:text-sm lg:min-h-0 lg:text-base lg:font-bold lg:text-white lg:drop-shadow-sm"
+                        title="${safeCategoryName}">
+                        ${safeCategoryName}
+                    </div>
+
+                    <div class="mt-auto flex items-center justify-between gap-2 pt-2.5 sm:pt-3 lg:pt-2.5">
+                        <span class="inline-flex shrink-0 items-center rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600 sm:px-2.5 sm:text-[11px] lg:bg-white/15 lg:px-2.5 lg:py-1 lg:text-[11px] lg:font-semibold lg:text-white lg:ring-1 lg:ring-inset lg:ring-white/25 lg:backdrop-blur-sm">
+                            ${productCount} ${productCount === 1 ? "item" : "items"}
+                        </span>
+
+                        <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 transition duration-200 group-hover:bg-sky-50 group-hover:text-sky-500 sm:h-7 sm:w-7 lg:h-8 lg:w-8 lg:translate-x-1 lg:bg-white/15 lg:text-white lg:opacity-0 lg:backdrop-blur-sm lg:transition lg:duration-300 lg:group-hover:translate-x-0 lg:group-hover:bg-white lg:group-hover:text-slate-900 lg:group-hover:opacity-100">
+                            <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <path d="M7.5 4.5 13 10l-5.5 5.5"
+                                      stroke="currentColor"
+                                      stroke-width="1.7"
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"/>
+                            </svg>
+                        </span>
+                    </div>
+
+                `;
+
+        categoryCard.appendChild(imageWrap);
+        categoryCard.appendChild(content);
+
+        const openCategory = () => {
+          const newUrl = new URL(window.location);
+          newUrl.searchParams.set("category", categoryName);
+          window.history.pushState({}, "", newUrl);
+          showCategoryDetails(categoryName, categoryData);
+        };
+
+        categoryCard.addEventListener("click", openCategory);
+
+        categoryCard.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openCategory();
+          }
+        });
+
+        categoriesContainer.appendChild(categoryCard);
+      });
+    }
+
+    // =========================
+    // HOMEPAGE PRODUCT SEARCH
+    // =========================
+    function buildSearchIndex() {
+      const index = [];
+
+      Object.entries(allPriceListData || {}).forEach(
+        ([categoryName, categoryData]) => {
+          if (!categoryData?.products) return;
+
+          Object.values(categoryData.products).forEach((product) => {
+            const productName =
+              product["product name"] ||
+              product["media"] ||
+              `Product ${product.serial}`;
+
+            const price =
+              product["simple price"] ??
+              product["price"] ??
+              product["premium price"] ??
+              product["preimum price"];
+
+            index.push({ categoryName, categoryData, productName, product, price });
+          });
+        },
+      );
+
+      return index;
+    }
+
+    function renderSearchResults(query) {
+      const q = query.trim().toLowerCase();
+
+      if (!q) {
+        searchResults.classList.add("hidden");
+        searchResults.innerHTML = "";
+        return;
+      }
+
+      const matches = buildSearchIndex()
+        .filter(
+          (item) =>
+            item.productName.toLowerCase().includes(q) ||
+            item.categoryName.toLowerCase().includes(q),
+        )
+        .slice(0, 8);
+
+      if (!matches.length) {
+        searchResults.innerHTML = `
+                    <div class="px-4 py-8 text-center">
+                        <p class="text-sm font-medium text-slate-600">No products found</p>
+                        <p class="mt-1 text-xs text-slate-400">Try a different product or category name.</p>
+                    </div>
+                `;
+        searchResults.classList.remove("hidden");
+        return;
+      }
+
+      searchResults.innerHTML = matches
+        .map((item) => {
+          const productId = generateProductId(
+            item.categoryName,
+            item.productName,
+          );
+          const priceLabel =
+            item.price !== undefined && item.price !== null
+              ? formatFieldValue("price", item.price)
+              : "";
+          const categoryImageUrl = getCategoryImageUrl(item.categoryData);
+          const categoryBadge = categoryImageUrl
+            ? `<img src="${escapeHtml(categoryImageUrl)}" alt="" class="h-full w-full rounded-full object-cover" loading="lazy" />`
+            : escapeHtml(item.categoryName.charAt(0).toUpperCase());
+
+          return `
+                        <button
+                            type="button"
+                            data-category="${escapeHtml(item.categoryName)}"
+                            data-product-id="${productId}"
+                            class="search-result-item flex w-full items-center gap-3 border-b border-slate-100 px-4 py-3 text-left transition hover:bg-sky-50 last:border-b-0"
+                        >
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-[11px] font-semibold text-slate-500">
+                              ${categoryBadge}
+                            </span>
+                            <span class="min-w-0 flex-1">
+                                <span class="block truncate text-sm font-semibold text-slate-800">${escapeHtml(item.productName)}</span>
+                                <span class="mt-0.5 block truncate text-xs text-slate-500">${escapeHtml(item.categoryName)}</span>
+                            </span>
+                            ${priceLabel
+              ? `<span class="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">${escapeHtml(String(priceLabel))}</span>`
+              : ""
+            }
+                        </button>
+                    `;
+        })
+        .join("");
+
+      searchResults.classList.remove("hidden");
+
+      searchResults.querySelectorAll(".search-result-item").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          goToSearchResult(
+            btn.getAttribute("data-category"),
+            btn.getAttribute("data-product-id"),
+          );
+        });
+      });
+    }
+
+    function goToSearchResult(categoryName, productId) {
+      const categoryData = allPriceListData[categoryName];
+      if (!categoryData) return;
+
+      const newUrl = new URL(window.location);
+      newUrl.searchParams.set("category", categoryName);
+      newUrl.searchParams.set("product", productId);
+      window.history.pushState({}, "", newUrl);
+
+      showCategoryDetails(categoryName, categoryData);
+
+      searchInput.value = "";
+      searchClearBtn.classList.add("hidden");
+      searchResults.classList.add("hidden");
+      searchResults.innerHTML = "";
+      searchInput.blur();
+
+      setTimeout(() => {
+        const el =
+          document.getElementById(productId) ||
+          document.getElementById(`${productId}-mobile`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.style.backgroundColor = "var(--primary-light)";
+          setTimeout(() => {
+            el.style.backgroundColor = "";
+          }, 2000);
+        }
+      }, 400);
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener("input", (event) => {
+        const value = event.target.value;
+        renderSearchResults(value);
+        searchClearBtn.classList.toggle("hidden", !value);
+      });
+
+      searchInput.addEventListener("focus", () => {
+        if (searchInput.value.trim()) renderSearchResults(searchInput.value);
+      });
+
+      searchInput.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          searchResults.classList.add("hidden");
+          searchInput.blur();
+        }
+      });
+    }
+
+    if (searchClearBtn) {
+      searchClearBtn.addEventListener("click", () => {
+        searchInput.value = "";
+        searchClearBtn.classList.add("hidden");
+        searchResults.classList.add("hidden");
+        searchResults.innerHTML = "";
+        searchInput.focus();
+      });
+    }
+
+    document.addEventListener("click", (event) => {
+      if (searchWrap && !searchWrap.contains(event.target)) {
+        searchResults.classList.add("hidden");
+      }
+    });
+
+    // =========================
+    // STICKY CATEGORY TOOLBAR
+    // =========================
+    // The toolbar (Categories / Export PDF) uses CSS `position: sticky`
+    // to dock itself just below the fixed header once scrolled up to
+    // that point — and only then. We use a 1px sentinel placed right
+    // above the toolbar plus an IntersectionObserver purely to toggle a
+    // styling class (backdrop, shadow) once it's actually docked, so it
+    // stays visually blended with the page until it needs to stand out.
+    const toolbarSentinel = document.getElementById("toolbar-sentinel");
+    const categoryToolbar = document.getElementById("category-toolbar");
+
+    if (
+      toolbarSentinel &&
+      categoryToolbar &&
+      "IntersectionObserver" in window
+    ) {
+      const toolbarObserver = new IntersectionObserver(
+        ([entry]) => {
+          categoryToolbar.classList.toggle("is-stuck", !entry.isIntersecting);
+        },
+        { rootMargin: "-73px 0px 0px 0px", threshold: 0 },
+      );
+      toolbarObserver.observe(toolbarSentinel);
+    }
+
+    function extractColumnNames(products) {
+      const allKeys = new Set();
+
+      products.forEach((product) => {
+        Object.keys(product).forEach((key) => {
+          if (key !== "id" && key !== "serial") {
+            allKeys.add(key);
+          }
+        });
+      });
+
+      const priorityFields = [
+        "product name",
+        "media",
+        "price",
+        "simple price",
+        "premium price",
+        "preimum price",
+        "gst",
+      ];
+      const sortedKeys = Array.from(allKeys).sort((a, b) => {
+        const aIndex = priorityFields.indexOf(a);
+        const bIndex = priorityFields.indexOf(b);
+
+        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+        if (aIndex !== -1) return -1;
+        if (bIndex !== -1) return 1;
+
+        return a.localeCompare(b);
+      });
+
+      return sortedKeys;
+    }
+
+    function getProductImageUrl(product, categoryData) {
+      const candidates = [product?.imageUrl, product?.image, product?.media];
+      const url = candidates.find(
+        (value) =>
+          typeof value === "string" &&
+          /^(https?:\/\/|data:image\/)/i.test(value.trim()),
+      );
+      return url ? url.trim() : getCategoryImageUrl(categoryData);
+    }
+
+    function showCategoryDetails(categoryName, categoryData) {
+      currentCategory = { name: categoryName, ...categoryData };
+
+      categoriesView.style.display = "none";
+      categoryDetailsView.style.display = "block";
+      mainTitle.style.display = "none";
+      // Keep the homepage header visible on category pages so navigation and
+      // the visual language remain consistent across the whole site.
+      mainHeader.style.display = "block";
+
+      // A category always opens from the top, even when the user selected it
+      // while scrolled near the bottom of the homepage (especially on mobile).
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+
+      categoryPageTitle.textContent = `${categoryName} Price List`;
+
+      lastUpdatedContainer.innerHTML = "";
+
+      if (categoryData.products) {
+        const products = Object.values(categoryData.products);
+        products.sort((a, b) => a.serial - b.serial);
+
+        columnNames = extractColumnNames(products);
+
+        let tableHTML = `
+                    <table class="products-table">
+                        <thead>
+                            <tr>
+                                <th>Serial</th>
+                `;
+
+        columnNames.forEach((column) => {
+          tableHTML += `<th>${formatFieldName(column)}</th>`;
+        });
+
+        tableHTML += `
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+        let cardsHTML = `<div class="products-cards">`;
+
+        products.forEach((product) => {
+          const productName =
+            product["product name"] ||
+            product["media"] ||
+            `Product ${product.serial}`;
+          const productId = generateProductId(categoryName, productName);
+
+          tableHTML += `
+                        <tr id="${productId}">
+                            <td>${product.serial}</td>
+                    `;
+
+          columnNames.forEach((column) => {
+            tableHTML += `<td>${formatFieldValue(column, product[column])}</td>`;
+          });
+
+          tableHTML += `</tr>`;
+
+          cardsHTML += `
+                        <div class="product-card" id="${productId}-mobile">
+                            <div class="product-header-row">
+                                <div class="product-name">${product.serial}. ${escapeHtml(productName)}</div>
+                                <div class="product-gst">GST ${formatFieldValue("gst", product["gst"])}</div>
+                            </div>
+                            <div class="product-details">
+                    `;
+
+          columnNames.forEach((column) => {
+            if (
+              column !== "product name" &&
+              column !== "media" &&
+              column !== "gst" &&
+              product[column] !== undefined
+            ) {
+              cardsHTML += `
+                                <div class="detail-item">
+                                    <div class="detail-label">
+                                        ${getFieldIcon(column)}
+                                        ${formatFieldName(column)}
+                                    </div>
+                                    <div class="detail-value">${formatFieldValue(column, product[column])}</div>
+                                </div>
+                            `;
+            }
+          });
+
+          cardsHTML += `
+                            </div>
+                        </div>
+                    `;
+        });
+
+        tableHTML += `
+                        </tbody>
+                    </table>
+                `;
+
+        cardsHTML += `</div>`;
+
+        productsContainer.innerHTML = tableHTML + cardsHTML;
+
+        renderTermsAndConditions();
+      } else {
+        productsContainer.innerHTML = `
+                    <div class="empty-state">
+                        <svg
+    width="160"
+    height="160"
+    viewBox="0 0 200 200"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+>
+    <!-- Main empty document/card -->
+    <rect
+        x="30"
+        y="55"
+        width="140"
+        height="105"
+        rx="14"
+        fill="#F3F4F6"
+    />
+
+    <!-- Content placeholders -->
+    <rect
+        x="50"
+        y="78"
+        width="80"
+        height="10"
+        rx="5"
+        fill="#E5E7EB"
+    />
+
+    <rect
+        x="50"
+        y="98"
+        width="105"
+        height="10"
+        rx="5"
+        fill="#E5E7EB"
+    />
+
+    <rect
+        x="50"
+        y="118"
+        width="65"
+        height="10"
+        rx="5"
+        fill="#E5E7EB"
+    />
+
+    <!-- Search circle -->
+    <circle
+        cx="145"
+        cy="48"
+        r="25"
+        fill="white"
+        stroke="#D1D5DB"
+        stroke-width="5"
+    />
+
+    <!-- Search handle -->
+    <path
+        d="M163 66L178 81"
+        stroke="#D1D5DB"
+        stroke-width="5"
+        stroke-linecap="round"
+    />
+
+    <!-- Small highlight -->
+    <circle
+        cx="137"
+        cy="40"
+        r="5"
+        fill="#E5E7EB"
+    />
+</svg>
+                        <p>No products found in this category.</p>
+                    </div>`;
+        termsContainer.innerHTML = "";
+      }
+    }
+
+    function renderTermsAndConditions() {
+      if (termsAndConditions.length > 0) {
+        let termsHTML = `
+      <div class="mb-4">
+        <h2 class="text-base font-semibold text-slate-800">
+          Terms & Conditions
+        </h2>
+
+        <p class="mt-0.5 text-xs text-slate-500">
+          Please review these notes before placing an order.
+        </p>
+      </div>
+
+      <ul class="space-y-1.5 pl-5 text-sm leading-6 text-slate-600">
+    `;
+
+        termsAndConditions.forEach((term) => {
+          termsHTML += `
+        <li class="list-disc pl-1">
+          ${term}
+        </li>
+      `;
+        });
+
+        termsHTML += `
+      </ul>
+    `;
+
+        termsContainer.innerHTML = termsHTML;
+      } else {
+        termsContainer.innerHTML = "";
+      }
+    }
+
+    function buildPdfForCategories(categoryEntries) {
+      pdfContent.innerHTML = "";
+      categoryEntries.forEach(([categoryName, categoryData]) => {
+        const products = categoryData?.products
+          ? Object.values(categoryData.products).sort(
+            (a, b) => a.serial - b.serial,
+          )
+          : [];
+        const chunks = [];
+        const chunkSize = products.length > 15 ? 18 : 15;
+        for (let i = 0; i < products.length; i += chunkSize)
+          chunks.push(products.slice(i, i + chunkSize));
+        if (!chunks.length) chunks.push([]);
+
+        chunks.forEach((chunk, pageIndex) => {
+          const page = document.createElement("div");
+          page.className = "pdf-page";
+          const pdfLogo = `<img class="pdf-logo" src="https://res.cloudinary.com/ds6um53cx/image/upload/v1787827798/fpqfpm0epjsyl6tz4ubx.svg" alt="Decor Drapes Instyle">`;
+          const updatedText = categoryData?.lastUpdated
+            ? formatFullDate(categoryData.lastUpdated)
+            : "";
+          let tableHTML = `<div class="pdf-header"><a href="https://www.decordrapesinstyle.com" target="_blank">${pdfLogo}</a><div class="pdf-info"><div class="pdf-category">${escapeHtml(categoryName)} Price List</div><div class="pdf-date">Last updated: ${updatedText}</div><div class="pdf-address">Basement Floor, 76, Canera Bank, Mission Road<br>Bangalore, Karnataka - 560027<br>+91 9738101408 • contact@decordrapesinstyle.com</div></div></div>`;
+          tableHTML += `<div class="pdf-table-container"><table class="pdf-table"><thead><tr><th>Serial</th>`;
+          const cols = extractColumnNames(products);
+          cols.forEach(
+            (column) => (tableHTML += `<th>${formatFieldName(column)}</th>`),
+          );
+          tableHTML += `</tr></thead><tbody>`;
+          chunk.forEach((product) => {
+            tableHTML += `<tr><td>${product.serial}</td>`;
+            cols.forEach(
+              (column) =>
+                (tableHTML += `<td>${formatFieldValue(column, product[column])}</td>`),
+            );
+            tableHTML += `</tr>`;
+          });
+          tableHTML += `</tbody></table></div>`;
+          if (pageIndex === chunks.length - 1 && termsAndConditions.length) {
+            tableHTML += `<div class="pdf-terms"><div class="pdf-terms-title">Terms & Conditions</div><ul class="pdf-terms-list">${termsAndConditions.map((term) => `<li>${escapeHtml(term)}</li>`).join("")}</ul></div>`;
+          }
+          page.innerHTML = tableHTML;
+          pdfContent.appendChild(page);
+        });
+      });
+      window.print();
+    }
+
+    function generateAllPDF() {
+      const entries = Object.entries(allPriceListData || {});
+      if (!entries.length) return;
+      buildPdfForCategories(entries);
+    }
+
+    function generatePDF() {
+      if (!currentCategory) return;
+      buildPdfForCategories([[currentCategory.name, currentCategory]]);
+      return;
+
+      pdfContent.innerHTML = "";
+      const products = currentCategory.products
+        ? Object.values(currentCategory.products)
+        : [];
+      products.sort((a, b) => a.serial - b.serial);
+      const chunkSize = products.length > 15 ? 18 : 15;
+      const productChunks = [];
+      for (let i = 0; i < products.length; i += chunkSize) {
+        productChunks.push(products.slice(i, i + chunkSize));
+      }
+      if (!productChunks.length) {
+        productChunks.push([]);
+      }
+      productChunks.forEach((chunk, pageIndex) => {
+        const page = document.createElement("div");
+        page.className = "pdf-page";
+
+        let tableHTML = `
+                    <div class="pdf-header">
+                        <a href="https://www.decordrapesinstyle.com" target="_blank">
+                            <svg class="pdf-logo" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" width="16.721" height="6.222" style="shape-rendering:geometricPrecision;text-rendering:geometricPrecision;image-rendering:optimizeQuality;fill-rule:evenodd;clip-rule:evenodd" viewBox="0 0 174.17 64.81">
+                                <defs>
+                                    <linearGradient id="id0" x1="49.71" x2="49.71" y1="47.77" y2="92.99" gradientUnits="userSpaceOnUse">
+                                    <stop offset="0" style="stop-opacity:1;stop-color:#00a0e4"/>
+                                    <stop offset="1" style="stop-opacity:1;stop-color:white"/>
+                                    </linearGradient>
+                                    <linearGradient xlink:href="#id0" id="id1" x1="43.92" x2="43.92" y1="12.74" y2="92.72" gradientUnits="userSpaceOnUse"/>
+                                    <linearGradient id="id2" x1="-15.54" x2="65.26" y1="33.03" y2="33.03" gradientUnits="userSpaceOnUse">
+                                    <stop offset="0" style="stop-opacity:1;stop-color:#fcf290"/>
+                                    <stop offset=".027" style="stop-opacity:1;stop-color:#f6d665"/>
+                                    <stop offset=".059" style="stop-opacity:1;stop-color:#efb939"/>
+                                    <stop offset=".169" style="stop-opacity:1;stop-color:#d9a133"/>
+                                    <stop offset=".49" style="stop-opacity:1;stop-color:#c3892c"/>
+                                    <stop offset=".694" style="stop-opacity:1;stop-color:#e1a934"/>
+                                    <stop offset=".851" style="stop-opacity:1;stop-color:#ffca3d"/>
+                                    <stop offset="1" style="stop-opacity:1;stop-color:#dabf7f"/>
+                                    </linearGradient>
+                                    <linearGradient xlink:href="#id0" id="id3" x1="141.62" x2="141.62" y1="35.62" y2="105.7" gradientUnits="userSpaceOnUse"/>
+                                    <linearGradient xlink:href="#id2" id="id4" x1="115.42" x2="174.87" y1="62.05" y2="62.05" gradientUnits="userSpaceOnUse"/>
+                                    <linearGradient xlink:href="#id2" id="id5" x1="43.59" x2="166.72" y1="18.8" y2="18.8" gradientUnits="userSpaceOnUse"/>
+                                </defs>
+                                <g id="Layer_x0020_1">
+                                    <g id="_433619328">
+                                    <path d="M75.05 7.76c1.61 0 3.06.31 4.36.93 1.3.62 2.35 1.44 3.15 2.45.8 1.02 1.41 2.17 1.85 3.47a12.464 12.464 0 0 1 0 7.94c-.44 1.3-1.05 2.45-1.85 3.46-.8 1.02-1.85 1.84-3.15 2.46-1.3.62-2.75.93-4.36.93h-7.78c.74-.14 1.24-.46 1.51-.94.27-.48.41-1.13.41-1.94V10.64c0-.81-.13-1.46-.41-1.94-.27-.49-.77-.8-1.51-.94h7.78zm0 20.99c1.13.01 2.14-.35 3.02-1.09.89-.74 1.56-1.7 2.02-2.89.46-1.2.8-2.52 1.02-3.96.22-1.44.22-2.89 0-4.35a19.69 19.69 0 0 0-1.01-3.97c-.45-1.2-1.13-2.18-2.02-2.93-.89-.76-1.9-1.14-3.03-1.15h-2.21v20.34h2.21zm11.63.65c1.27-.24 1.91-1.32 1.91-3.23V10.98c0-1.91-.64-2.99-1.91-3.23h14.75l.72 2.72v2.72c-.16-1.44-.7-2.6-1.64-3.48-.94-.87-2.11-1.31-3.5-1.31h-4.76v9.84h2.4c.67 0 1.22-.05 1.67-.14.44-.09.85-.25 1.23-.5.37-.24.67-.59.88-1.04.22-.46.37-1.04.47-1.73v7.47c-.18-1.34-.59-2.24-1.25-2.7-.65-.46-1.66-.69-3-.69h-2.4v9.83h4.76c1.39 0 2.55-.44 3.5-1.32.94-.88 1.49-2.04 1.65-3.48v2.73l-.72 2.72H86.69zm27.78.33c-1.3 0-2.49-.2-3.59-.62-1.1-.42-2.04-.98-2.81-1.7-.78-.72-1.43-1.55-1.98-2.5-.54-.95-.95-1.96-1.21-3.03-.26-1.07-.39-2.17-.39-3.31 0-1.13.13-2.23.39-3.31.26-1.07.67-2.08 1.21-3.03.55-.95 1.2-1.78 1.98-2.5.77-.71 1.71-1.28 2.81-1.7 1.1-.41 2.3-.62 3.59-.62.63 0 1.12 0 1.48.02.36.02.87.07 1.51.17.65.11 1.33.26 2.04.46v5.46c-.13-.96-.41-1.85-.85-2.67a5.956 5.956 0 0 0-1.75-2.01c-.74-.52-1.55-.79-2.44-.79-.8 0-1.54.21-2.22.62-.69.41-1.26.97-1.74 1.66s-.89 1.49-1.22 2.39c-.34.91-.59 1.85-.75 2.84-.16.99-.24 1.98-.24 2.98 0 1.4.19 2.7.56 3.92.37 1.22.86 2.25 1.48 3.1.62.85 1.35 1.56 2.19 2.09.83.54 1.7.87 2.6 1 .89.13 1.83.02 2.79-.31.97-.33 1.87-.9 2.72-1.7-.49.96-1.31 1.71-2.46 2.24-1.15.54-2.39.8-3.7.8zm12.8-21.36c1.3-.63 2.76-.95 4.36-.95 1.61 0 3.06.31 4.36.95 1.3.64 2.35 1.48 3.15 2.54.8 1.05 1.41 2.24 1.85 3.57.44 1.33.65 2.7.65 4.09 0 1.4-.22 2.76-.65 4.09-.43 1.33-1.05 2.53-1.85 3.58-.8 1.05-1.85 1.89-3.15 2.53-1.3.64-2.75.95-4.36.95-1.6 0-3.06-.31-4.36-.95-1.31-.63-2.35-1.48-3.16-2.53-.8-1.06-1.41-2.25-1.85-3.58-.44-1.33-.65-2.69-.65-4.09 0-1.39.22-2.76.65-4.09.43-1.33 1.05-2.52 1.85-3.57.8-1.05 1.85-1.89 3.16-2.54zm1.33 19.53c.88.78 1.9 1.16 3.02 1.16 1.13 0 2.15-.39 3.04-1.15.89-.77 1.57-1.77 2.03-3 .45-1.24.8-2.6 1.01-4.09.22-1.5.22-2.99 0-4.48-.22-1.49-.56-2.85-1.01-4.09-.46-1.24-1.14-2.25-2.03-3.02-.89-.77-1.9-1.16-3.04-1.16-1.13 0-2.14.38-3.02 1.15-.89.77-1.56 1.76-2.02 3-.46 1.23-.79 2.6-1.01 4.09-.22 1.5-.22 2.98 0 4.48.22 1.49.55 2.85 1.01 4.09.46 1.24 1.13 2.24 2.02 3.02zm26.58-7.89c.59.33 1.15.76 1.67 1.3.52.53.96 1.09 1.33 1.65.37.56.73 1.16 1.09 1.78.36.62.72 1.2 1.11 1.75.38.55.79 1.04 1.23 1.48.44.44.98.79 1.6 1.05.63.26 1.31.39 2.07.39-4.52.73-7.31.22-8.37-1.52-.28-.41-.65-1.02-1.12-1.82-.47-.8-.89-1.47-1.23-2.01-.34-.55-.73-1.11-1.16-1.7-.43-.59-.85-1.04-1.25-1.35-.41-.3-.79-.46-1.17-.46h-2.11v5.62c0 1.91.63 2.98 1.9 3.23h-7.48c1.27-.24 1.91-1.32 1.91-3.23V10.98c0-1.91-.64-2.99-1.91-3.23h8.3c1.16 0 2.22.15 3.18.44.96.3 1.76.69 2.38 1.17.63.49 1.14 1.05 1.54 1.69.41.64.67 1.31.79 2 .13.69.13 1.4 0 2.11-.12.71-.36 1.38-.72 2-.36.62-.85 1.19-1.46 1.69-.62.5-1.33.89-2.12 1.16zm-3.59-.12c.66 0 1.25-.17 1.8-.49a4 4 0 0 0 1.32-1.3c.33-.54.6-1.15.79-1.84.19-.69.28-1.39.29-2.11.01-.72-.08-1.42-.26-2.11s-.43-1.3-.77-1.84c-.33-.54-.77-.98-1.32-1.31-.54-.33-1.16-.5-1.85-.5h-2.72v11.49h2.72z" style="fill:url(#id5);fill-rule:nonzero"/>
+                                    <path d="M75.05 34.61c1.61 0 3.06.31 4.36.94 1.3.62 2.35 1.44 3.15 2.45.8 1.01 1.41 2.17 1.85 3.46.43 1.3.65 2.61.65 3.97 0 1.36-.22 2.68-.65 3.97-.44 1.3-1.05 2.45-1.85 3.46-.8 1.01-1.85 1.83-3.15 2.46-1.3.62-2.75.93-4.36.93h-7.78c.74-.14 1.24-.45 1.51-.94.27-.48.41-1.13.41-1.94V37.49c0-.81-.13-1.45-.41-1.94-.27-.48-.77-.8-1.51-.94h7.78zm0 21c1.13.01 2.14-.35 3.02-1.09.89-.74 1.56-1.7 2.02-2.89.46-1.2.8-2.52 1.02-3.96.22-1.44.22-2.89 0-4.35-.22-1.45-.56-2.78-1.01-3.97-.45-1.2-1.13-2.18-2.02-2.93-.89-.76-1.9-1.15-3.03-1.15h-2.21v20.34h2.21zm34.38-5.11c-.13.39-.22.73-.27 1.01-.06.29-.06.56-.03.83.03.28.15.5.34.67.2.17.48.3.85.36h-4.58c1.37-.26 2.36-1.22 2.95-2.87l5.88-16.22c.76 2.08 1.74 4.78 2.95 8.11 1.2 3.33 2.19 6.03 2.95 8.11.29.79.67 1.43 1.13 1.93.46.49 1.07.81 1.82.95h-7.79c.31-.06.56-.15.75-.27.19-.12.32-.26.41-.42.07-.16.11-.36.1-.6-.01-.24-.05-.48-.1-.71-.06-.23-.16-.52-.28-.86-.08-.24-.2-.57-.35-.96-.15-.4-.24-.63-.26-.71h-5.88c-.07.21-.27.77-.59 1.66zm3.56-9.91c-.7 1.92-1.6 4.45-2.72 7.59h5.41c-.98-2.8-1.87-5.33-2.69-7.59zm.73 13.21c.11.85.4 1.61.88 2.28.74.31 1.7.54 2.85.7-1.09.13-2.04.36-2.85.69a4.9 4.9 0 0 0-.88 2.26c-.11-.84-.41-1.59-.88-2.26-.81-.33-1.76-.56-2.85-.69 1.15-.16 2.1-.39 2.85-.7.48-.67.77-1.43.88-2.28zm-15.66-6.71c.68.33 1.37.82 2.06 1.47.7.65 1.27 1.26 1.71 1.82.44.56 1.03 1.33 1.76 2.31.57.78 1.01 1.37 1.32 1.77.3.4.76.95 1.37 1.65.61.7 1.13 1.23 1.57 1.58.44.36 1.01.78 1.72 1.27.71.5 1.39.84 2.03 1.02.64.19 1.41.36 2.31.52.9.16 1.81.19 2.74.08.92-.11 1.96-.31 3.13-.62 1.16-.3 2.38-.72 3.65-1.26-7.03 3.78-12.78 4.32-17.27 1.63-1.91-1.14-3.74-2.99-5.5-5.55-.31-.45-1.09-1.67-2.33-3.65-.99-1.6-1.78-2.64-2.38-3.14-.48-.39-.94-.59-1.39-.61h-2.32V53c0 1.91.64 2.99 1.92 3.23h-7.48c1.27-.24 1.91-1.32 1.91-3.23V37.81c0-1.91-.64-2.98-1.91-3.23h8.29c1.16 0 2.22.15 3.18.45.96.3 1.76.69 2.39 1.19.64.49 1.15 1.06 1.56 1.72.4.65.66 1.33.77 2.04.11.71.1 1.42-.05 2.15-.14.72-.41 1.4-.79 2.03-.39.64-.93 1.2-1.61 1.72s-1.47.91-2.36 1.19zm-3.09-.34c.66 0 1.25-.17 1.8-.49.54-.33.98-.76 1.31-1.3.33-.54.59-1.15.78-1.84.19-.69.28-1.39.3-2.1.01-.72-.07-1.43-.25-2.11-.18-.69-.43-1.3-.77-1.84-.33-.54-.77-.98-1.32-1.3-.54-.33-1.16-.5-1.85-.5h-2.73v11.49h2.73zm36.9-12.14c1.31 0 2.49.19 3.54.56 1.06.37 1.9.85 2.54 1.45a6.09 6.09 0 0 1 1.45 2.05c.33.76.49 1.55.48 2.35-.02.8-.2 1.57-.56 2.35-.36.77-.86 1.45-1.5 2.04-.64.6-1.48 1.08-2.51 1.45-1.03.37-2.18.56-3.44.56h-2.73v5.62c0 1.91.64 2.99 1.91 3.23h-7.48c1.27-.24 1.91-1.32 1.91-3.23V37.85c0-1.91-.64-2.98-1.91-3.23h8.3zm0 12.14c.69 0 1.3-.17 1.85-.49.55-.33 1-.76 1.33-1.3.33-.54.59-1.15.77-1.84.19-.69.27-1.39.27-2.1 0-.72-.1-1.43-.29-2.11-.19-.69-.45-1.3-.79-1.84s-.78-.98-1.33-1.3c-.54-.33-1.15-.5-1.81-.5h-2.73v11.49h2.73zm9.18 9.5c1.27-.24 1.91-1.32 1.91-3.23V37.83c0-1.91-.64-2.98-1.91-3.23h14.75l.71 2.72v2.73c-.15-1.44-.7-2.61-1.64-3.48-.94-.87-2.11-1.31-3.5-1.31h-4.76v9.84H149c.67 0 1.23-.05 1.67-.14.44-.09.85-.26 1.22-.5s.67-.59.89-1.04c.22-.46.37-1.04.46-1.73v7.47c-.17-1.35-.59-2.25-1.24-2.71-.65-.46-1.66-.69-3-.69h-2.39v9.83h4.76c1.39 0 2.55-.44 3.5-1.32.94-.88 1.49-2.04 1.65-3.49v2.73l-.71 2.72h-14.75zm29.7-4.15c0-.58-.14-1.14-.4-1.67s-.61-.99-1.06-1.41c-.44-.42-.96-.82-1.54-1.21-.58-.39-1.19-.76-1.84-1.13-.64-.36-1.28-.73-1.93-1.11-.64-.37-1.25-.78-1.83-1.21-.58-.44-1.1-.89-1.55-1.37-.45-.47-.81-1.02-1.07-1.64-.27-.63-.41-1.29-.41-2-.01-.97.31-1.85.98-2.65.67-.8 1.51-1.41 2.54-1.82 1.02-.42 2.09-.62 3.19-.62 2.64 0 4.77.43 6.4 1.29v4.49c-.39-1.46-1.22-2.69-2.46-3.66-1.25-.98-2.56-1.46-3.94-1.46-1.02 0-1.84.27-2.46.81-.62.54-.93 1.38-.93 2.52 0 .57.22 1.12.65 1.65.43.54.99 1.03 1.68 1.48.69.45 1.46.91 2.29 1.38.83.47 1.67.97 2.5 1.52.83.54 1.59 1.11 2.29 1.7.69.6 1.25 1.3 1.68 2.11.43.81.65 1.68.65 2.6 0 .8-.17 1.54-.51 2.23-.34.7-.84 1.31-1.5 1.87-.66.55-1.52.98-2.6 1.3-1.07.32-2.3.48-3.68.48-2.68-.08-4.93-.76-6.76-2.03l.08-5.17c.33 1.61 1.24 3.04 2.74 4.27 1.33 1.09 2.75 1.76 4.26 2.02 1.56.25 2.76-.04 3.57-.87.63-.64.95-1.54.96-2.72z" style="fill:url(#id3);fill-rule:nonzero"/>
+                                    <path d="M126.85 64.73c.32-.06.48-.33.48-.81v-3.84c0-.48-.16-.75-.48-.81h1.89c-.32.06-.48.33-.48.81v3.84c0 .48.16.75.48.81h-1.89zm5.11 0c.19-.04.31-.11.38-.24.07-.12.1-.28.1-.49v-4.01c0-.2-.04-.37-.1-.49-.07-.12-.2-.2-.38-.24h1.32l2.92 4.8v-4.07c0-.2-.03-.37-.1-.49s-.19-.2-.38-.24h1.13c-.19.04-.31.12-.38.24s-.1.28-.1.49v4.74h-.84l-2.92-4.79c-.01.39-.02.82-.02 1.28 0 .46 0 .97.01 1.52 0 .56.01.98.01 1.26 0 .2.03.37.1.49.06.13.19.2.38.24h-1.13zm11.11-1.05c0-.15-.04-.29-.1-.42-.06-.13-.15-.25-.27-.35a2.5 2.5 0 0 0-.39-.3c-.15-.1-.3-.19-.46-.29-.16-.09-.32-.19-.48-.28-.17-.09-.32-.2-.46-.31-.15-.11-.28-.22-.39-.34-.11-.12-.2-.26-.27-.41-.07-.16-.1-.33-.11-.5 0-.24.08-.47.25-.67.17-.2.38-.36.64-.46.26-.11.53-.16.81-.16.67 0 1.2.11 1.61.33v1.13c-.1-.37-.31-.68-.62-.92-.31-.25-.65-.37-.99-.37-.26 0-.46.07-.62.2-.16.14-.24.35-.24.64 0 .14.06.28.17.42.11.13.25.26.42.37.18.11.37.23.58.35.21.12.42.24.63.38.21.14.4.28.57.43.18.15.32.33.43.53.11.2.17.43.17.66 0 .2-.04.39-.13.56-.09.18-.21.33-.38.47-.17.14-.38.25-.65.33-.27.08-.58.12-.93.12-.68-.02-1.25-.19-1.71-.51l.02-1.31c.08.41.31.77.69 1.08.33.28.69.45 1.07.51.4.06.7-.01.91-.22.16-.16.24-.39.24-.69zm5.23-4.25c-.35 0-.64.11-.88.33-.24.22-.37.52-.41.88v-.69l.18-.69h4.73l.18.69v.69c-.04-.36-.18-.66-.41-.88-.24-.22-.53-.33-.88-.33h-.79v4.49c0 .48.16.75.48.81h-1.89c.32-.06.48-.33.48-.81v-4.49h-.78zm7.59.56c-.26-.41-.57-.66-.93-.73h2.05l-.11.03c-.03.01-.05.02-.07.04-.02.02-.03.03-.04.05-.02.02-.02.04-.02.06v.07c0 .02.01.05.02.08.02.04.03.07.04.09.01.02.02.06.05.1.02.04.04.07.05.1.02.03.04.06.06.11l1.07 1.72 1.07-1.72c.03-.04.05-.08.06-.11.01-.03.03-.06.05-.1.02-.04.04-.07.05-.1.01-.02.02-.05.04-.09.02-.04.02-.06.02-.08v-.07c0-.02-.01-.05-.02-.06-.01-.02-.03-.03-.04-.05a.161.161 0 0 0-.07-.04c-.03-.01-.07-.02-.11-.03h1.15c-.36.07-.67.31-.93.73l-1.17 1.88v2.05c0 .48.16.75.48.81h-1.89c.32-.06.48-.33.48-.81v-1.78c-.3-.48-.75-1.2-1.34-2.15zm7.32 4.74c.32-.06.48-.33.48-.81v-3.84c0-.48-.16-.75-.48-.81h1.89c-.32.06-.48.33-.48.81v4.49h1.2c.35 0 .65-.11.89-.33.24-.22.37-.51.41-.88v.69l-.18.69h-3.72zm7.04 0c.32-.06.48-.33.48-.81v-3.84c0-.48-.16-.75-.48-.81h3.72l.18.69v.69c-.04-.36-.17-.66-.41-.88-.24-.22-.53-.33-.89-.33h-1.2v2.48h.61c.17 0 .31-.01.42-.04a.71.71 0 0 0 .31-.13c.09-.06.17-.15.22-.26.06-.11.09-.26.12-.43v1.89c-.04-.34-.15-.57-.31-.69-.16-.11-.42-.17-.76-.17h-.61v2.48h1.2c.35 0 .65-.11.89-.33.24-.22.37-.51.41-.88v.69l-.18.69h-3.72z" style="fill:url(#id4);fill-rule:nonzero"/>
+                                    <path d="M5.17 32.05c-.02-6.68 1.03-12.88 3.52-18.04 2-4.16 3.56-6.36 6.54-9.52 1.07-1.13 1.91-1.64 2.57-2.75C12.79 3.31 7 9.72 4.59 13.76.88 19.98.05 25.5.03 34.3L0 64.79h16.14l-.01-23.75c-.01-7.87-1-17.25 2.41-23.91 2.26-4.41 5.11-7.2 9.56-9.42 10.96-5.47 22.13.07 26.83 6.74 6.7 9.51 4.76 20.59-2.22 27.52-9.76 9.69-19.59 5.2-30.7 6.69-.28.41-.15.07-.32.77-.16.66-.02-.1-.09.59l.11 4.09c14.68-.23 24.87 1.38 34.49-7.69 4.42-4.17 8.11-10.59 8.12-19.5.04-24.64-30.84-36.47-47.15-17.61-4.65 5.37-6.46 11.7-6.45 21.15l.06 28.98H5.24l-.05-27.37z" style="fill:url(#id2)"/>
+                                    <path d="M21.94 19.8c14.16-8.97 25.92.94 26.16 12.24.11 5.02-2.13 7.81-4.01 10.83 4.29-2.42 8.26-5.14 9.26-11.18 1.05-6.31-2.54-11.8-5.37-14.79-7.68-8.16-21.56-7.87-26.04 2.89z" style="fill:url(#id1)"/>
+                                    <path d="M21.6 64.8c9.92-.06 18.15.58 26.03-3.2 5.59-2.69 12.67-9.28 14.39-14.69-3.18 3.29-2.61 3.23-6.9 6.45-9.3 6.98-21.66 6.23-33.51 5.98v5.46z" style="fill:url(#id0)"/>
+                                    <path d="M163.87 7.65h-.67V2.94h-1.66v-.59h3.97v.59h-1.64z" class="fil6"/>
+                                    <path id="_1" d="m168.65 7.65-1.74-4.64h-.03c.01.09.02.22.03.38.01.15.01.32.02.5s.01.36.01.55v3.21h-.61v-5.3h.98l1.63 4.34h.03l1.66-4.34h.98v5.3h-.66V4.39c0-.17 0-.35.01-.52.01-.17.02-.33.02-.48.01-.15.02-.28.02-.39h-.03l-1.76 4.64h-.55z" class="fil6"/>
+                                    </g>
+                                </g>
+                            </svg>
+                        </a>
+
+                        <div class="pdf-info">
+                            <div class="pdf-category">${currentCategory.name} Price List</div>
+                            <div class="pdf-date">Last updated: ${formatFullDate(currentCategory.lastUpdated)}</div>
+                            <div class="pdf-address">
+                                Basement Floor, 76, Canera Bank, Mission Road<br>
+                                Bangalore, Karnataka - 560027<br>
+                                +91 9738101408 • contact@decordrapesinstyle.com
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pdf-table-container">
+                        <table class="pdf-table">
+                            <thead>
+                                <tr>
+                                    <th>Serial</th>
+                `;
+
+        columnNames.forEach((column) => {
+          tableHTML += `<th>${formatFieldName(column)}</th>`;
+        });
+
+        tableHTML += `
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+        chunk.forEach((product) => {
+          tableHTML += `
+                        <tr>
+                            <td>${product.serial}</td>
+                    `;
+
+          columnNames.forEach((column) => {
+            tableHTML += `<td>${formatFieldValue(column, product[column])}</td>`;
+          });
+
+          tableHTML += `</tr>`;
+        });
+
+        tableHTML += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+        if (
+          pageIndex === productChunks.length - 1 &&
+          termsAndConditions.length > 0
+        ) {
+          tableHTML += `
+                        <div class="pdf-terms">
+                            <div class="pdf-terms-title">Terms & Conditions</div>
+                            <ul class="pdf-terms-list">
+                    `;
+
+          termsAndConditions.forEach((term) => {
+            tableHTML += `<li>${term}</li>`;
+          });
+
+          tableHTML += `
+                            </ul>
+                        </div>
+                    `;
+        }
+
+        page.innerHTML = tableHTML;
+        pdfContent.appendChild(page);
+      });
+
+      // The PDF markup is intentionally kept exactly as designed.
+      // Reset the scroll position before the browser captures the print view.
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      requestAnimationFrame(() => window.print());
+    }
+
+    backButton.addEventListener("click", () => {
+      categoriesView.style.display = "block";
+      categoryDetailsView.style.display = "none";
+      mainTitle.style.display = "block";
+      mainHeader.style.display = "block";
+      currentCategory = null;
+
+      const newUrl = new URL(window.location);
+      newUrl.searchParams.delete("category");
+      newUrl.searchParams.delete("product");
+      window.history.pushState({}, "", newUrl);
+    });
+
+    exportPdfBtn.addEventListener("click", generatePDF);
+    downloadAllPdfBtn?.addEventListener("click", generateAllPDF);
+    downloadAllPdfBtnMobile?.addEventListener("click", generateAllPDF);
+
+    window.addEventListener("popstate", () => {
+      handleUrlParams();
+    });
+
+    fetchCategories();
+    fetchTermsAndConditions();
+  </script>
+</body>
+
+</html>

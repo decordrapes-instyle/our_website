@@ -458,7 +458,7 @@ const Hero: React.FC = () => {
                 </button>
 
                 {/* Dots Indicator */}
-                <div className="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 flex gap-2">
+                {/* <div className="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 flex gap-2">
                   {slides.map((_, index) => (
                     <button
                       key={index}
@@ -470,7 +470,7 @@ const Hero: React.FC = () => {
                       }`}
                     />
                   ))}
-                </div>
+                </div> */}
               </div>
 
               {/* Call Now Card - Desktop Only */}
