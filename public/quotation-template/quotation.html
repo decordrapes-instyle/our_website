@@ -1,0 +1,1071 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Noto+Sans:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <title>Quotation</title>
+  %%%CSS%%%
+</head>
+
+<body>
+  <div id="pagesContainer"></div>
+
+  <script>
+    const q = JSON.parse(`%%%DATA%%%`);
+    const company = q.company || {};
+    const customer = q.customer || {};
+    const items = Array.isArray(q.items) ? q.items : [];
+
+    // Image helper
+    // SVG URLs work directly in <img> elements and remain vector when the
+    // HTML is rendered to PDF by Chromium/Puppeteer/Playwright.
+    // Keep the original URL unchanged so remote SVGs do not need to be
+    // downloaded and rasterized into PNGs.
+    const imageSrc = (url) => {
+      if (!url) return "";
+      return String(url).trim();
+    };
+
+    // Escape an image URL for safe use inside an HTML attribute.
+    const imageAttr = (url) =>
+      imageSrc(url)
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+    // Set dynamic title and favicon
+    document.title = `${q.quotationNumber || 'Quotation'} | ${customer?.name || 'Customer'}`;
+    if (company.companyLogoSquare) {
+      const favicon = document.createElement('link');
+      favicon.rel = 'icon';
+      favicon.href = imageSrc(company.companyLogoSquare);
+      document.head.appendChild(favicon);
+    }
+
+    const formatNumber = (n) =>
+      Number(n || 0).toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    const formatNumber0 = (n) =>
+      Number(n || 0).toLocaleString("en-IN", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      });
+
+    const initials = (value = "DDI") =>
+      value
+        .split(" ")
+        .filter(Boolean)
+        .map((word) => word[0])
+        .join("")
+        .slice(0, 3)
+        .toUpperCase();
+
+    const formatNiceDate = (dateString) => {
+      if (!dateString) return "-";
+      const date = new Date(dateString);
+      const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const dayName = weekdays[date.getDay()];
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = months[date.getMonth()];
+      const year = date.getFullYear();
+      return `${dayName}, ${day}-${month}-${year}`;
+    };
+
+    const numberToWords = (num) => {
+      if (num === 0) return 'Zero Rupees Only';
+
+      const parts = num.toFixed(0).split('.');
+      const rupees = parseInt(parts[0], 10);
+      const paise = parseInt(parts[1] || '0', 10);
+
+      const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+        'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+        'Seventeen', 'Eighteen', 'Nineteen'];
+      const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+      const convertToWords = (n) => {
+        if (n === 0) return '';
+        if (n < 20) return ones[n];
+        if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+        if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' ' + convertToWords(n % 100) : '');
+        if (n < 100000) return convertToWords(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 !== 0 ? ' ' + convertToWords(n % 1000) : '');
+        if (n < 10000000) return convertToWords(Math.floor(n / 100000)) + ' Lakh' + (n % 100000 !== 0 ? ' ' + convertToWords(n % 100000) : '');
+        return convertToWords(Math.floor(n / 10000000)) + ' Crore' + (n % 10000000 !== 0 ? ' ' + convertToWords(n % 10000000) : '');
+      };
+
+      let result = convertToWords(rupees);
+      if (rupees === 1) {
+        result += ' Rupee';
+      } else {
+        result += ' Rupees';
+      }
+
+      if (paise > 0) {
+        result += ' and ' + convertToWords(paise);
+        result += ' Paise';
+      }
+
+      return result + ' Only';
+    };
+
+    // Function to identify and group duplicate products
+    const groupDuplicateProducts = (items) => {
+      const productMap = new Map();
+
+      items.forEach((item) => {
+        const product = item.product || {};
+        const key = `${product.id || ''}-${product.productCode || ''}`;
+
+        if (!productMap.has(key)) {
+          productMap.set(key, {
+            productId: product.id,
+            productCode: product.productCode,
+            productName: product.productName,
+            productCategory: product.productCategory,
+            unit: product.unit,
+            gstRate: product.gst || 0,
+            items: []
+          });
+        }
+
+        productMap.get(key).items.push(item);
+      });
+
+      const groupedProducts = Array.from(productMap.values());
+
+      // Identify which products have duplicates
+      const productsWithDuplicates = groupedProducts.filter(group => group.items.length > 1);
+      const hasDuplicates = productsWithDuplicates.length > 0;
+
+      return {
+        groupedProducts,
+        productsWithDuplicates,
+        hasDuplicates,
+        isAllUnique: productsWithDuplicates.length === 0
+      };
+    };
+
+    // Function to create consolidated items for duplicate products
+    const createConsolidatedItems = (groupedProducts) => {
+      return groupedProducts.map(group => {
+        const firstItem = group.items[0];
+        const product = firstItem.product || {};
+
+        let totalQty = 0;
+        let totalAmount = 0;
+        let totalUnitValue = 0;
+        let price = firstItem.price || 0;
+        let totalGstAmount = 0;
+        let itemCount = 0;
+
+        // Determine the primary unit value field
+        const unitFields = ['sqft', 'runningFeet', 'rft', 'pcs', 'kgs', 'meter', 'foot'];
+        let primaryUnitField = null;
+
+        // Find which unit field has values
+        for (const field of unitFields) {
+          if (group.items.some(item => item[field] && item[field] > 0)) {
+            primaryUnitField = field;
+            break;
+          }
+        }
+
+        // Sum all values - Calculate total unit value by multiplying unit value with quantity
+        group.items.forEach(item => {
+          const qty = item.qty || 0;
+          totalQty += qty;
+          itemCount += 1;
+          totalAmount += item.amount || 0;
+
+          // Calculate GST amount for this item
+          const itemGstRate = item.product?.gst || group.gstRate || 0;
+          const itemGstAmount = (item.amount * itemGstRate) / 100;
+          totalGstAmount += itemGstAmount;
+
+          if (primaryUnitField && item[primaryUnitField]) {
+            totalUnitValue += (item[primaryUnitField] * qty);
+          }
+        });
+
+        // Get unit display name
+        const unitShortNames = {
+          sqft: "sq.ft",
+          pcs: "pcs",
+          kgs: "kg",
+          meter: "m",
+          foot: "ft",
+          box: "box",
+          rft: "rft",
+          runningFeet: "rft"
+        };
+
+        const unitDisplay = unitShortNames[primaryUnitField] || group.unit || "";
+
+        return {
+          ...group,
+          totalQty,           // This is the SUM of quantities
+          itemCount,          // This is the COUNT of items (rows)
+          totalAmount,
+          totalUnitValue,
+          totalGstAmount,
+          price,
+          unitDisplay,
+          primaryUnitField,
+          isConsolidated: group.items.length > 1
+        };
+      });
+    };
+
+    const unitShortNames = {
+      sqft: "sq.ft",
+      pcs: "pcs",
+      kgs: "kg",
+      meter: "m",
+      foot: "ft",
+      box: "box",
+      rft: "rft",
+      runningFeet: "rft"
+    };
+
+    // Check for duplicate products
+    const { groupedProducts, productsWithDuplicates, hasDuplicates, isAllUnique } = groupDuplicateProducts(items);
+    const consolidatedItems = createConsolidatedItems(groupedProducts);
+
+    // Check if items have measurements
+    const hasMeasurements = items.some(item => item.width > 0 || item.height > 0);
+
+    // Items per page based on measurements
+    const itemsPerPage = hasMeasurements ? 10 : 12;
+
+    // GST Pill Color Function
+    const getGstRateClass = (rate) => {
+      if (rate === 5) return 'gst-rate-pill-5';
+      if (rate === 12) return 'gst-rate-pill-12';
+      if (rate === 18) return 'gst-rate-pill-18';
+      return 'gst-rate-pill-other';
+    };
+
+    // WATERMARK FUNCTION
+    const renderWatermark = () => {
+      if (company.companyLogoSquare) {
+        return `
+          <div class="watermark">
+            <img src="${imageAttr(company.companyLogoSquare)}" alt="Watermark" class="watermark-image" />
+          </div>
+        `;
+      }
+      return `
+        <div class="watermark">
+          <div class="watermark-fallback">${initials(company.companyName || "DDI")}</div>
+        </div>
+      `;
+    };
+
+    const renderCompanyLogo = () => {
+      if (company.companyLogo) {
+        return `
+            <div class="logo-container">
+              <img src="${imageAttr(company.companyLogo)}" alt="${company.companyName || "Decor Drapes Instyle"}" />
+            </div>
+          `;
+      }
+      return `
+          <div class="logo-container">
+            <div class="logo-fallback">${initials(company.companyName || "DDI")}</div>
+          </div>
+        `;
+    };
+
+    const renderCompanyDetails = () => {
+      const rows = [];
+
+      if (company.companyAddress) {
+        rows.push(`
+            <div class="company-detail-item address-only">
+              <span>${company.companyAddress}</span>
+            </div>
+          `);
+      }
+
+      const contactParts = [];
+
+      if (company.companyEmail) {
+        contactParts.push(`
+    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+      <polyline points="22,6 12,13 2,6"></polyline>
+    </svg>
+    <span>${company.companyEmail}</span>
+  `);
+      }
+
+      if (company.companyPhone) {
+        if (company.companyEmail) contactParts.push(`<span class="separator">•</span>`);
+
+        contactParts.push(`
+    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+    </svg>
+    <span>${company.companyPhone}</span>
+  `);
+      }
+
+      if (company.companyGSTIN) {
+        if (company.companyEmail || company.companyPhone) contactParts.push(`<span class="separator">•</span>`);
+
+        contactParts.push(`
+    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+      <line x1="16" y1="2" x2="16" y2="6"></line>
+      <line x1="8" y1="2" x2="8" y2="6"></line>
+      <line x1="3" y1="10" x2="21" y2="10"></line>
+    </svg>
+    <span>GSTIN: ${company.companyGSTIN}</span>
+  `);
+      }
+
+      rows.push(`<div class="company-detail-item">${contactParts.join("")}</div>`);
+
+      return rows.join("");
+    };
+
+    const renderCustomerDetails = () => {
+      const rows = [];
+      if (customer.address) {
+        rows.push(`
+            <div class="customer-detail-item">
+              <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+              <span>${customer.address}</span>
+            </div>
+          `);
+      }
+
+      const contactParts = [];
+      if (customer.mobile) {
+        contactParts.push(`
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+            <span>${customer.mobile}</span>
+          `);
+      }
+      if (customer.email) {
+        if (customer.mobile) {
+          contactParts.push(`<span class="separator">•</span>`);
+        }
+        contactParts.push(`
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            <span>${customer.email}</span>
+          `);
+      }
+      if (customer.gstin) {
+        if (customer.mobile || customer.email) {
+          contactParts.push(`<span class="separator">•</span>`);
+        }
+        contactParts.push(`
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>GST: ${customer.gstin}</span>
+          `);
+      }
+
+      if (contactParts.length > 0) {
+        rows.push(`<div class="customer-detail-item customer-contact-row">${contactParts.join("")}</div>`);
+      }
+
+      return rows.join("") || `<p class="muted">Customer details unavailable.</p>`;
+    };
+
+    const renderHeader = () => `
+        <header class="header">
+          <div class="header-content">
+            ${renderCompanyLogo()}
+            <div class="company-info">
+              <div class="company-details-list">
+                ${renderCompanyDetails()}
+              </div>
+            </div>
+          </div>
+        </header>
+      `;
+
+    const renderCustomerSection = (hideCustomerDetails = false) => {
+      if (hideCustomerDetails) {
+        return '<section class="customer-section hide-customer-details"></section>';
+      }
+
+            return `
+        <section class="customer-section">
+          <div class="customer-wrapper">
+
+            <!-- Customer Card -->
+            <div class="card customer-card">
+              <div class="customer-block">
+                <div class="customer-header">
+                  ${
+                    customer.logo
+                      ? `<img src="${imageAttr(customer.logo)}" alt="${customer.name || "Customer"}" class="customer-logo" />`
+                      : `<svg class="customer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="12" cy="7" r="4"></circle>
+                        </svg>`
+                  }
+                  <div class="customer-info">
+                    <p class="customer-name">${customer.name || "Customer"}</p>
+                  </div>
+                </div>
+
+                <div class="customer-details-list">
+                  ${renderCustomerDetails()}
+                </div>
+              </div>
+            </div>
+
+            <!-- Quotation Card -->
+            <div class="card quotation-card">
+              <div class="quotation-block">
+                <div class="quotation-header">
+                  <strong class="quotation-focus">${q.quotationNumber || "-"}</strong>
+                </div>
+
+                <div class="quotation-details-list">
+                  <div class="quotation-item date-right">
+                    <svg class="icon-svg-small" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+
+                    <p class="quotation-date">
+                      ${q.createdAt ? formatNiceDate(q.createdAt) : "-"}
+
+                      ${
+                        q.status === "confirmed" && q.updatedAt
+                          ? `
+                          <br>
+                          <small class="confirmed-text">
+                            <span class="confirmed-icon">
+                              <svg xmlns="http://www.w3.org/2000/svg" id="Layer_1" data-name="Layer 1" viewBox="0 0 24 24" stroke="currentColor"  fill="currentColor" width="10" height="10"><path d="M12,24c-1.626,0-3.16-.714-4.208-1.959-1.54,.176-3.127-.405-4.277-1.555-1.149-1.15-1.729-2.74-1.59-4.362-1.211-.964-1.925-2.498-1.925-4.124s.714-3.16,1.96-4.208c-.175-1.537,.405-3.127,1.555-4.277,1.15-1.15,2.737-1.733,4.361-1.59,.964-1.21,2.498-1.925,4.124-1.925s3.16,.714,4.208,1.959c1.542-.173,3.127,.405,4.277,1.555,1.149,1.15,1.729,2.74,1.59,4.362,1.211,.964,1.925,2.498,1.925,4.124s-.714,3.16-1.96,4.208c.175,1.537-.405,3.127-1.555,4.277-1.151,1.15-2.741,1.726-4.361,1.59-.964,1.21-2.498,1.925-4.124,1.925Zm-4.127-3.924c.561,0,1.081,.241,1.448,.676,.668,.793,1.644,1.248,2.679,1.248s2.011-.455,2.679-1.248c.403-.479,.99-.721,1.616-.67,1.034,.087,2.044-.28,2.776-1.012,.731-.731,1.1-1.743,1.012-2.776-.054-.624,.19-1.213,.67-1.617,.792-.667,1.247-1.644,1.247-2.678s-.455-2.011-1.247-2.678c-.479-.403-.724-.993-.67-1.617,.088-1.033-.28-2.045-1.012-2.776s-1.748-1.094-2.775-1.012c-.626,.056-1.214-.191-1.617-.669-.668-.793-1.644-1.248-2.679-1.248s-2.011,.455-2.679,1.248c-.404,.479-.993,.719-1.616,.67-1.039-.09-2.044,.28-2.776,1.012-.731,.731-1.1,1.743-1.012,2.776,.054,.624-.19,1.213-.67,1.617-.792,.667-1.247,1.644-1.247,2.678s.455,2.011,1.247,2.678c.479,.403,.724,.993,.67,1.617-.088,1.033,.28,2.045,1.012,2.776,.732,.731,1.753,1.095,2.775,1.012,.057-.005,.113-.007,.169-.007Zm4.928-4.941l4.739-4.568c.397-.383,.409-1.017,.025-1.414-.383-.397-1.016-.409-1.414-.026l-4.752,4.581c-.391,.391-1.022,.391-1.44-.025l-2.278-2.117c-.402-.375-1.036-.353-1.413,.052-.376,.404-.353,1.037,.052,1.413l2.252,2.092c.586,.586,1.357,.879,2.126,.879,.765,0,1.526-.289,2.104-.866Z"/></svg>
+                            </span>
+                            ${new Date(q.updatedAt).toLocaleDateString("en-US", { day: "2-digit", month: "short" })},
+                            ${new Date(q.updatedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}
+                          </small>
+                          `
+                          : ""
+                      }
+
+                      ${
+                        q.status === "pending" && q.createdAt
+                          ? (() => {
+                              const createdDate = new Date(q.createdAt);
+                              const expiryDate = new Date(createdDate);
+                              expiryDate.setDate(createdDate.getDate() + 4);
+
+                              const today = new Date();
+
+                              if (today > expiryDate) {
+                                return `
+                                  <br>
+                                  <small class="expired-text">
+                                    Quotation Expired
+                                  </small>
+                                `;
+                              }
+
+                              return `
+                                <br>
+                                <small class="pending-text">
+                                  Valid till ${expiryDate.toLocaleDateString("en-US", {
+                                    day: "2-digit",
+                                    month: "short",
+                                  })}
+                                </small>
+                              `;
+                            })()
+                          : ""
+                      }
+
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+        `;
+    };
+
+
+    // Calculate totals
+    const subTotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
+    const taxAmount = q.taxAmount || 0;
+    const grandTotal = q.grandTotal || subTotal;
+
+    const buildPaymentInfo = () => {
+      const parts = [];
+      if (company.accountNumber) parts.push(`A/c No.: ${company.accountNumber}`);
+      if (company.ifsc) parts.push(`IFSC: ${company.ifsc}`);
+      if (company.upiId) parts.push(`UPI ID: ${company.upiId}`);
+      if (!parts.length) {
+        return "<p class='muted'>Update payment details in Settings to display them here.</p>";
+      }
+      return parts.map((part) => `<p class="payment-text">${part}</p>`).join("");
+    };
+
+    const buildQrHtml = () => {
+      if (company.upiId && grandTotal > 0) {
+        const upiId = encodeURIComponent(company.upiId);
+        const amount = grandTotal.toFixed(2);
+        const upiUrl = `upi://pay?pa=${upiId}&am=${amount}&cu=INR`;
+        const qrText = encodeURIComponent(upiUrl);
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${qrText}`;
+        return `
+            <div class="qr-wrapper">
+              <a href="${upiUrl}">
+                <img src="${imageAttr(qrUrl)}" alt="UPI Payment QR Code" class="qr-image" />
+              </a>
+            </div>
+          `;
+      }
+      if (grandTotal > 0) {
+        const qrText = encodeURIComponent(`Amount: ₹${formatNumber(grandTotal)}`);
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${qrText}`;
+        return `
+            <div class="qr-wrapper">
+              <img src="${imageAttr(qrUrl)}" alt="Payment QR Code" class="qr-image" />
+              <p class="qr-label">Scan to Pay</p>
+            </div>
+          `;
+      }
+      return "";
+    };
+
+    const renderBankLogo = () => {
+      if (company.bankLogo) {
+        return `<img src="${imageAttr(company.bankLogo)}" alt="Bank Logo" class="bank-logo" />`;
+      }
+      return `<div class="bank-logo-fallback">${company.bankName ? company.bankName.substring(0, 2) : 'CB'}</div>`;
+    };
+
+    const renderAmountSummaryAndPayment = () => {
+      return `
+        <section class="summary-section">
+          <div class="card amount-card">
+            <div class="card-title">
+              <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 4h12"></path>
+                <path d="M6 9h12"></path>
+                <path d="M6 4h6a4 4 0 0 1 0 8H6l10 8"></path>
+              </svg>
+              Amount Summary
+            </div>
+            <div class="totals-container">
+              <div class="totals-row">
+                <span>Subtotal</span>
+                <strong>₹ ${formatNumber(subTotal)}</strong>
+              </div>
+              <div class="totals-row">
+                <span>GST</span>
+                <strong>₹ ${formatNumber(taxAmount)}</strong>
+              </div>
+              <div class="totals-row grand">
+                <span>Grand Total</span>
+                <strong>₹ ${formatNumber0(grandTotal)}</strong>
+              </div>
+            </div>
+          </div>
+          <div class="card payment-card">
+            <div class="card-title">
+              <svg class="icon-svg-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                <line x1="1" y1="10" x2="23" y2="10"></line>
+              </svg>
+              Payment Details
+            </div>
+            <div class="payment-content">
+              <div class="payment-left">
+                <div class="bank-logo-container">
+                  ${renderBankLogo()}
+                </div>
+                <div class="payment-info-text">
+                  ${buildPaymentInfo()}
+                </div>
+              </div>
+              <div class="qr-container">
+                ${buildQrHtml()}
+              </div>
+            </div>
+          </div>
+        </section>
+      `;
+    };
+
+    const renderAmountInWords = () => {
+      const amountInWords = numberToWords(grandTotal);
+      return `
+          <div class="amount-words${!company.termsAndConditions?.length ? ' no-terms' : ''}">
+            <strong>Amount in Words:</strong> ${amountInWords}
+          </div>
+        `;
+    };
+
+    const renderTermsSection = () => {
+      const terms = (company.termsAndConditions && company.termsAndConditions.length
+        ? company.termsAndConditions
+        : [
+          "Prices include installation unless specified otherwise.",
+          "Delivery timeline will be shared post confirmation.",
+          "Payment terms as mutually agreed.",
+        ]).map((term) => `<li>${term}</li>`).join("");
+
+      return `
+          <section class="card" style="margin-top: 10px;">
+            <div class="card-title">
+              <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              Terms & Conditions
+            </div>
+            <ul class="terms-list">${terms}</ul>
+          </section>
+        `;
+    };
+
+    const renderFooterSections = (includePayment = true, includeTerms = true) => {
+      let content = '';
+
+      if (includePayment) {
+        content += renderAmountSummaryAndPayment();
+      }
+
+      content += renderAmountInWords();
+
+      if (includeTerms && company.termsAndConditions?.length) {
+        content += renderTermsSection();
+      }
+
+      return content;
+    };
+
+    // Build detailed table row
+    const buildDetailedTableRow = (item, index) => {
+      const p = item.product || {};
+
+      // Get GST amount
+      const gstRate = p.gst || 0;
+      const gstAmount = (item.amount * gstRate) / 100;
+
+      // Get unit value display
+      let unitValueDisplay = "";
+      const unitFields = ['sqft', 'runningFeet', 'rft', 'pcs', 'kgs', 'meter', 'foot'];
+      for (const field of unitFields) {
+        if (item[field] && item[field] > 0) {
+          const unitName = unitShortNames[field] || field;
+          unitValueDisplay = `${formatNumber(item[field])} ${unitName}`;
+          break;
+        }
+      }
+
+      const addons =
+        (item.selectedAddons || [])
+          .map((addonId) => {
+            const addon = p.addons?.find((a) => a.id === addonId);
+            if (!addon) return "";
+            return addon.name;
+          })
+          .filter(Boolean)
+          .join(", ");
+
+      let measurementsHtml = '';
+      if (item.width > 0 || item.height > 0) {
+        measurementsHtml = '<div class="measurements-badges">';
+
+        const formatUnit = (unit) => {
+          if (!unit) return '';
+
+          const u = unit.toLowerCase().trim();
+
+          const map = {
+            inch: 'in',
+            inches: 'in',
+            in: 'in',
+            '"': 'in',
+            cm: 'cm',
+            centi: 'cm',
+            centimeter: 'cm',
+            centimetre: 'cm',
+            centimeters: 'cm',
+            centimetres: 'cm',
+            m: 'm',
+            meter: 'm',
+            metre: 'm',
+            meters: 'm',
+            metres: 'm',
+            ft: 'ft',
+            feet: 'ft',
+            foot: 'ft',
+            "'": 'ft',
+            rft: 'rft',
+            runningft: 'rft',
+            runningfeet: 'rft',
+            running_feet: 'rft',
+            linearfeet: 'rft',
+            linearft: 'rft',
+            lft: 'rft',
+            yd: 'yd',
+            yard: 'yd',
+            yards: 'yd',
+          };
+
+          return map[u] || unit;
+        };
+
+
+        const extraInch = item.add6Inch ? ' +6"' : '';
+
+        if (item.width > 0) {
+          measurementsHtml += `
+          <span class="measurement-badge">
+            W: ${item.width} ${formatUnit(item.widthUnit)}
+          </span>
+        `;
+        }
+
+        if (item.height > 0) {
+          measurementsHtml += `
+          <span class="measurement-badge">
+            H: ${item.height} ${formatUnit(item.heightUnit)}${extraInch}
+          </span>
+        `;
+        }
+
+        measurementsHtml += '</div>';
+      }
+
+
+      const itemNameCell = `
+        <div class="item-name">
+          ${p.productName || "Product"}
+          ${addons ? ` <span class="addon-inline">(${addons})</span>` : ""}
+        </div>
+        ${p.productCategory || p.productCode ? `<div class="item-meta">${[p.productCategory, p.productCode].filter(Boolean).join(" • ")}</div>` : ""}
+        ${measurementsHtml}
+      `;
+
+      return `
+        <tr>
+          <td class="serial-number">${index + 1}</td>
+          <td>${itemNameCell}</td>
+          <td class="col-center">${unitValueDisplay}</td>
+          <td class="col-center">${item.qty || 0}</td>
+          <td class="col-right">₹ ${formatNumber(item.price || 0)}</td>
+          <td class="gst-column">
+            ${gstRate > 0 ?
+          `₹ ${formatNumber(gstAmount)} <span class="gst-rate-pill ${getGstRateClass(gstRate)}">${gstRate}%</span>` :
+          '-'
+        }
+          </td>
+          <td class="col-right">₹ ${formatNumber(item.amount || 0)}</td>
+        </tr>
+      `;
+    };
+
+    // Function to break consolidated items into pages (5 per page)
+    const paginateConsolidatedItems = () => {
+      if (!hasDuplicates || consolidatedItems.length === 0) return [];
+
+      const pages = [];
+      const itemsPerPage = 5;
+      const totalPages = Math.ceil(consolidatedItems.length / itemsPerPage);
+
+      for (let i = 0; i < totalPages; i++) {
+        const start = i * itemsPerPage;
+        const end = start + itemsPerPage;
+        const isLastPage = i === totalPages - 1;
+
+        pages.push({
+          items: consolidatedItems.slice(start, end),
+          pageNumber: i + 1,
+          totalPages: totalPages,
+          isLastPage: isLastPage,
+          isFirstPage: i === 0,
+          startIndex: start // ADD THIS LINE
+        });
+      }
+
+      return pages;
+    };
+
+    // Function to break detailed items into pages
+    const paginateDetailedItems = (items, isUniqueItems = false) => {
+      const pages = [];
+
+      if (items.length === 0) {
+        pages.push({
+          items: [],
+          pageNumber: 1,
+          totalPages: 1,
+          isLastPage: true,
+          hideCustomerDetails: false
+        });
+        return pages;
+      }
+
+      // Use dynamic items per page based on measurements
+      const itemsPerPageValue = itemsPerPage;
+      const totalPages = Math.ceil(items.length / itemsPerPageValue);
+
+      for (let i = 0; i < totalPages; i++) {
+        const start = i * itemsPerPageValue;
+        const end = start + itemsPerPageValue;
+        const isLastPage = i === totalPages - 1;
+
+        pages.push({
+          items: items.slice(start, end),
+          pageNumber: i + 1,
+          totalPages: totalPages,
+          isLastPage: isLastPage,
+          startIndex: start,
+          hideCustomerDetails: false
+        });
+      }
+
+      return pages;
+    };
+
+    // Render consolidated summary
+    const renderConsolidatedSummary = (pageConfig) => {
+      const { items: pageItems, pageNumber, totalPages, isLastPage, isFirstPage } = pageConfig;
+
+      const rows = pageItems.map((group, index) => {
+        const serialNumber = (pageConfig.startIndex || 0) + index + 1;
+
+        const totalQuantity = group.totalQty || 0;
+        const itemCount = group.items?.length || 0;
+        const gstAmount = group.totalGstAmount || ((group.totalAmount * (group.gstRate || 0)) / 100);
+
+        return `
+          <tr>
+            <td class="serial-number">${serialNumber}</td>
+            <td>
+              <div class="consolidated-product-info">
+                <div class="consolidated-product-name">
+                  ${group.productName || "Product"}
+                  ${group.isConsolidated ? ` <span style="color: #64748b; font-size: 10px;">(${totalQuantity} items)</span>` : ''}
+                </div>
+                <div class="consolidated-product-meta">
+                  ${group.productCategory ? `<span>${group.productCategory}</span>` : ''}
+                  ${group.productCode ? `<span class="consolidated-product-code">${group.productCode}</span>` : ''}
+                </div>
+              </div>
+            </td>
+            <td class="col-center">
+              <div class="consolidated-quantity-info">
+                <div class="consolidated-quantity-total">
+                  ${group.totalUnitValue > 0 ? `${formatNumber(group.totalUnitValue)} ${group.unitDisplay}` : `${formatNumber(group.totalQty)}`}
+                </div>
+                ${group.isConsolidated ? `
+                  <div class="consolidated-quantity-breakdown">
+                    ${group.totalUnitValue > 0 ?
+              `<span>${group.totalQty} units</span>` :
+              ''
+            }
+                  </div>
+                ` : ''}
+              </div>
+            </td>
+            <td class="col-center">₹ ${formatNumber(group.price)}</td>
+            <td class="gst-column">
+              ${group.gstRate > 0 ?
+            `₹ ${formatNumber(gstAmount)} <span class="gst-rate-pill ${getGstRateClass(group.gstRate)}">${group.gstRate}%</span>` :
+            '-'
+          }
+            </td>
+            <td class="col-right">₹ ${formatNumber(group.totalAmount)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      const pageIndicator = totalPages > 1 ?
+        `<div class="consolidated-page-indicator">
+          Product Summary (Consolidated) - Page ${pageNumber} of ${totalPages}
+        </div>` :
+        `<div class="consolidated-page-indicator">
+          Product Summary (Item-wise breakdown available on next pages)
+        </div>`;
+
+      return `
+        <section class="consolidated-section">
+          ${pageIndicator}
+          <table class="consolidated-table">
+            <thead>
+              <tr>
+                <th style="width: 25px; text-align: center;">#</th>
+                <th>Product Description</th>
+                <th class="col-left">Total Quantity</th>
+                <th class="col-left">Rate</th>
+                <th class="col-center">GST Amount</th>
+                <th class="col-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        </section>
+      `;
+    };
+
+    // Render detailed items section
+    const renderDetailedItemsSection = (pageConfig) => {
+      const { items: pageItems, pageNumber, totalPages, isLastPage = false, startIndex = 0 } = pageConfig;
+
+      const rows =
+        pageItems.length > 0
+          ? pageItems.map((item, idx) => buildDetailedTableRow(item, startIndex + idx)).join("")
+          : `<tr><td colspan="7" class="empty-state">No detailed items</td></tr>`;
+
+      const tableHeaderHtml = `
+        <th style="width: 25px; text-align: center;">#</th>
+        <th>Item Description</th>
+        <th class="col-unit" style="text-align: center;">Unit</th>
+        <th class="col-qty" style="text-align: right;">Qty</th>
+        <th class="col-rate" style="text-align: right;">Rate</th>
+        <th class="col-gst" style="text-align: left;">GST Amount</th>
+        <th class="col-amount" style="text-align: right;">Amount</th>
+      `;
+
+      let content = '';
+
+      if (pageNumber === 1 && !hasDuplicates) {
+        content += `<div class="detailed-section-title">Detailed Measurements</div>`;
+      } else if (pageNumber === 1 && hasDuplicates) {
+        content += `<div class="detailed-section-title">Detailed Measurements</div>`;
+      }
+
+      content += `
+        <table class="table">
+          <thead>
+            <tr>${tableHeaderHtml}</tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+        ${pageItems.length >= itemsPerPage && pageNumber < totalPages ? `<div class="page-break-indicator">Continue to Page ${pageNumber + 1}</div>` : ''}
+        <div class="page-info">Page ${pageNumber} of ${totalPages}</div>
+      `;
+
+      return content;
+    };
+
+    // Main rendering logic
+    const renderPages = () => {
+      const pagesHtml = [];
+
+      if (!hasDuplicates) {
+        const itemsPerPageUnique = 5;
+        const totalPages = Math.ceil(items.length / itemsPerPageUnique);
+
+        for (let i = 0; i < totalPages; i++) {
+          const start = i * itemsPerPageUnique;
+          const end = start + itemsPerPageUnique;
+          const pageItems = items.slice(start, end);
+          const isLastPage = i === totalPages - 1;
+
+          const pageContent = `
+            ${renderWatermark()}
+            ${renderHeader()}
+            ${renderCustomerSection()}
+            ${i === 0 ? '<div class="detailed-section-title">Detailed Measurements</div>' : ''}
+            <table class="table">
+              <thead>
+                <tr>
+                  <th style="width: 25px; text-align: center;">#</th>
+                  <th>Item Description</th>
+                  <th class="col-unit" style="text-align: center;">Unit</th>
+                  <th class="col-qty" style="text-align: right;">Qty</th>
+                  <th class="col-rate" style="text-align: right;">Rate</th>
+                  <th class="col-gst" style="text-align: left;">GST Amount</th>
+                  <th class="col-amount" style="text-align: right;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${pageItems.map((item, idx) => buildDetailedTableRow(item, start + idx)).join('')}
+              </tbody>
+            </table>
+            ${pageItems.length >= itemsPerPageUnique && !isLastPage ? `<div class="page-break-indicator">Continue to Page ${i + 2}</div>` : ''}
+            <div class="page-info">Page ${i + 1} of ${totalPages}</div>
+            ${renderFooterSections(true, true)}
+          `;
+
+          if (i === 0) {
+            pagesHtml.push(`<div class="page">${pageContent}</div>`);
+          } else {
+            pagesHtml.push(`<div class="page page-break">${pageContent}</div>`);
+          }
+        }
+      } else {
+        const consolidatedPages = paginateConsolidatedItems();
+        const detailedPages = paginateDetailedItems(items, false);
+        consolidatedPages.forEach((page, index) => {
+          const pageContent = `
+            ${renderWatermark()}
+            ${renderHeader()}
+            ${renderCustomerSection()}
+            ${renderConsolidatedSummary(page)}
+            ${renderFooterSections(true, true)}
+          `;
+
+          if (index === 0) {
+            pagesHtml.push(`<div class="page">${pageContent}</div>`);
+          } else {
+            pagesHtml.push(`<div class="page page-break">${pageContent}</div>`);
+          }
+        });
+
+        // Detailed pages (NO payment or terms)
+        detailedPages.forEach((page, index) => {
+          const pageContent = `
+            ${renderWatermark()}
+            ${renderHeader()}
+            ${renderCustomerSection(page.hideCustomerDetails)}
+            ${renderDetailedItemsSection(page)}
+          `;
+
+          pagesHtml.push(`<div class="page page-break">${pageContent}</div>`);
+        });
+      }
+
+      return pagesHtml.join("");
+    };
+
+    document.getElementById("pagesContainer").innerHTML = renderPages();
+  </script>
+</body>
+
+</html>

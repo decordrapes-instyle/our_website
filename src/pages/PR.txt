@@ -1,0 +1,538 @@
+I have an existing React + Vite SPA that currently runs on my website:
+
+https://domain.com/profile
+
+I want to create an Android APK from the existing project.
+
+IMPORTANT:
+
+* Do NOT rewrite the application from scratch.
+* Do NOT break or change the existing website behavior.
+* Reuse my existing React components, Profile page, Login page, Firebase configuration, AuthContext, types, helpers, icons, styling, etc.
+* The website must continue working normally.
+* The Android APK should contain the React application locally and should NOT depend on loading https://domain.com/profile.
+* The APK must be able to open and display the Profile application without internet after the required initial authentication/data setup.
+* Use Capacitor for Android.
+
+CURRENT STACK:
+
+* React
+* Vite
+* TypeScript/JavaScript as already used in the project
+* Firebase Authentication
+* Firebase Realtime Database
+* react-hot-toast
+* lucide-react
+
+My Profile component currently contains imports similar to:
+
+import React, { useEffect, useState } from "react";
+
+import {
+Bell,
+Building2,
+CalendarDays,
+CheckCircle2,
+ChevronLeft,
+ChevronRight,
+ExternalLink,
+CircleUserRound,
+Clock,
+FileText,
+Home,
+IndianRupee,
+Layers,
+LogOut,
+Mail,
+MapPin,
+Package,
+Palette,
+Percent,
+Phone,
+Plus,
+Ruler,
+Save,
+Search,
+ShieldCheck,
+Tag,
+Trash2,
+User,
+X,
+Moon,
+Sun,
+} from "lucide-react";
+
+import toast from "react-hot-toast";
+
+import {
+database,
+onValue,
+push,
+ref,
+set
+} from "../config/firebase";
+
+import { useAuth } from "../context/AuthContext";
+
+import { User as UserType } from "../types";
+
+GOAL:
+
+Create an Android APK containing my existing Profile application.
+
+The Android app should behave like this:
+
+FIRST LAUNCH:
+
+1. Open the APK.
+2. Check whether Firebase Auth has an existing authenticated session.
+3. If there is no authenticated user:
+
+   * Show the existing Login screen.
+4. User logs in.
+5. Firebase Auth authenticates the user.
+6. Fetch the data required by the Profile application.
+7. Save the required application data locally for offline use.
+8. Show the Profile screen.
+
+SUBSEQUENT LAUNCH:
+
+If the user has previously authenticated:
+
+1. Open APK.
+2. Restore the Firebase authentication session.
+3. If internet is available:
+
+   * Load/synchronize fresh Firebase data.
+   * Update the local offline cache.
+4. If internet is unavailable:
+
+   * Do NOT redirect the user to the website.
+   * Do NOT show an internet-required error unnecessarily.
+   * Load the previously cached Profile data.
+   * Allow the Profile UI to work offline.
+
+IMPORTANT SECURITY REQUIREMENT:
+
+DO NOT store or cache the user's password.
+
+Authentication credentials/session should be handled by Firebase Auth using its supported persistence mechanism.
+
+Only application/profile data should be cached locally.
+
+OFFLINE DATA:
+
+I want the Profile application to work offline.
+
+Identify every piece of data used by the Profile page and determine which data needs to be persisted locally.
+
+Do not simply cache one arbitrary giant object if the application has multiple logical data sets.
+
+Create a small offline/data-access layer so that the Profile UI does not need to know whether data came from Firebase or local storage.
+
+Prefer an appropriate persistent local database/storage solution for structured application data rather than relying only on localStorage.
+
+The architecture should conceptually be:
+
+React Profile UI
+|
+v
+Profile data/offline layer
+|
++---- Local persistent storage
+|
++---- Firebase Realtime Database
+|
+v
+Internet
+
+ONLINE:
+
+Firebase → update local cache → React UI
+
+OFFLINE:
+
+Local cache → React UI
+
+OFFLINE WRITES:
+
+If the Profile page allows the user to create/update/delete data while offline, do not silently lose those changes.
+
+Create a pending-operation/synchronization mechanism where appropriate:
+
+Offline user action
+↓
+Save locally
+↓
+Mark operation as pending
+↓
+Internet returns
+↓
+Synchronize with Firebase
+↓
+Mark operation synchronized
+
+Be careful with conflicts between local changes and server changes.
+
+Do not invent complicated conflict resolution unless the existing application actually requires it. First inspect how the current Firebase data is structured and then choose a sensible strategy.
+
+CAPACITOR:
+
+Install and configure:
+
+@capacitor/core
+@capacitor/cli
+@capacitor/android
+
+Create the Android project using Capacitor.
+
+The Android application should bundle the Vite production build.
+
+It must NOT simply be a WebView that navigates to:
+
+https://domain.com/profile
+
+Instead, the React/Vite build itself should be packaged into the APK.
+
+Expected architecture:
+
+React + Vite
+↓
+npm run build
+↓
+dist/
+↓
+Capacitor
+↓
+Android APK
+
+PLATFORM DETECTION:
+
+Add a small platform helper, for example:
+
+src/platform.ts
+
+or another appropriate location.
+
+It should allow the application to determine whether it is running:
+
+* on the normal website
+* inside the Android Capacitor application
+
+Use Capacitor's supported platform detection.
+
+Do not duplicate the entire Profile application.
+
+The same Profile components should be reused.
+
+ROUTING:
+
+For the WEBSITE:
+
+Keep the existing routing.
+
+The website should continue using:
+
+domain.com/login
+domain.com/profile
+
+For the ANDROID APK:
+
+The user should not need to navigate to /profile manually.
+
+The APK should start at the application root and determine:
+
+authenticated?
+|
++-- NO  → Login
+|
++-- YES → Profile
+
+The Android experience should effectively be:
+
+/
+↓
+Auth check
+↓
+Login OR Profile
+
+Do not require the user to type /profile.
+
+If React Router is currently being used, adapt the existing routing rather than replacing it unnecessarily.
+
+WEBSITE VS APK FEATURES:
+
+The website is intentionally a limited version.
+
+The Android APK should expose additional/full Profile functionality.
+
+Create a clean way to detect the platform and conditionally expose features.
+
+Conceptually:
+
+if native Android:
+full functionality
+
+if website:
+limited functionality
+
+Do NOT rely solely on frontend checks to protect sensitive/premium functionality.
+
+If a feature requires real authorization/security, explain what needs to be enforced server-side/Firebase-side as well.
+
+The website should be able to display a message such as:
+
+"Download our app to access more features."
+
+But do not implement arbitrary marketing UI unless necessary.
+
+FIREBASE:
+
+Inspect the existing Firebase setup before changing it.
+
+Do not create a second Firebase project unless there is a specific technical reason.
+
+Reuse the existing Firebase project/configuration.
+
+Inspect:
+
+* Firebase Authentication
+* Realtime Database
+* Firebase Security Rules
+* current database paths
+* current AuthContext
+* current Profile data access
+* current listeners using onValue
+* current writes using push/set/update/remove/etc.
+
+Pay particular attention to code such as:
+
+onValue(...)
+ref(...)
+push(...)
+set(...)
+
+Determine which Firebase operations need offline handling.
+
+AUTH CONTEXT:
+
+Inspect the existing AuthContext.
+
+Preserve its public API where practical so existing components do not need unnecessary changes.
+
+Make authentication initialization/loading explicit.
+
+Avoid rendering Login briefly while Firebase is still restoring the authentication session.
+
+The desired behavior is:
+
+App starts
+↓
+auth loading
+↓
+Firebase restores session
+↓
+authenticated?
+├── yes → Profile
+└── no  → Login
+
+Do not store passwords.
+
+Use Firebase Auth's supported client persistence/session behavior.
+
+LOCAL DATA:
+
+Choose the local persistence technology based on the actual data structure after inspecting the project.
+
+If the application is simple, a suitable persistent storage mechanism may be enough.
+
+If there are many structured records, relationships, pending writes, or synchronization requirements, use an appropriate local database.
+
+Do not add a huge dependency unnecessarily.
+
+Keep the offline layer isolated so it can be changed later.
+
+NETWORK:
+
+The APK should not require an internet connection to load:
+
+* React
+* JavaScript
+* CSS
+* icons
+* images bundled with the application
+* Profile UI
+* locally cached profile data
+
+Internet should only be required for things that genuinely require the server, such as:
+
+* initial authentication
+* downloading data not previously cached
+* synchronizing changes
+* server-side operations
+
+Do not make the APK load the website URL.
+
+ASSETS:
+
+Make sure all Profile assets required for offline operation are bundled into the Vite/Capacitor application.
+
+Inspect:
+
+* public/
+* imported images
+* fonts
+* icons
+* CSS
+* other static assets
+
+Anything required by the Profile UI should not unexpectedly point to an external website.
+
+ANDROID:
+
+Create the Android project.
+
+Configure:
+
+* application name
+* application ID/package name
+* app icon
+* splash screen if appropriate
+
+Do not make unnecessary native Android modifications.
+
+The final project should be buildable using Android Studio/Gradle.
+
+DEVELOPMENT:
+
+Before making large changes:
+
+1. Inspect the existing project.
+2. Explain the current architecture.
+3. Identify the Profile data dependencies.
+4. Identify the authentication flow.
+5. Identify all Firebase reads/writes.
+6. Identify which data must be available offline.
+7. Propose the smallest reasonable architecture.
+8. Then implement it.
+
+Do NOT blindly create an app/ directory just because it is common in other projects.
+
+Use the existing project structure unless there is a concrete reason to reorganize it.
+
+EXPECTED FILES:
+
+Create only files that are actually necessary.
+
+A possible structure could be:
+
+src/
+├── config/
+│   └── firebase.ts
+├── context/
+│   └── AuthContext.tsx
+├── pages/
+│   ├── Login.tsx
+│   └── Profile.tsx
+├── offline/
+│   ├── storage.ts
+│   ├── profileStore.ts
+│   └── sync.ts
+├── platform.ts
+└── ...
+
+But adapt this to my actual project.
+
+Do not blindly use this exact structure.
+
+CAPACITOR FILES:
+
+Add the required Capacitor configuration, such as:
+
+capacitor.config.ts
+
+and:
+
+android/
+
+Do not commit generated build output unnecessarily if the existing project uses a different convention.
+
+BUILD:
+
+The final workflow should be approximately:
+
+npm install
+
+npm run build
+
+npx cap sync android
+
+npx cap open android
+
+Then Android Studio should be able to build the APK.
+
+If appropriate, also document how to generate a debug APK and release APK.
+
+TESTING:
+
+Test these scenarios:
+
+1. Fresh install + no login
+   → Login
+
+2. Login with internet
+   → Profile
+
+3. Close and reopen app with internet
+   → Profile
+
+4. Close app, disable internet, reopen
+   → Profile using cached data
+
+5. Disable internet while already inside Profile
+   → Profile continues functioning
+
+6. Perform supported offline operations
+   → Changes remain locally available
+
+7. Restore internet
+   → Pending changes synchronize appropriately
+
+8. Website remains functional
+   → Existing /login and /profile behavior is preserved
+
+9. APK does not navigate to domain.com/profile for its UI.
+
+10. Remove/uninstall app and reinstall
+    → Explain what data is expected to be lost because application storage is removed.
+
+IMPORTANT:
+
+Do not make assumptions about my Firebase database structure.
+
+Inspect the existing code first.
+
+Do not remove existing functionality.
+
+Do not replace Firebase with another backend.
+
+Do not duplicate the Profile page for Android.
+
+Do not store passwords.
+
+Do not make the Android APK dependent on the website being online.
+
+At the end, give me:
+
+1. Files created
+2. Files modified
+3. Dependencies added
+4. Database/storage changes
+5. Authentication changes
+6. How offline mode works
+7. How synchronization works
+8. How website vs APK feature differences work
+9. Exact commands to run/build the APK
+10. Any Firebase Security Rules changes required
+
+If something in the existing code prevents true offline operation, identify it explicitly and fix it rather than hiding the problem.

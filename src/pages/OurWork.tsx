@@ -95,7 +95,7 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
   // Skeleton loader
   const Skeleton = () => (
     <div 
-      className="animate-pulse bg-neutral-200 dark:bg-neutral-800 rounded-2xl w-full"
+      className="animate-pulse bg-neutral-200/80 dark:bg-neutral-800/80 rounded-3xl w-full"
       style={{ height: `${200 + Math.random() * 200}px` }}
     />
   );
@@ -106,9 +106,11 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
       <div 
         key={item.id}
         className={`
-          group relative bg-white dark:bg-neutral-900 
-          rounded-2xl shadow-lg hover:shadow-2xl dark:shadow-neutral-800/50 
+          group relative bg-white dark:bg-neutral-900/80
+          border border-neutral-200/80 dark:border-neutral-800
+          rounded-3xl shadow-sm hover:shadow-xl dark:shadow-black/20
           overflow-hidden transition-all duration-300
+          hover:-translate-y-0.5
           ${horizontalPreview ? 'flex-shrink-0 w-72 mx-2' : 'w-full mb-4'}
         `}
         onClick={() => {
@@ -123,8 +125,8 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
           <div className={`
             px-3 py-1 rounded-full text-xs font-medium
             ${item.type === 'video' 
-              ? 'bg-red-500/90 text-white' 
-              : 'bg-white/90 dark:bg-neutral-800/90 text-neutral-700 dark:text-neutral-300'
+              ? 'bg-amber-500/95 text-white' 
+              : 'bg-white/90 dark:bg-neutral-900/90 text-neutral-700 dark:text-neutral-300 border border-white/60 dark:border-neutral-700/80'
             }
           `}>
             {item.type === 'video' ? 'Video' : 'Image'}
@@ -135,7 +137,7 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
           <div className="relative pb-[56.25%]">
             <iframe
               src={item.videoUrl}
-              className="absolute inset-0 w-full h-full object-cover rounded-t-2xl"
+              className="absolute inset-0 w-full h-full object-cover rounded-t-3xl"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
@@ -147,26 +149,27 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
             <img 
               src={item.url || '/placeholder-work.jpg'} 
               alt={item.title || 'Our work item'} 
-              className="w-full h-auto rounded-t-2xl group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-auto rounded-t-3xl group-hover:scale-[1.025] transition-transform duration-500"
               loading="lazy"
             />
             {/* View overlay for images */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 rounded-t-2xl" />
+            <div className="absolute inset-0 bg-sky-500/0 group-hover:bg-sky-500/10 transition-colors duration-300 rounded-t-3xl" />
           </div>
         )}
         
-        <div className="p-3">
+        <div className="p-4">
           {item.caption && (
-            <p className="text-neutral-600 dark:text-neutral-400 text-sm ">
+            <p className="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">
               {item.caption}
             </p>
           )}
           {item.category && (
             <button className="
-              bg-neutral-100 dark:bg-neutral-800 
-              hover:bg-neutral-200 dark:hover:bg-neutral-700
-              text-neutral-700 dark:text-neutral-300 
-              text-sm px-4 py-2 rounded-full transition-colors
+              bg-sky-50 dark:bg-sky-400/10
+              hover:bg-sky-100 dark:hover:bg-sky-400/15
+              text-sky-700 dark:text-sky-300
+              border border-sky-100 dark:border-sky-400/20
+              text-xs font-medium px-3 py-1.5 rounded-full transition-colors
             ">
               {item.category}
             </button>
@@ -178,12 +181,13 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
           <div className="
             absolute inset-0 flex items-center justify-center
             opacity-0 group-hover:opacity-100 transition-opacity duration-300
-            bg-black/20 rounded-2xl pointer-events-none
+            bg-neutral-950/20 rounded-3xl pointer-events-none
           ">
             <div className="
-              bg-white/90 dark:bg-neutral-900/90 
+              bg-white/95 dark:bg-neutral-900/95
               text-neutral-900 dark:text-white
-              px-6 py-3 rounded-full font-medium shadow-lg
+              border border-neutral-200/80 dark:border-neutral-700
+              px-5 py-2.5 rounded-full text-sm font-medium shadow-lg
             ">
               View Full Size
             </div>
@@ -194,14 +198,28 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
   };
 
   return (
-    <div className={horizontalPreview ? "w-full" : "dark:bg-neutral-950 bg-neutral-50 max-w-7xl mx-auto px-4 py-8"}>
+    <div className={horizontalPreview
+        ? "w-full"
+        : "relative overflow-hidden bg-neutral-50 dark:bg-neutral-950 max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-12 text-neutral-900 dark:text-neutral-100 transition-colors duration-300"}>
+      {/* Subtle brand atmosphere */}
+      {!horizontalPreview && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[32rem] -translate-x-1/2 rounded-full bg-sky-400/5 blur-3xl"
+        />
+      )}
+
       {/* Header */}
       {!horizontalPreview && showTitle && (
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-3">
+        <div className="relative text-center mb-10 sm:mb-12">
+          <span className="inline-flex items-center gap-2 rounded-full border border-amber-200/80 dark:border-amber-400/20 bg-amber-50 dark:bg-amber-400/10 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-300 mb-4">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+            Portfolio
+          </span>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-light tracking-tight text-neutral-950 dark:text-white mb-3">
             Our Work
           </h1>
-          <p className="text-neutral-600 dark:text-neutral-400 text-lg">
+          <p className="max-w-2xl mx-auto text-sm sm:text-base text-neutral-600 dark:text-neutral-400">
             Explore our latest projects and creative work
           </p>
         </div>
@@ -209,7 +227,7 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
 
       {/* Horizontal preview mode */}
       {horizontalPreview ? (
-        <div className="flex gap-4 w-full overflow-x-auto pb-6 hide-scrollbar px-4">
+        <div className="flex gap-4 w-full overflow-x-auto pb-5 hide-scrollbar px-4 sm:px-6">
           {loading
             ? Array(previewCount || 8).fill(0).map((_, i) => (
                 <div key={i} className="flex-shrink-0 w-72">
@@ -239,16 +257,16 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
 
       {/* Empty state */}
       {!loading && items.length === 0 && (
-        <div className="text-center py-16">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-            <svg className="w-10 h-10 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="relative text-center py-16 sm:py-20">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-sky-50 dark:bg-sky-400/10 border border-sky-100 dark:border-sky-400/20 flex items-center justify-center">
+            <svg className="w-10 h-10 text-sky-500 dark:text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
-          <h3 className="text-xl font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
+          <h3 className="text-xl font-light text-neutral-900 dark:text-neutral-100 mb-2">
             No Work Available
           </h3>
-          <p className="text-neutral-500 dark:text-neutral-500">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
             Check back soon for our latest projects
           </p>
         </div>
@@ -271,7 +289,7 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
       <style>{`
         .masonry-grid {
           display: grid;
-          grid-template-columns: repeat(var(--columns), 1fr);
+          grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
           gap: var(--gap);
         }
         
@@ -295,10 +313,20 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
           max-width: 100%;
           height: auto;
         }
+
+        /* Keep the masonry layout comfortable on narrow screens */
+        @media (max-width: 639px) {
+          .masonry-grid {
+            gap: 0.875rem;
+          }
+          .masonry-column {
+            gap: 0.875rem;
+          }
+        }
         
         /* Smooth transitions */
         * {
-          transition: background-color 0.3s ease, border-color 0.3s ease;
+          transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
       `}</style>
     </div>
