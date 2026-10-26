@@ -3,7 +3,9 @@ import { useLocation } from "react-router-dom";
 
 const routeTitles: Record<string, string> = {
   "/": "Home | Decor Drapes Instyle",
-  "/catalogue": "Catalogue | Decor Drapes Instyle",
+  "/products": "Products | Decor Drapes Instyle",
+  "/catalogue": "Virtual Catalogue | Decor Drapes Instyle",
+  "/warranty": "Warranty Verification | Decor Drapes Instyle",
   "/terms": "Terms & Conditions | Decor Drapes Instyle",
   "/cart": "My Cart | Decor Drapes Instyle",
   "/about": "About Us | Decor Drapes Instyle",

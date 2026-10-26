@@ -4,7 +4,7 @@ import TestimonialForm from "./testimonials/TestimonialForm";
 import { Review, ReviewsProps } from "../types";
 import { BadgeCheckIcon } from "lucide-react";
 
-const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
+const Reviews: React.FC<ReviewsProps> = ({ localReviews, isEmbedded = false }) => {
   const [googleReviews, setGoogleReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedReplies, setExpandedReplies] = useState<{
@@ -118,7 +118,7 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto py-12 px-4">
+      <div className={isEmbedded ? "w-full py-6" : "max-w-7xl mx-auto py-12 px-4"}>
         <div className="flex flex-col items-center justify-center h-64">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading reviews...</p>
@@ -132,7 +132,7 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews }) => {
   const showLoadLess = displayCount > 6;
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4" id="reviews-section">
+    <div className={isEmbedded ? "w-full" : "max-w-7xl mx-auto py-12 px-4"} id="reviews-section">
       {/* Google Badge with Stats */}
       <motion.div
         className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-neutral-50 dark:bg-neutral-900 p-6 rounded-2xl shadow-sm mb-10"

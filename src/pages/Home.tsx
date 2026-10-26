@@ -188,203 +188,215 @@ transition-colors duration-300
       <Hero />
 
       {/* Product categories section */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
-        <motion.div
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.6 }}
-        >
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Decor Drapes Instyle
-          </h2>
-          <p className="text-gray-600 dark:text-slate-400 text-lg max-w-2xl mx-auto">
-            Transform your space with our curated collection of high-quality
-            window treatments
-          </p>
-        </motion.div>
-
-        <div className="grid grid-cols-2 gap-4">
-  {productCategories.map((category, index) => (
-    <motion.div
-      key={index}
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-      className="group bg-neutral-50 dark:bg-neutral-900 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-neutral-200 dark:border-neutral-700 flex flex-col h-full"
-    >
-      {/* Card Flex Container */}
-      <div className="flex flex-col sm:flex-row w-full h-full flex-1">
-        {/* Image Section */}
-        <div className="sm:w-2/5 relative h-32 sm:h-48 flex-shrink-0">
-          <img
-            src={category.image}
-            alt={category.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-          {/* Icon Overlay */}
-          <div className="absolute top-2 left-2 bg-neutral-900 dark:bg-neutral-50 p-2 rounded-lg text-neutral-50 dark:text-neutral-900 flex items-center justify-center text-sm">
-            {category.icon}
-          </div>
-        </div>
-
-        {/* Content Section */}
-        <div className="sm:w-3/5 p-4 sm:p-6 flex flex-col justify-between flex-1">
-          <div>
-            <h3 className="font-semibold text-sm sm:text-xl mb-2 text-neutral-900 dark:text-neutral-100">
-              {category.title}
-            </h3>
-            <p className="text-neutral-700 dark:text-neutral-400 mb-4 text-xs sm:text-sm">
-              {category.description}
-            </p>
-          </div>
-
-          {/* Feature Pills — wrap naturally */}
-          <div className="flex flex-wrap gap-2 mt-auto">
-            {category.features.map((feature, i) => (
-              <span
-                key={i}
-                className="text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full inline-flex items-center"
-              >
-                {feature}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  ))}
-</div>
-
-      </section>
-
-      {/* Benefits section */}
-<section className="bg-neutral-50 dark:bg-neutral-900 py-14 sm:py-16 lg:py-20">
-  <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-    <motion.div
-      className="text-center mb-10 sm:mb-14"
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.6 }}
-    >
-      <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100 mb-3">
-        Why Choose Us
-      </h2>
-      <p className="text-neutral-600 dark:text-neutral-400 text-base sm:text-lg max-w-xl mx-auto">
-        Premium products, thoughtful design, and service you can trust.
-      </p>
-    </motion.div>
-
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-      {benefits.map((benefit, index) => (
-        <motion.div
-          key={index}
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.45, delay: index * 0.08 }}
-          className="
-            group
-            rounded-2xl
-            bg-white/70 dark:bg-neutral-800/60
-            backdrop-blur
-            border border-neutral-200/70 dark:border-neutral-700/60
-            p-5 sm:p-6
-            transition-all duration-300
-            hover:-translate-y-1
-            hover:shadow-xl hover:shadow-neutral-900/5
-          "
-        >
-          {/* Icon */}
-          <div
-            className="
-              mb-4
-              mx-auto
-              flex h-11 w-11 items-center justify-center
-              rounded-xl
-              bg-neutral-100 dark:bg-neutral-700
-              text-neutral-800 dark:text-neutral-100
-              group-hover:bg-neutral-900
-              group-hover:text-white
-              dark:group-hover:bg-neutral-100
-              dark:group-hover:text-neutral-900
-              transition-colors
-            "
-          >
-            {benefit.icon}
-          </div>
-
-          {/* Title */}
-          <h3 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-1.5 text-center">
-            {benefit.title}
-          </h3>
-
-          {/* Description */}
-          <p className="text-sm text-neutral-600 dark:text-neutral-400 text-center leading-relaxed">
-            {benefit.description}
-          </p>
-        </motion.div>
-      ))}
-    </div>
-  </div>
-</section>
-
-
-      {/* Featured products section */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
-        <div className="flex flex-col sm:flex-row items-center justify-between mb-10 gap-4">
-          <motion.h2
+      <section className="py-16 md:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            className="text-center mb-12"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
             transition={{ duration: 0.6 }}
-            className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white text-center sm:text-left"
           >
-            Featured Products
-          </motion.h2>
-          <motion.a
-            href="/catalogue"
-            className="inline-flex items-center text-neutral-700 dark:text-neutral-300 font-medium gap-2 group text-base
-                      hover:text-neutral-900 dark:hover:text-white transition-colors duration-200"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            View Full Catalogue
-            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-          </motion.a>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              Decor Drapes Instyle
+            </h2>
+            <p className="text-gray-600 dark:text-slate-400 text-lg max-w-2xl mx-auto">
+              Transform your space with our curated collection of high-quality
+              window treatments
+            </p>
+          </motion.div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {productCategories.map((category, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="group bg-neutral-50 dark:bg-neutral-900 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-neutral-200 dark:border-neutral-700 flex flex-col h-full"
+              >
+                {/* Card Flex Container */}
+                <div className="flex flex-col sm:flex-row w-full h-full flex-1">
+                  {/* Image Section */}
+                  <div className="sm:w-2/5 relative h-40 sm:h-auto min-h-[160px] flex-shrink-0">
+                    <img
+                      src={category.image}
+                      alt={category.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    {/* Icon Overlay */}
+                    <div className="absolute top-2 left-2 bg-neutral-900 dark:bg-neutral-50 p-2 rounded-lg text-neutral-50 dark:text-neutral-900 flex items-center justify-center text-sm">
+                      {category.icon}
+                    </div>
+                  </div>
+
+                  {/* Content Section */}
+                  <div className="sm:w-3/5 p-5 sm:p-6 flex flex-col justify-between flex-1">
+                    <div>
+                      <h3 className="font-semibold text-base sm:text-xl mb-2 text-neutral-900 dark:text-neutral-100">
+                        {category.title}
+                      </h3>
+                      <p className="text-neutral-700 dark:text-neutral-400 mb-4 text-xs sm:text-sm">
+                        {category.description}
+                      </p>
+                    </div>
+
+                    {/* Feature Pills — wrap naturally */}
+                    <div className="flex flex-wrap gap-2 mt-auto">
+                      {category.features.map((feature, i) => (
+                        <span
+                          key={i}
+                          className="text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full inline-flex items-center"
+                        >
+                          {feature}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
+      </section>
 
-        {/* Products grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-3 gap-6 justify-items-center">
-          {loadingProducts
-            ? Array(6)
-                .fill(0)
-                .map((_, idx) => <SkeletonCard key={idx} className="h-72" />)
-            : previewProducts.map((p, idx) => (
-                <motion.div
-                  key={p.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+      {/* Benefits section */}
+      <section className="bg-neutral-50 dark:bg-neutral-900 py-14 sm:py-16 lg:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            className="text-center mb-10 sm:mb-14"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100 mb-3">
+              Why Choose Us
+            </h2>
+            <p className="text-neutral-600 dark:text-neutral-400 text-base sm:text-lg max-w-xl mx-auto">
+              Premium products, thoughtful design, and service you can trust.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {benefits.map((benefit, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.45, delay: index * 0.08 }}
+                className="
+                  group
+                  rounded-2xl
+                  bg-white/70 dark:bg-neutral-800/60
+                  backdrop-blur
+                  border border-neutral-200/70 dark:border-neutral-700/60
+                  p-5 sm:p-6
+                  transition-all duration-300
+                  hover:-translate-y-1
+                  hover:shadow-xl hover:shadow-neutral-900/5
+                "
+              >
+                {/* Icon */}
+                <div
+                  className="
+                    mb-4
+                    mx-auto
+                    flex h-11 w-11 items-center justify-center
+                    rounded-xl
+                    bg-neutral-100 dark:bg-neutral-700
+                    text-neutral-800 dark:text-neutral-100
+                    group-hover:bg-neutral-900
+                    group-hover:text-white
+                    dark:group-hover:bg-neutral-100
+                    dark:group-hover:text-neutral-900
+                    transition-colors
+                  "
                 >
-                  <ProductCard
-                    product={p}
-                    onViewDetails={() => setSelectedProduct(p)}
-                  />
-                </motion.div>
-              ))}
+                  {benefit.icon}
+                </div>
+
+                {/* Title */}
+                <h3 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-1.5 text-center">
+                  {benefit.title}
+                </h3>
+
+                {/* Description */}
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 text-center leading-relaxed">
+                  {benefit.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Featured products section */}
+      <section className="py-16 md:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between mb-10 gap-4">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.6 }}
+              className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white text-center sm:text-left"
+            >
+              Featured Products
+            </motion.h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <motion.a
+                href="/products"
+                className="inline-flex items-center text-neutral-700 dark:text-neutral-300 font-medium gap-2 group text-base hover:text-neutral-900 dark:hover:text-white transition-colors duration-200"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                View All Products
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </motion.a>
+              <span className="text-neutral-300 dark:text-neutral-700 hidden sm:inline">•</span>
+              <motion.a
+                href="/catalogue"
+                className="inline-flex items-center text-indigo-600 dark:text-indigo-400 font-semibold gap-1.5 group text-base hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors duration-200"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                Virtual Flip Catalogue
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </motion.a>
+            </div>
+          </div>
+
+          {/* Products grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6 justify-items-center">
+            {loadingProducts
+              ? Array(4)
+                  .fill(0)
+                  .map((_, idx) => <SkeletonCard key={idx} className="h-72 w-full" />)
+              : previewProducts.map((p, idx) => (
+                  <motion.div
+                    key={p.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-50px" }}
+                    transition={{ duration: 0.5, delay: idx * 0.1 }}
+                    className="w-full"
+                  >
+                    <ProductCard
+                      product={p}
+                      onViewDetails={() => setSelectedProduct(p)}
+                    />
+                  </motion.div>
+                ))}
+          </div>
         </div>
       </section>
 
       {/* Our Work */}
       <section className="bg-neutral-50 dark:bg-neutral-950 py-16 md:py-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -400,105 +412,109 @@ transition-colors duration-300
                   ))}
               </div>
             ) : (
-              <OurWorkPublic previewCount={5} />
+              <OurWorkPublic previewCount={5} isEmbedded={true} />
             )}
           </motion.div>
         </div>
       </section>
 
       {/* Testimonials */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
-        <div className="text-center mb-12">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.6 }}
-            className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4"
-          >
-            Client Testimonials
-          </motion.h2>
-          <motion.p
-            className="text-gray-600 md:text-lg sm:text-xl dark:text-slate-400 text-sm max-w-2xl mx-auto"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            Hear what our satisfied customers have to say about our products and
-            service
-          </motion.p>
-        </div>
+      <section className="py-16 md:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.6 }}
+              className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4"
+            >
+              Client Testimonials
+            </motion.h2>
+            <motion.p
+              className="text-gray-600 md:text-lg sm:text-xl dark:text-slate-400 text-sm max-w-2xl mx-auto"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              Hear what our satisfied customers have to say about our products and
+              service
+            </motion.p>
+          </div>
 
-        {/* Combined Reviews Component */}
-        <div className="w-full">
-          <Reviews localReviews={testimonials} />
+          {/* Combined Reviews Component */}
+          <div className="w-full">
+            <Reviews localReviews={testimonials} isEmbedded={true} />
+          </div>
         </div>
       </section>
 
       {/* CTA Section */}
-<section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
-  <motion.div
-    className="
-      rounded-2xl p-8 md:p-12 text-center
-      bg-neutral-100 dark:bg-neutral-800
-      text-neutral-900 dark:text-neutral-100
-      shadow-sm
-    "
-    initial={{ opacity: 0, y: 30 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true, margin: '-50px' }}
-    transition={{ duration: 0.6 }}
-  >
-    <div className="max-w-2xl mx-auto">
-      <h3 className="text-2xl md:text-3xl font-bold mb-4">
-        Ready to Transform Your Space?
-      </h3>
+      <section className="py-16 md:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            className="
+              rounded-2xl p-8 md:p-12 text-center
+              bg-neutral-100 dark:bg-neutral-800
+              text-neutral-900 dark:text-neutral-100
+              shadow-sm
+            "
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-50px' }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="max-w-2xl mx-auto">
+              <h3 className="text-2xl md:text-3xl font-bold mb-4">
+                Ready to Transform Your Space?
+              </h3>
 
-      <p className="text-neutral-600 dark:text-neutral-400 mb-8 text-lg">
-        Get a free consultation and quote for your window treatment needs
-      </p>
+              <p className="text-neutral-600 dark:text-neutral-400 mb-8 text-lg">
+                Get a free consultation and quote for your window treatment needs
+              </p>
 
-      <div className="flex flex-wrap gap-4 justify-center">
-        {/* Primary CTA */}
-        <motion.a
-          href="/contact"
-          className="
-            inline-flex items-center justify-center
-            px-8 py-4 rounded-full
-            bg-neutral-900 dark:bg-neutral-100
-            text-neutral-100 dark:text-neutral-900
-            font-semibold
-            hover:bg-neutral-800 dark:hover:bg-neutral-200
-            transition-colors
-          "
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.97 }}
-        >
-          Book Consultation
-        </motion.a>
+              <div className="flex flex-wrap gap-4 justify-center">
+                {/* Primary CTA */}
+                <motion.a
+                  href="/contact"
+                  className="
+                    inline-flex items-center justify-center
+                    px-8 py-4 rounded-full
+                    bg-neutral-900 dark:bg-neutral-100
+                    text-neutral-100 dark:text-neutral-900
+                    font-semibold
+                    hover:bg-neutral-800 dark:hover:bg-neutral-200
+                    transition-colors
+                  "
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  Book Consultation
+                </motion.a>
 
-        {/* Secondary CTA */}
-        <motion.a
-          href="/estimate"
-          className="
-            inline-flex items-center justify-center
-            px-8 py-4 rounded-full
-            border border-neutral-400 dark:border-neutral-600
-            text-neutral-900 dark:text-neutral-100
-            font-medium
-            hover:bg-neutral-200 dark:hover:bg-neutral-700
-            transition-colors
-          "
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.97 }}
-        >
-          Get Free Quote
-        </motion.a>
-      </div>
-    </div>
-  </motion.div>
-</section>
+                {/* Secondary CTA */}
+                <motion.a
+                  href="/estimate"
+                  className="
+                    inline-flex items-center justify-center
+                    px-8 py-4 rounded-full
+                    border border-neutral-400 dark:border-neutral-600
+                    text-neutral-900 dark:text-neutral-100
+                    font-medium
+                    hover:bg-neutral-200 dark:hover:bg-neutral-700
+                    transition-colors
+                  "
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  Get Free Quote
+                </motion.a>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
 
       {/* Product modal */}

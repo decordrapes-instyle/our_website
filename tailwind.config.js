@@ -1,9 +1,25 @@
+import containerQueries from '@tailwindcss/container-queries';
+
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      colors: {
+        ink: 'var(--ink, #111111)',
+        muted: 'var(--muted, #8a8a8a)',
+        line: 'var(--line, #e8e8e8)',
+        desk: 'var(--desk, #f2f2f2)',
+      },
+      fontFamily: {
+        sans: ['"Inter"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        display: ['"Plus Jakarta Sans"', '"Inter"', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+      },
+      aspectRatio: {
+        'a4': '210 / 297',
+      },
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0' },
@@ -30,5 +46,7 @@ export default {
       },
     },
   },
-  plugins: [],
-}
+  plugins: [
+    containerQueries,
+  ],
+};

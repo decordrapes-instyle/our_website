@@ -10,8 +10,10 @@ import {
   Home,
   Phone,
   ChevronRight,
-  Star,
   Sparkles,
+  ShoppingBag,
+  BookOpen,
+  ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { ref, onValue } from "../../config/firebase";
@@ -147,10 +149,20 @@ const Navbar: React.FC = () => {
       icon: <Home size={14} />,
     },
     {
-      label: "Our Work",
-      to: "/our-work",
-      icon: <Star size={14} />,
+      label: "Products",
+      to: "/products",
+      icon: <ShoppingBag size={14} />,
     },
+    // {
+    //   label: "Catalogue",
+    //   to: "/catalogue",
+    //   icon: <BookOpen size={14} />,
+    // },
+    // {
+    //   label: "Our Work",
+    //   to: "/our-work",
+    //   icon: <Star size={14} />,
+    // },
     {
       label: "About",
       to: "/about",
@@ -171,9 +183,19 @@ const Navbar: React.FC = () => {
   // Quick action links for features (used in mobile sidebar only)
   const quickFeatureLinks = [
     {
-      label: "Browse Catalogue",
+      label: "Browse Products",
+      to: "/products",
+      icon: <ShoppingBag size={12} />,
+    },
+    {
+      label: "Virtual Catalogue",
       to: "/catalogue",
-      icon: <Sparkles size={12} />,
+      icon: <BookOpen size={12} />,
+    },
+    {
+      label: "Check Warranty",
+      to: "/warranty",
+      icon: <ShieldCheck size={12} />,
     },
   ];
 
@@ -186,7 +208,7 @@ const Navbar: React.FC = () => {
             : "relative"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Left Section - Logo & Navigation */}
             <div className="flex items-center space-x-8">
@@ -326,14 +348,14 @@ const Navbar: React.FC = () => {
                 </div>
               ) : (
                 <div className="flex items-center space-x-3">
-                  <Link
+                  {/* <Link
                     to="/login"
                     className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 
              hover:text-neutral-900 dark:hover:text-white transition-colors duration-200 
              rounded-full hidden sm:inline-block"
                   >
                     Sign In
-                  </Link>
+                  </Link> */}
 
                   <Link
                     to="/login"

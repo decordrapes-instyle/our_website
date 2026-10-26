@@ -41,6 +41,7 @@ export interface ReviewsProps {
     createdAt: string;
     title?: string;
   }>;
+  isEmbedded?: boolean;
 }
 
 export type OurWorkItem = {
@@ -280,3 +281,6 @@ export interface ProductSKU {
   createdAt: string;
   updatedAt: string;
 }
+
+export * from './warranty';
+

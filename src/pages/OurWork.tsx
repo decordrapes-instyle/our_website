@@ -24,13 +24,15 @@ interface OurWorkPublicProps {
   previewCount?: number;
   items?: WorkItem[];
   showTitle?: boolean;
+  isEmbedded?: boolean;
 }
 
 const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
   horizontalPreview = false,
   previewCount,
   items: propItems,
-  showTitle = true
+  showTitle = true,
+  isEmbedded = false
 }) => {
   const [items, setItems] = useState<WorkItem[]>(propItems || []);
   const [loading, setLoading] = useState(propItems ? false : true);
@@ -198,11 +200,11 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
   };
 
   return (
-    <div className={horizontalPreview
+    <div className={horizontalPreview || isEmbedded
         ? "w-full"
-        : "relative overflow-hidden bg-neutral-50 dark:bg-neutral-950 max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-12 text-neutral-900 dark:text-neutral-100 transition-colors duration-300"}>
+        : "relative overflow-hidden bg-neutral-50 dark:bg-neutral-950 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 text-neutral-900 dark:text-neutral-100 transition-colors duration-300"}>
       {/* Subtle brand atmosphere */}
-      {!horizontalPreview && (
+      {!horizontalPreview && !isEmbedded && (
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[32rem] -translate-x-1/2 rounded-full bg-sky-400/5 blur-3xl"

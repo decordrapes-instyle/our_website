@@ -1,6 +1,7 @@
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import Home from "./pages/Home";
+import Products from "./pages/Products";
 import Catalogue from "./pages/Catalogue";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -11,11 +12,13 @@ import TermsPage from "./pages/Terms";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import PageRouteGuard from "./components/common/PageRouteGuard";
 
 const Login = lazy(() => import("./components/auth/Login"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Verified = lazy(() => import("./pages/Verified"));
 const AuthHandler = lazy(() => import("./context/Auth"));
+const Warranty = lazy(() => import("./pages/Warranty"));
 const Navbar = lazy(() => import("./components/common/Navbar"));
 const Footer = lazy(() => import("./components/common/Footer"));
 const TitleUpdater = lazy(() => import("./components/common/TitleUpdater"));
@@ -28,6 +31,9 @@ function App() {
 
   const hideHeaderFooter =
     location.pathname.startsWith("/profile") ||
+    location.pathname.startsWith("/catalogue") ||
+    location.pathname.startsWith("/warranty") ||
+    location.pathname.startsWith("/check-warranty") ||
     location.pathname === "/terms" ||
     location.pathname === "/privacy" ||
     location.pathname === "/login" ||
@@ -49,14 +55,81 @@ function App() {
       <main>
         <Suspense fallback={null}>
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/catalogue" element={<Catalogue />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/estimate" element={<Estimate />} />
+            <Route
+              path="/"
+              element={
+                <PageRouteGuard page="home" pageName="Home">
+                  <Home />
+                </PageRouteGuard>
+              }
+            />
+            <Route
+              path="/products"
+              element={
+                <PageRouteGuard page="products" pageName="Products">
+                  <Products />
+                </PageRouteGuard>
+              }
+            />
+            <Route
+              path="/catalogue"
+              element={
+                <PageRouteGuard page="catalogue" pageName="Catalogue">
+                  <Catalogue />
+                </PageRouteGuard>
+              }
+            />
+            <Route
+              path="/catalogue/*"
+              element={
+                <PageRouteGuard page="catalogue" pageName="Catalogue">
+                  <Catalogue />
+                </PageRouteGuard>
+              }
+            />
+            <Route
+              path="/about"
+              element={
+                <PageRouteGuard page="about" pageName="About Us">
+                  <About />
+                </PageRouteGuard>
+              }
+            />
+            <Route
+              path="/contact"
+              element={
+                <PageRouteGuard page="contact" pageName="Contact Us">
+                  <Contact />
+                </PageRouteGuard>
+              }
+            />
+            <Route
+              path="/estimate"
+              element={
+                <PageRouteGuard page="estimate" pageName="Cost Estimator">
+                  <Estimate />
+                </PageRouteGuard>
+              }
+            />
             <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/our-work" element={<OurWorkPublic />} />
+            <Route
+              path="/our-work"
+              element={
+                <PageRouteGuard page="ourWork" pageName="Our Work">
+                  <OurWorkPublic />
+                </PageRouteGuard>
+              }
+            />
             <Route path="/terms" element={<TermsPage />} />
+            <Route
+              path="/warranty"
+              element={
+                <PageRouteGuard page="warranty" pageName="Warranty Verification">
+                  <Warranty />
+                </PageRouteGuard>
+              }
+            />
+            <Route path="/check-warranty" element={<Navigate to="/warranty" replace />} />
             <Route path="/login" element={<Login />} />
 
             <Route path="/auth/reset-password" element={<ResetPassword />} />
@@ -97,7 +170,5 @@ function App() {
     </div>
   );
 }
-
-
 
 export default App;

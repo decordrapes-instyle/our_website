@@ -201,7 +201,7 @@ const Hero: React.FC = () => {
 
       <div className="relative z-10">
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 pt-8 sm:pt-16 pb-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 pb-20">
           {/* Trust Badge */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -355,7 +355,7 @@ const Hero: React.FC = () => {
                 </motion.a>
 
                 <motion.a
-                  href="/catalogue"
+                  href="/products"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 font-semibold rounded-full hover:shadow-lg transition-all duration-200"
