@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ref, onValue, runTransaction, set, get } from '../config/firebase';
 import { getAuth, onAuthStateChanged, User as FirebaseUser } from '../config/firebase';
 import { database } from '../config/firebase';
-import { X, BookOpen, Sparkles, ArrowRight } from 'lucide-react';
+import { X, BookOpen, ArrowRight } from 'lucide-react';
 
 interface Product {
   id: string;
