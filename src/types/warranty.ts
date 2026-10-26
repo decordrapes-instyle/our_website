@@ -3,6 +3,7 @@ export interface WarrantyCustomer {
   mobile: string;
   email: string;
   address: string;
+  installationAddress?: string;
   gstin?: string;
 }
 
@@ -23,6 +24,8 @@ export interface WarrantyProductItem {
   productSpecification?: string;
   productImage?: string;
   productSpecificWarranty?: string;
+  hasWarranty?: boolean;
+  noWarrantyReason?: string;
   amount?: number;
   gst?: number;
   gstAmount?: number;
