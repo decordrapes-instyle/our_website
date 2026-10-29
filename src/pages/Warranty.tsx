@@ -696,65 +696,35 @@ function ProductItemCard({
 }
 
 /**
- * Extract search query from ANY query parameter in the URL.
- * Supports ?q=..., ?search=..., ?id=..., ?itemId=..., ?orderNumber=..., ?warrantyNumber=..., etc.
- * Also handles bare keys such as /warranty?202605140078 or /warranty?DDI-Q-60747.
+ * Extract search query ONLY from orderNumber, warrantyNumber, itemId, or standard q/search in the URL.
+ * Any other search parameters are ignored and will not return results.
  */
 function getSearchQueryFromParams(searchParams: URLSearchParams): string {
-  const PRIORITY_KEYS = [
-    'q',
-    'search',
-    'query',
-    'id',
-    'itemId',
-    'item_id',
-    'orderNumber',
+  const ALLOWED_KEYS = [
+    'ordernumber',
     'order_number',
     'order',
-    'orderNo',
+    'orderno',
     'order_no',
-    'warrantyNumber',
+    'warrantynumber',
     'warranty_number',
-    'warranty',
-    'warrantyId',
+    'warrantyid',
     'warranty_id',
-    'quotationId',
-    'quotation_id',
-    'quotation',
-    'productCode',
-    'code',
-    'name',
-    'mobile',
-    'phone',
-    'email',
-    'gstin',
+    'warranty',
+    'itemid',
+    'item_id',
+    'id',
+    'q',
+    'search',
   ];
 
-  for (const k of PRIORITY_KEYS) {
-    const val = searchParams.get(k);
-    if (val && val.trim()) {
-      try {
-        return decodeURIComponent(val.trim());
-      } catch {
-        return val.trim();
-      }
-    }
-  }
-
-  // Fallback: check any parameter
   for (const [key, val] of searchParams.entries()) {
-    if (val && val.trim()) {
+    const normalizedKey = key.toLowerCase().trim();
+    if (ALLOWED_KEYS.includes(normalizedKey) && val && val.trim()) {
       try {
         return decodeURIComponent(val.trim());
       } catch {
         return val.trim();
-      }
-    }
-    if (key && key.trim() && !val) {
-      try {
-        return decodeURIComponent(key.trim());
-      } catch {
-        return key.trim();
       }
     }
   }
@@ -763,7 +733,7 @@ function getSearchQueryFromParams(searchParams: URLSearchParams): string {
 }
 
 /**
- * Clean search query if user pasted parameter prefixes like "id: ...", "orderNumber = ...", "?q=..."
+ * Clean search query if user pasted allowed parameter prefixes like "id: ...", "orderNumber: ...", "warrantyNumber: ..."
  */
 function cleanSearchQuery(raw: string): string {
   if (!raw) return '';
@@ -774,8 +744,8 @@ function cleanSearchQuery(raw: string): string {
     cleaned = cleaned.replace(/^[?&]+/, '').trim();
   }
 
-  // Handle prefix like "q=...", "id: ...", "orderNumber: ..."
-  const paramPattern = /^(?:q|search|query|id|itemid|item_id|item\s+id|ordernumber|order_number|order\s+number|order|orderno|order_no|warrantynumber|warranty_number|warranty\s+number|warranty|warrantyid|warranty_id|warranty\s+id|quotationid|quotation_id|quotation\s+id|quotation|code|productcode|product_code|product\s+code|customer|mobile|phone|email|name|gstin)\s*[:=]\s*(.+)$/i;
+  // Handle allowed parameter prefix like "orderNumber: ...", "warrantyNumber: ...", "itemId: ..."
+  const paramPattern = /^(?:q|search|id|itemid|item_id|item\s+id|ordernumber|order_number|order\s+number|order|orderno|order_no|warrantynumber|warranty_number|warranty\s+number|warranty|warrantyid|warranty_id|warranty\s+id)\s*[:=]\s*(.+)$/i;
   const match = cleaned.match(paramPattern);
   if (match && match[1]) {
     cleaned = match[1].trim();
@@ -1066,91 +1036,55 @@ export default function Warranty() {
     setSearchParams({}, { replace: true });
   };
 
-  // Find match with specific Item ID discrimination and exhaustive parameter matching
+  // Find match: STRICTLY full exact match on Order Number, Warranty Number, or Item ID only.
+  // Apart from these three fields, if user entered anything else, return NO result.
   const matchResult: MatchResult | null = useMemo(() => {
     if (!submittedQuery) return null;
     const cleanQ = cleanSearchQuery(submittedQuery);
+    if (!cleanQ) return null;
+
     const q = cleanQ.toLowerCase();
     const cleanAlphaNum = q.replace(/[^a-z0-9]/g, '');
 
-    const check = (str?: string) => {
-      if (!str) return false;
-      const s = str.toLowerCase().trim();
-      if (!s) return false;
-      if (s === q || s.includes(q) || q.includes(s)) return true;
-      if (cleanAlphaNum && cleanAlphaNum.length >= 2) {
-        const sClean = s.replace(/[^a-z0-9]/g, '');
-        if (sClean === cleanAlphaNum || sClean.includes(cleanAlphaNum) || cleanAlphaNum.includes(sClean)) {
-          return true;
-        }
+    const isExactMatch = (val?: string): boolean => {
+      if (!val) return false;
+      const trimmedVal = val.trim().toLowerCase();
+      if (!trimmedVal) return false;
+
+      // 1. Literal exact full match (case-insensitive)
+      if (trimmedVal === q) return true;
+
+      // 2. Full exact alphanumeric match (ignoring dashes/spaces, e.g. "WAR-2026-Q-60747" === "WAR2026Q60747")
+      // Both strings must be completely equal from start to end (never partial/substring)
+      if (cleanAlphaNum) {
+        const cleanVal = trimmedVal.replace(/[^a-z0-9]/g, '');
+        if (cleanVal && cleanVal === cleanAlphaNum) return true;
       }
+
       return false;
     };
 
     for (const w of warranties) {
       const prods = Array.isArray(w.products) ? w.products : [];
 
-      // 1. Check exact Item ID search first (primary unique distinction between repeating products)
-      const prodById = prods.find(
-        (p) =>
-          p.id &&
-          (p.id.toLowerCase().trim() === q ||
-            (cleanAlphaNum && p.id.toLowerCase().replace(/[^a-z0-9]/g, '') === cleanAlphaNum) ||
-            (cleanAlphaNum.length >= 4 && p.id.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanAlphaNum)))
-      );
+      // 1. STRICTLY EXACT Item ID match
+      const prodById = prods.find((p) => p.id && isExactMatch(p.id));
       if (prodById) {
         return { warranty: w, specificProduct: prodById, matchedBy: 'product_id' };
       }
 
-      // 2. Check productCode search
-      const prodByCode = prods.find((p) => p.productCode && check(p.productCode));
-      if (prodByCode) {
-        return { warranty: w, specificProduct: prodByCode, matchedBy: 'product_code' };
-      }
-
-      // 3. Check Order Number
-      if (check(w.orderNumber)) {
+      // 2. STRICTLY EXACT Order Number match
+      if (isExactMatch(w.orderNumber)) {
         return { warranty: w, matchedBy: 'order' };
       }
 
-      // 4. Check Warranty Number
-      if (check(w.warrantyNumber)) {
+      // 3. STRICTLY EXACT Warranty Number match
+      if (isExactMatch(w.warrantyNumber)) {
         return { warranty: w, matchedBy: 'warranty' };
-      }
-
-      // 5. Check Quotation ID / Doc ID
-      if (check(w.quotationId) || check(w.id)) {
-        return { warranty: w, matchedBy: 'general' };
-      }
-
-      // 6. Check Customer Phone / Email / Name / GSTIN / Addresses
-      if (w.customer) {
-        if (
-          check(w.customer.name) ||
-          check(w.customer.mobile) ||
-          check(w.customer.email) ||
-          check(w.customer.gstin) ||
-          check(w.customer.address) ||
-          check(w.customer.installationAddress)
-        ) {
-          return { warranty: w, matchedBy: 'general' };
-        }
-      }
-
-      // 7. Check Product Name / Category / Specification
-      const prodByNameOrSpec = prods.find(
-        (p) => check(p.productName) || check(p.productCategory) || check(p.productSpecification)
-      );
-      if (prodByNameOrSpec) {
-        return { warranty: w, specificProduct: prodByNameOrSpec, matchedBy: 'general' };
-      }
-
-      // 8. Check Metadata
-      if (w.metadata && (check(w.metadata.notes) || check(w.metadata.source))) {
-        return { warranty: w, matchedBy: 'general' };
       }
     }
 
+    // Apart from exact Order Number, Warranty Number, or Item ID, return NO result
     return null;
   }, [submittedQuery, warranties]);
 
@@ -1194,8 +1128,7 @@ export default function Warranty() {
   }, [currentUser, matchedWarranty]);
 
   const isSpecificProductMatch = Boolean(
-    (matchResult?.matchedBy === 'product_id' || matchResult?.matchedBy === 'product_code') &&
-    matchResult?.specificProduct
+    matchResult?.matchedBy === 'product_id' && matchResult?.specificProduct
   );
 
   const displayedProducts = useMemo(() => {
