@@ -23,9 +23,7 @@ const Warranty = lazy(() => import("./pages/Warranty"));
 const Navbar = lazy(() => import("./components/common/Navbar"));
 const Footer = lazy(() => import("./components/common/Footer"));
 const TitleUpdater = lazy(() => import("./components/common/TitleUpdater"));
-const Toaster = lazy(() =>
-  import("react-hot-toast").then((m) => ({ default: m.Toaster }))
-);
+import { Toaster } from "react-hot-toast";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() =>
@@ -175,8 +173,7 @@ function App() {
         </Suspense>
       )}
 
-      <Suspense fallback={null}>
-        <Toaster
+      <Toaster
           position={isMobile ? "top-center" : "top-right"}
           containerClassName="app-toaster-container"
           containerStyle={{
@@ -202,7 +199,6 @@ function App() {
             },
           }}
         />
-      </Suspense>
     </div>
   );
 }

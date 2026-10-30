@@ -1,8 +1,14 @@
-import React, { useState, useEffect, useMemo, FormEvent } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+  FormEvent,
+} from "react";
 import {
   ShieldCheck,
   ShieldAlert,
-  Shield,
   Printer,
   Copy,
   Check,
@@ -14,8 +20,8 @@ import {
   MessageCircle,
   X,
   Loader2,
-  ArrowLeft,
   ChevronRight,
+  ChevronDown,
   Package,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -37,89 +43,115 @@ interface WarrantyTabProps {
   onGoHome?: () => void;
 }
 
+/* ------------------------------------------------------------------ */
+/* Helpers                                                             */
+/* ------------------------------------------------------------------ */
+
+const DAY = 24 * 60 * 60 * 1000;
+const EXPIRING_SOON_DAYS = 90;
+const TERMS_PREVIEW_COUNT = 3;
+
+const norm = (value?: string) => (value || "").toLowerCase().trim();
+const alnum = (value?: string) => norm(value).replace(/[^a-z0-9]/g, "");
+
+const parseTime = (value?: string) => {
+  if (!value) return null;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? null : time;
+};
+
 function formatDate(dateStr?: string) {
-  if (!dateStr) return "—";
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
+  const time = parseTime(dateStr);
+  if (time === null) return dateStr || "—";
+  return new Date(time).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
-function getStatusBadge(status?: string, _startDate?: string, endDate?: string) {
-  const isExplicitExpired = status?.toLowerCase() === "expired";
-  if (!endDate) {
-    return {
-      label: isExplicitExpired ? "Expired" : "Active",
-      timeText: isExplicitExpired ? "Coverage Expired" : "Active Coverage",
-      badgeClass: isExplicitExpired
-        ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-900"
-        : "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800",
-      dotClass: isExplicitExpired ? "bg-rose-500" : "bg-emerald-500 animate-pulse",
-    };
+const inr = (value?: number | string) =>
+  `₹${(Number(value) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+
+const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
+
+function coverageLabel(w: WarrantyRecord) {
+  const label = w.warranty?.warrantyPeriodLabel;
+  if (label) return label;
+  const months = Number(w.warranty?.durationMonths);
+  if (!months) return "—";
+  return months % 12 === 0 ? plural(months / 12, "year") : plural(months, "month");
+}
+
+const hasNoWarranty = (item: WarrantyProductItem) => {
+  const period = norm(item.warrantyPeriod);
+  return item.hasWarranty === false || period === "none" || period === "no warranty";
+};
+
+type Tone = "active" | "soon" | "expired";
+
+interface WarrantyStatus {
+  tone: Tone;
+  label: string;
+  timeText: string;
+  /** share of the coverage period still left, 0–100 (null when dates are missing) */
+  remainingPct: number | null;
+}
+
+const TONE: Record<Tone, { chip: string; bar: string }> = {
+  active: {
+    chip: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+    bar: "bg-emerald-500",
+  },
+  soon: {
+    chip: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+    bar: "bg-amber-500",
+  },
+  expired: {
+    chip: "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300",
+    bar: "bg-rose-500",
+  },
+};
+
+function describeRemaining(remainingMs: number) {
+  const days = Math.ceil(remainingMs / DAY);
+  const months = Math.round(days / 30.4375);
+  const years = Math.floor(months / 12);
+  const extraMonths = months % 12;
+
+  if (years > 0 && extraMonths > 0) return `${years} yr ${extraMonths} mo left`;
+  if (years > 0) return `${plural(years, "year")} left`;
+  if (months > 0) return `${plural(months, "month")} left`;
+  return `${plural(days, "day")} left`;
+}
+
+function getStatus(status?: string, startDate?: string, endDate?: string): WarrantyStatus {
+  const explicitlyExpired = norm(status) === "expired";
+  const end = parseTime(endDate);
+
+  if (end === null) {
+    return explicitlyExpired
+      ? { tone: "expired", label: "Expired", timeText: "Coverage ended", remainingPct: null }
+      : { tone: "active", label: "Active", timeText: "Coverage active", remainingPct: null };
   }
 
-  const now = Date.now();
-  const end = new Date(endDate).getTime();
-  const remainingMs = end - now;
-
-  if (isExplicitExpired || remainingMs <= 0) {
-    return {
-      label: "Expired",
-      timeText: "Coverage Expired",
-      badgeClass:
-        "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-900",
-      dotClass: "bg-rose-500",
-    };
+  const remainingMs = end - Date.now();
+  if (explicitlyExpired || remainingMs <= 0) {
+    return { tone: "expired", label: "Expired", timeText: "", remainingPct: 0 };
   }
 
-  const remainingDays = Math.ceil(remainingMs / (1000 * 60 * 60 * 24));
-  const remainingMonths = Math.max(0, Math.round(remainingDays / 30.4375));
-  const remainingYears = Math.floor(remainingMonths / 12);
-  const remainingExtraMonths = remainingMonths % 12;
+  const start = parseTime(startDate);
+  const remainingPct =
+    start !== null && end > start
+      ? Math.min(100, Math.max(0, (remainingMs / (end - start)) * 100))
+      : null;
 
-  let timeText = "";
-  if (remainingYears > 0 && remainingExtraMonths > 0) {
-    timeText = `${remainingYears}y ${remainingExtraMonths}m Left`;
-  } else if (remainingYears > 0) {
-    timeText = `${remainingYears} Year${remainingYears > 1 ? "s" : ""} Left`;
-  } else if (remainingMonths > 0) {
-    timeText = `${remainingMonths} Month${remainingMonths > 1 ? "s" : ""} Left`;
-  } else {
-    timeText = `${remainingDays} Day${remainingDays > 1 ? "s" : ""} Left`;
-  }
-
-  if (remainingYears >= 2) {
-    return {
-      label: "Active",
-      timeText,
-      badgeClass:
-        "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800",
-      dotClass: "bg-emerald-500 animate-pulse",
-    };
-  }
-
-  if (remainingYears >= 1) {
-    return {
-      label: "Active",
-      timeText,
-      badgeClass:
-        "bg-lime-50 text-lime-800 border-lime-200 dark:bg-lime-950/60 dark:text-lime-300 dark:border-lime-800",
-      dotClass: "bg-lime-500",
-    };
-  }
-
+  const soon = remainingMs <= EXPIRING_SOON_DAYS * DAY;
   return {
-    label: "Expiring Soon",
-    timeText,
-    badgeClass:
-      "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800",
-    dotClass: "bg-amber-500 animate-pulse",
+    tone: soon ? "soon" : "active",
+    label: soon ? "Expiring soon" : "Active",
+    timeText: describeRemaining(remainingMs),
+    remainingPct,
   };
 }
 
@@ -146,6 +178,100 @@ function parseTerms(rawText?: string): string[] {
   return [text];
 }
 
+const linkedStorageKey = (uid?: string) =>
+  uid ? `portal_linked_warranties_${uid}` : "portal_linked_warranties_anon";
+
+const warrantyKey = (w: WarrantyRecord) => w.id || w.warrantyNumber || w.orderNumber;
+
+/* ------------------------------------------------------------------ */
+/* Small building blocks                                               */
+/* ------------------------------------------------------------------ */
+
+const Panel: React.FC<{ className?: string; children: React.ReactNode }> = ({
+  className = "",
+  children,
+}) => (
+  <section
+    className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-6 print:mb-3 print:rounded-none print:border-0 print:border-b print:border-neutral-300 print:bg-transparent print:p-0 print:pb-3 print:shadow-none ${className}`}
+  >
+    {children}
+  </section>
+);
+
+const PanelTitle: React.FC<{ children: React.ReactNode; aside?: React.ReactNode }> = ({
+  children,
+  aside,
+}) => (
+  <div className="mb-4 flex items-baseline justify-between gap-3">
+    <h2 className="text-sm font-bold text-slate-900 dark:text-white print:text-[10pt]">{children}</h2>
+    {aside && <span className="text-xs text-slate-500 dark:text-neutral-400">{aside}</span>}
+  </div>
+);
+
+const StatusChip: React.FC<{ status: WarrantyStatus; className?: string }> = ({
+  status,
+  className = "",
+}) => (
+  <span
+    className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${TONE[status.tone].chip} print:border print:border-neutral-400 print:bg-transparent print:text-neutral-900 ${className}`}
+  >
+    {status.label}
+  </span>
+);
+
+const CopyButton: React.FC<{ copied: boolean; label: string; onClick: () => void }> = ({
+  copied,
+  label,
+  onClick,
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    aria-label={label}
+    title={label}
+    className="no-print inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-neutral-800 dark:hover:text-white"
+  >
+    {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+  </button>
+);
+
+const Fact: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <div className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+    <dt className="text-sm text-slate-500 dark:text-neutral-400 print:text-[9pt]">{label}</dt>
+    <dd className="flex min-w-0 items-center gap-0.5 text-right text-sm font-semibold text-slate-900 dark:text-white print:text-[9pt]">
+      {children}
+    </dd>
+  </div>
+);
+
+const ListSkeleton = () => (
+  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-hidden="true">
+    {[0, 1, 2].map((i) => (
+      <div
+        key={i}
+        className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
+      >
+        <div className="space-y-3 p-4 pb-4">
+          <div className="flex justify-between">
+            <div className="skeleton h-6 w-20 rounded-full" />
+            <div className="skeleton h-4 w-16 rounded" />
+          </div>
+          <div className="skeleton h-5 w-2/3 rounded" />
+          <div className="skeleton h-3.5 w-1/2 rounded" />
+        </div>
+        <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 dark:border-neutral-800">
+          <div className="skeleton h-8 w-24 rounded" />
+          <div className="skeleton h-8 w-8 rounded-full" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+/* ------------------------------------------------------------------ */
+/* Component                                                           */
+/* ------------------------------------------------------------------ */
+
 export const WarrantyTab: React.FC<WarrantyTabProps> = ({ user, onGoHome }) => {
   const [allWarranties, setAllWarranties] = useState<WarrantyRecord[]>([]);
   const [linkedKeys, setLinkedKeys] = useState<string[]>([]);
@@ -153,17 +279,23 @@ export const WarrantyTab: React.FC<WarrantyTabProps> = ({ user, onGoHome }) => {
   const [selectedWarrantyId, setSelectedWarrantyId] = useState<string | null>(null);
   const [searchFilter, setSearchFilter] = useState<string>("");
   const [linkInput, setLinkInput] = useState<string>("");
+  const [linkError, setLinkError] = useState<string>("");
   const [isLinking, setIsLinking] = useState<boolean>(false);
   const [showLinkForm, setShowLinkForm] = useState<boolean>(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [unlinkTarget, setUnlinkTarget] = useState<WarrantyRecord | null>(null);
+  const [termsOpen, setTermsOpen] = useState<boolean>(false);
+
+  const linkInputRef = useRef<HTMLInputElement>(null);
+  const isFirstRender = useRef(true);
 
   const { get: getSetting } = useSiteSettings();
   const storeName = getSetting("store_name") || "Decor Drapes Instyle";
   const supportPhone = getSetting("primary_phone") || "+91 98459 18992";
   const supportWhatsapp = getSetting("primary_whatsapp") || "919842918992";
 
-  const userEmail = (user?.email || "").toLowerCase().trim();
+  const userEmail = norm(user?.email);
   const userPhone = (user?.phone || "").replace(/\D/g, "");
 
   // Fetch all warranties & linked certificates for this user
@@ -178,16 +310,13 @@ export const WarrantyTab: React.FC<WarrantyTabProps> = ({ user, onGoHome }) => {
         setAllWarranties(freshList);
 
         const userUid = user?.uid;
-        const localSavedKey = userUid ? `portal_linked_warranties_${userUid}` : "portal_linked_warranties_anon";
         let userLinked: string[] = [];
 
         try {
-          const rawLocal = localStorage.getItem(localSavedKey);
-          if (rawLocal) {
-            userLinked = JSON.parse(rawLocal);
-          }
+          const rawLocal = localStorage.getItem(linkedStorageKey(userUid));
+          if (rawLocal) userLinked = JSON.parse(rawLocal);
         } catch {
-          // ignore local storage error
+          // ignore local storage errors
         }
 
         if (userUid) {
@@ -195,7 +324,9 @@ export const WarrantyTab: React.FC<WarrantyTabProps> = ({ user, onGoHome }) => {
             const linkedSnap = await get(ref(database, `users/${userUid}/linkedWarranties`));
             if (linkedSnap.exists()) {
               const data = linkedSnap.val();
-              const dbKeys = Object.keys(data).map((k) => data[k]?.warrantyNumber || data[k]?.orderNumber || k);
+              const dbKeys = Object.keys(data).map(
+                (k) => data[k]?.warrantyNumber || data[k]?.orderNumber || k
+              );
               userLinked = Array.from(new Set([...userLinked, ...dbKeys]));
             }
           } catch (dbErr) {
@@ -203,9 +334,7 @@ export const WarrantyTab: React.FC<WarrantyTabProps> = ({ user, onGoHome }) => {
           }
         }
 
-        if (active) {
-          setLinkedKeys(userLinked);
-        }
+        if (active) setLinkedKeys(userLinked);
       } catch (err) {
         console.error("Error loading warranties for profile:", err);
       } finally {
@@ -220,84 +349,78 @@ export const WarrantyTab: React.FC<WarrantyTabProps> = ({ user, onGoHome }) => {
     };
   }, [user?.uid]);
 
-  // Filter warranties matching this user
-  const matchedWarranties = useMemo(() => {
-    if (!allWarranties.length) return [];
+  /* ---------- matching ---------- */
 
-    return allWarranties.filter((w) => {
-      // 1. Match by email
-      const custEmail = (w.customer?.email || "").toLowerCase().trim();
+  // Registered directly to this account (email or phone)
+  const isAutoMatch = useCallback(
+    (w: WarrantyRecord) => {
+      const custEmail = norm(w.customer?.email);
       if (userEmail && custEmail && userEmail === custEmail) return true;
 
-      // 2. Match by phone
       const custPhone = (w.customer?.mobile || "").replace(/\D/g, "");
-      if (
+      return (
         userPhone.length >= 10 &&
         custPhone.length >= 10 &&
         (userPhone.endsWith(custPhone.slice(-10)) || custPhone.endsWith(userPhone.slice(-10)))
-      ) {
-        return true;
-      }
+      );
+    },
+    [userEmail, userPhone]
+  );
 
-      // 3. Match by manually linked keys
-      const wNum = (w.warrantyNumber || "").toLowerCase().trim();
-      const oNum = (w.orderNumber || "").toLowerCase().trim();
-      const idNum = (w.id || "").toLowerCase().trim();
-      const qNum = (w.quotationId || "").toLowerCase().trim();
+  // Linked by the user with an order / warranty / item reference
+  const linkedSet = useMemo(
+    () => new Set(linkedKeys.map(norm).filter(Boolean)),
+    [linkedKeys]
+  );
 
-      const normalizedLinked = linkedKeys.map((k) => k.toLowerCase().trim()).filter(Boolean);
+  const isLinked = useCallback(
+    (w: WarrantyRecord) => {
+      const ids = [
+        w.warrantyNumber,
+        w.orderNumber,
+        w.id,
+        w.quotationId,
+        ...(w.products || []).map((p) => p.id),
+      ];
+      return ids.some((id) => {
+        const key = norm(id);
+        return !!key && linkedSet.has(key);
+      });
+    },
+    [linkedSet]
+  );
 
-      if (
-        normalizedLinked.includes(wNum) ||
-        normalizedLinked.includes(oNum) ||
-        normalizedLinked.includes(idNum) ||
-        normalizedLinked.includes(qNum)
-      ) {
-        return true;
-      }
+  const matchedWarranties = useMemo(
+    () => allWarranties.filter((w) => isAutoMatch(w) || isLinked(w)),
+    [allWarranties, isAutoMatch, isLinked]
+  );
 
-      // Check product items
-      if (
-        (w.products || []).some(
-          (p) => p.id && normalizedLinked.includes(p.id.toLowerCase().trim())
-        )
-      ) {
-        return true;
-      }
-
-      return false;
-    });
-  }, [allWarranties, userEmail, userPhone, linkedKeys]);
-
-  // Filter matched warranties by search query on overview list
   const filteredWarranties = useMemo(() => {
-    if (!searchFilter.trim()) return matchedWarranties;
     const q = searchFilter.toLowerCase().trim();
+    if (!q) return matchedWarranties;
     const qAlpha = q.replace(/[^a-z0-9]/g, "");
 
-    return matchedWarranties.filter((w) => {
-      const matchString = (str?: string) => {
-        if (!str) return false;
-        const s = str.toLowerCase();
-        if (s.includes(q)) return true;
-        if (qAlpha && s.replace(/[^a-z0-9]/g, "").includes(qAlpha)) return true;
-        return false;
-      };
+    const matches = (str?: string) => {
+      if (!str) return false;
+      const s = str.toLowerCase();
+      if (s.includes(q)) return true;
+      return !!qAlpha && s.replace(/[^a-z0-9]/g, "").includes(qAlpha);
+    };
 
-      if (matchString(w.warrantyNumber)) return true;
-      if (matchString(w.orderNumber)) return true;
-      if (matchString(w.quotationId)) return true;
-      if (matchString(w.customer?.name)) return true;
-      if (matchString(w.customer?.installationAddress)) return true;
-      if (matchString(w.customer?.address)) return true;
-
-      return (w.products || []).some(
-        (p) => matchString(p.id) || matchString(p.productName) || matchString(p.productCode)
-      );
-    });
+    return matchedWarranties.filter(
+      (w) =>
+        matches(w.warrantyNumber) ||
+        matches(w.orderNumber) ||
+        matches(w.quotationId) ||
+        matches(w.customer?.name) ||
+        matches(w.customer?.installationAddress) ||
+        matches(w.customer?.address) ||
+        (w.products || []).some(
+          (p) => matches(p.id) || matches(p.productName) || matches(p.productCode)
+        )
+    );
   }, [matchedWarranties, searchFilter]);
 
-  // Active warranty selected for detail view (null by default)
   const activeWarranty = useMemo(() => {
     if (!selectedWarrantyId) return null;
     return (
@@ -310,59 +433,108 @@ export const WarrantyTab: React.FC<WarrantyTabProps> = ({ user, onGoHome }) => {
     );
   }, [matchedWarranties, selectedWarrantyId]);
 
-  // Copy helper
-  const copyToClipboard = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    toast.success("Copied to clipboard");
-    setTimeout(() => setCopiedKey(null), 2000);
+  const activeStatus = activeWarranty
+    ? getStatus(
+        activeWarranty.warranty?.status,
+        activeWarranty.warranty?.startDate,
+        activeWarranty.warranty?.endDate
+      )
+    : null;
+
+  const termsList = useMemo(
+    () => parseTerms(activeWarranty?.warranty?.termsAndConditions),
+    [activeWarranty]
+  );
+
+  /* ---------- view behaviour ---------- */
+
+  // Start each view at the top
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setTermsOpen(false);
+  }, [selectedWarrantyId]);
+
+  // Focus the field when the link form is opened
+  useEffect(() => {
+    if (!showLinkForm) return;
+    const frame = window.requestAnimationFrame(() =>
+      linkInputRef.current?.focus({ preventScroll: true })
+    );
+    return () => window.cancelAnimationFrame(frame);
+  }, [showLinkForm]);
+
+  // Escape closes dialogs
+  useEffect(() => {
+    if (!previewImage && !unlinkTarget) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setPreviewImage(null);
+        setUnlinkTarget(null);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [previewImage, unlinkTarget]);
+
+  const openWarranty = (w: WarrantyRecord) => {
+    setShowLinkForm(false);
+    setSelectedWarrantyId(warrantyKey(w));
   };
 
-  // Manual linking handler
+  const copyToClipboard = async (text: string | undefined, key: string) => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      toast.error("Couldn't copy. Please copy it manually.");
+      return;
+    }
+    setCopiedKey(key);
+    window.setTimeout(() => setCopiedKey((current) => (current === key ? null : current)), 1800);
+  };
+
+  /* ---------- link / unlink ---------- */
+
   const handleLinkCertificate = async (e?: FormEvent) => {
     if (e) e.preventDefault();
     const query = linkInput.trim();
     if (!query) {
-      toast.error("Please enter a Warranty Number, Order Number, or Item ID");
+      setLinkError("Enter a Warranty ID, order number or item ID.");
       return;
     }
 
     setIsLinking(true);
+    setLinkError("");
 
     try {
       const latestList = await fetchFreshWarranties();
       setAllWarranties(latestList);
 
-      const qLower = query.toLowerCase().trim();
+      const qLower = query.toLowerCase();
       const qAlphaNum = qLower.replace(/[^a-z0-9]/g, "");
 
       const isExactMatch = (val?: string): boolean => {
-        if (!val) return false;
-        const trimmedVal = val.trim().toLowerCase();
-        if (!trimmedVal) return false;
-        if (trimmedVal === qLower) return true;
-        if (qAlphaNum) {
-          const cleanVal = trimmedVal.replace(/[^a-z0-9]/g, "");
-          if (cleanVal && cleanVal === qAlphaNum) return true;
-        }
-        return false;
+        const trimmed = norm(val);
+        if (!trimmed) return false;
+        if (trimmed === qLower) return true;
+        return !!qAlphaNum && trimmed.replace(/[^a-z0-9]/g, "") === qAlphaNum;
       };
 
-      const found = latestList.find((w) => {
-        if (
+      const found = latestList.find(
+        (w) =>
           isExactMatch(w.warrantyNumber) ||
           isExactMatch(w.orderNumber) ||
           isExactMatch(w.id) ||
-          isExactMatch(w.quotationId)
-        ) {
-          return true;
-        }
-        return (w.products || []).some((p) => isExactMatch(p.id));
-      });
+          isExactMatch(w.quotationId) ||
+          (w.products || []).some((p) => isExactMatch(p.id))
+      );
 
       if (!found) {
-        toast.error(`No warranty certificate found matching "${query}". Please check the ID or contact support.`);
-        setIsLinking(false);
+        setLinkError(`No certificate found for "${query}". Check the number or contact support.`);
         return;
       }
 
@@ -371,8 +543,11 @@ export const WarrantyTab: React.FC<WarrantyTabProps> = ({ user, onGoHome }) => {
       setLinkedKeys(updatedKeys);
 
       const userUid = user?.uid;
-      const localSavedKey = userUid ? `portal_linked_warranties_${userUid}` : "portal_linked_warranties_anon";
-      localStorage.setItem(localSavedKey, JSON.stringify(updatedKeys));
+      try {
+        localStorage.setItem(linkedStorageKey(userUid), JSON.stringify(updatedKeys));
+      } catch {
+        // ignore local storage errors
+      }
 
       if (userUid) {
         try {
@@ -388,41 +563,48 @@ export const WarrantyTab: React.FC<WarrantyTabProps> = ({ user, onGoHome }) => {
         }
       }
 
-      toast.success(`Warranty certificate ${found.warrantyNumber || found.orderNumber} linked to your account!`);
+      toast.success(`${found.warrantyNumber || found.orderNumber} linked to your account`);
       setLinkInput("");
       setShowLinkForm(false);
-      // Open the newly linked certificate
-      setSelectedWarrantyId(found.id || found.warrantyNumber || found.orderNumber);
+      setSelectedWarrantyId(warrantyKey(found));
     } catch (err) {
       console.error("Linking failed:", err);
-      toast.error("An error occurred while linking certificate. Please try again.");
+      toast.error("Something went wrong while linking. Please try again.");
     } finally {
       setIsLinking(false);
     }
   };
 
-  // Unlink manual certificate
-  const handleUnlink = async (warranty: WarrantyRecord) => {
-    const key = warranty.warrantyNumber || warranty.orderNumber || warranty.id;
-    const confirmUnlink = window.confirm(
-      `Are you sure you want to unlink certificate ${key} from your profile?`
-    );
-    if (!confirmUnlink) return;
+  const confirmUnlink = async () => {
+    const warranty = unlinkTarget;
+    if (!warranty) return;
+    setUnlinkTarget(null);
 
-    const updated = linkedKeys.filter(
-      (k) =>
-        k.toLowerCase() !== (warranty.warrantyNumber || "").toLowerCase() &&
-        k.toLowerCase() !== (warranty.orderNumber || "").toLowerCase() &&
-        k.toLowerCase() !== (warranty.id || "").toLowerCase()
+    // Drop every saved reference that points at this certificate
+    const ids = new Set(
+      [
+        warranty.warrantyNumber,
+        warranty.orderNumber,
+        warranty.id,
+        warranty.quotationId,
+        ...(warranty.products || []).map((p) => p.id),
+      ]
+        .map(alnum)
+        .filter(Boolean)
     );
+    const updated = linkedKeys.filter((k) => !ids.has(alnum(k)));
     setLinkedKeys(updated);
 
     const userUid = user?.uid;
-    const localSavedKey = userUid ? `portal_linked_warranties_${userUid}` : "portal_linked_warranties_anon";
-    localStorage.setItem(localSavedKey, JSON.stringify(updated));
+    try {
+      localStorage.setItem(linkedStorageKey(userUid), JSON.stringify(updated));
+    } catch {
+      // ignore local storage errors
+    }
 
     if (userUid) {
       try {
+        const key = warranty.warrantyNumber || warranty.orderNumber || warranty.id;
         const safeKey = encodeURIComponent(key.replace(/[.#$[\]]/g, "_"));
         await set(ref(database, `users/${userUid}/linkedWarranties/${safeKey}`), null);
       } catch (err) {
@@ -430,39 +612,140 @@ export const WarrantyTab: React.FC<WarrantyTabProps> = ({ user, onGoHome }) => {
       }
     }
 
-    toast.success("Certificate unlinked from your profile.");
-    if (selectedWarrantyId === key || selectedWarrantyId === warranty.id) {
-      setSelectedWarrantyId(null);
-    }
+    toast.success("Certificate removed from your profile");
+    setSelectedWarrantyId(null);
   };
 
-  const termsList = useMemo(() => {
-    if (!activeWarranty?.warranty?.termsAndConditions) return [];
-    return parseTerms(activeWarranty.warranty.termsAndConditions);
-  }, [activeWarranty]);
+  /* ---------- link form ---------- */
 
-  const activeStatus = activeWarranty
-    ? getStatusBadge(
-        activeWarranty.warranty?.status,
-        activeWarranty.warranty?.startDate,
-        activeWarranty.warranty?.endDate
-      )
-    : null;
+  const noCertificates = !loading && matchedWarranties.length === 0;
+  const linkFormOpen = !activeWarranty && !loading && (showLinkForm || noCertificates);
+  const whoLabel = user.email || user.displayName || "your account";
+
+  const linkForm = (
+    <div className="no-print">
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+          linkFormOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+        aria-hidden={!linkFormOpen}
+      >
+        <div className="-m-1 overflow-hidden p-1">
+          <form
+            onSubmit={handleLinkCertificate}
+            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-6"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                  {noCertificates ? "Link your warranty certificate" : "Link another certificate"}
+                </h2>
+                <p className="mt-1 max-w-xl text-sm leading-relaxed text-slate-500 dark:text-neutral-400">
+                  {noCertificates ? (
+                    <>
+                      We couldn&apos;t find a certificate registered to{" "} <span className="font-medium text-slate-700 dark:text-neutral-200">{whoLabel}</span>. If it was issued under a different email or phone, enter its Warranty ID, order number or item ID and we&apos;ll add it to your profile.
+                    </>
+                  ) : (
+                    "Enter a Warranty ID, order number or item ID to add it to your profile."
+                  )}
+                </p>
+              </div>
+              {!noCertificates && (
+                <button
+                  type="button"
+                  onClick={() => setShowLinkForm(false)}
+                  aria-label="Close"
+                  tabIndex={linkFormOpen ? 0 : -1}
+                  className="-mr-1 -mt-1 shrink-0 cursor-pointer rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-neutral-800 dark:hover:text-white"
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+
+            <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
+              <div className="relative flex-1">
+                <Search
+                  size={16}
+                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  ref={linkInputRef}
+                  type="text"
+                  value={linkInput}
+                  tabIndex={linkFormOpen ? 0 : -1}
+                  onChange={(e) => {
+                    setLinkInput(e.target.value);
+                    if (linkError) setLinkError("");
+                  }}
+                  placeholder="Warranty ID, order number or item ID"
+                  aria-label="Warranty ID, order number or item ID"
+                  aria-invalid={!!linkError}
+                  className={`h-11 w-full rounded-xl border bg-slate-50 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:bg-white dark:bg-neutral-800 dark:text-white dark:focus:bg-neutral-900 ${
+                    linkError
+                      ? "border-rose-300 focus:border-rose-400 dark:border-rose-900"
+                      : "border-slate-200 focus:border-slate-400 dark:border-neutral-700 dark:focus:border-neutral-500"
+                  }`}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isLinking || !linkInput.trim()}
+                tabIndex={linkFormOpen ? 0 : -1}
+                className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-slate-900"
+              >
+                {isLinking ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>Checking…</span>
+                  </>
+                ) : (
+                  <span>Link certificate</span>
+                )}
+              </button>
+            </div>
+
+            {linkError && (
+              <p role="alert" className="mt-2.5 text-sm text-rose-600 dark:text-rose-400">
+                {linkError}
+              </p>
+            )}
+
+            <p className="mt-4 flex items-center gap-1.5 text-xs text-slate-500 dark:text-neutral-400">
+              <Phone size={13} className="shrink-0" />
+              <span>
+                Can&apos;t find it? Call{" "}
+                <a
+                  href={`tel:${supportPhone.replace(/[^\d+]/g, "")}`}
+                  tabIndex={linkFormOpen ? 0 : -1}
+                  className="font-semibold text-slate-700 underline-offset-2 hover:underline dark:text-neutral-200"
+                >
+                  {supportPhone}
+                </a>{" "}
+                and we&apos;ll link it for you.
+              </span>
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ---------- render ---------- */
 
   return (
-    <div className="space-y-6">
-      {/* ── Print Stylesheet ────────────────────────────────────────── */}
+    <div className="space-y-5">
+      {/* Print stylesheet */}
       <style>{`
-        @page {
-          size: A4 portrait;
-          margin: 10mm 8mm;
-        }
+        @keyframes w-rise { from { opacity: 0; transform: translateY(8px); } }
+        @keyframes w-fade { from { opacity: 0; } }
+        .w-rise { animation: w-rise .3s cubic-bezier(.2,.8,.2,1) both; }
+        .w-fade { animation: w-fade .18s ease-out both; }
+
+        @page { size: A4 portrait; margin: 10mm 8mm; }
 
         @media print {
-          *, *:before, *:after {
-            box-shadow: none !important;
-            text-shadow: none !important;
-          }
+          *, *:before, *:after { box-shadow: none !important; text-shadow: none !important; animation: none !important; }
           html, body {
             background: #ffffff !important;
             color: #0f172a !important;
@@ -472,711 +755,486 @@ export const WarrantyTab: React.FC<WarrantyTabProps> = ({ user, onGoHome }) => {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
+          .app-main { margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
+          .app-main > * { max-width: 100% !important; }
+          .app-status-scrim { display: none !important; }
 
-          .no-print, header, footer, nav, button, form {
-            display: none !important;
-          }
+          .no-print, header, footer, nav, button, form { display: none !important; }
 
-          .print-clean {
-            border: none !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            max-width: 100% !important;
-            width: 100% !important;
-            background: #ffffff !important;
-            page-break-inside: auto;
-          }
+          .print-clean { border: none !important; border-radius: 0 !important; padding: 0 !important; margin: 0 !important; max-width: 100% !important; width: 100% !important; background: #ffffff !important; }
+          .print-avoid-break, .print-row, .print-table tr { page-break-inside: avoid !important; break-inside: avoid !important; }
 
-          .print-table {
-            width: 100% !important;
-            border-collapse: collapse !important;
-            page-break-inside: auto;
-            margin-top: 6px !important;
-          }
-
-          .print-table thead {
-            display: table-header-group !important;
-          }
-
+          .print-table { width: 100% !important; border-collapse: collapse !important; margin-top: 6px !important; }
+          .print-table thead { display: table-header-group !important; }
           .print-table thead th {
             background-color: #f1f5f9 !important;
             font-weight: 700 !important;
-            text-transform: uppercase !important;
-            font-size: 7.5pt !important;
-            letter-spacing: 0.05em !important;
+            font-size: 8pt !important;
             padding: 6px 8px !important;
             border: 1px solid #cbd5e1 !important;
             color: #0f172a !important;
           }
-
           .print-table tbody td {
             border: 1px solid #e2e8f0 !important;
             padding: 5px 8px !important;
-            font-size: 8pt !important;
+            font-size: 8.5pt !important;
             color: #1e293b !important;
             vertical-align: top !important;
-          }
-
-          .print-table tfoot td {
-            border-top: 2px solid #94a3b8 !important;
-            padding: 6px 8px !important;
-            font-size: 8pt !important;
-            background-color: #f8fafc !important;
-          }
-
-          .print-table tr,
-          .print-row {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
-
-          .print-avoid-break {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
           }
         }
       `}</style>
 
-      {/* ── Standard Profile Header (Matches all other tabs in Profile) */}
+      {/* Header */}
       {activeWarranty ? (
         <TabHeader
           eyebrow="Warranty"
           title={activeWarranty.warrantyNumber}
-          deskEyebrow="Warranty Certificate"
+          deskEyebrow="Warranty certificate"
           deskTitle={activeWarranty.warrantyNumber}
           onBack={() => setSelectedWarrantyId(null)}
           extra={
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedWarrantyId(null)}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-neutral-800 hover:bg-slate-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-300 transition-colors cursor-pointer"
-              >
-                <ArrowLeft size={13} />
-                <span>All Certificates</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:opacity-90 transition-all cursor-pointer shadow-xs"
-              >
-                <Printer size={13} />
-                <span>Print / PDF</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-slate-900 px-3.5 py-2 text-xs font-bold text-white transition hover:opacity-90 dark:bg-white dark:text-slate-900"
+            >
+              <Printer size={14} />
+              <span>Print / PDF</span>
+            </button>
           }
         />
       ) : (
         <TabHeader
           eyebrow=""
           title="Warranty"
-          deskTitle="Warranty Certificates"
+          deskTitle="Warranty certificates"
           onBack={onGoHome}
           search={matchedWarranties.length > 2 ? searchFilter : undefined}
           setSearch={matchedWarranties.length > 2 ? setSearchFilter : undefined}
           placeholder="Search certificates..."
           extra={
-            <button
-              type="button"
-              onClick={() => setShowLinkForm((prev) => !prev)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3.5 py-2 text-xs font-bold text-white dark:bg-white dark:text-slate-900 hover:opacity-90 transition cursor-pointer"
-            >
-              <Plus size={14} />
-              <span>Link Certificate</span>
-            </button>
+            !loading && !noCertificates ? (
+              <button
+                type="button"
+                onClick={() => setShowLinkForm((open) => !open)}
+                aria-expanded={showLinkForm}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-slate-900 px-3.5 py-2 text-xs font-bold text-white transition hover:opacity-90 dark:bg-white dark:text-slate-900"
+              >
+                <Plus
+                  size={14}
+                  className={`transition-transform duration-300 ${showLinkForm ? "rotate-45" : ""}`}
+                />
+                <span>Link certificate</span>
+              </button>
+            ) : undefined
           }
         />
       )}
 
-      {/* ── Loading State ─────────────────────────────────────────────── */}
-      {loading && (
-        <div className="rounded-2xl border border-slate-200 dark:border-neutral-800 p-12 text-center bg-white dark:bg-neutral-900 animate-pulse space-y-4 shadow-sm">
-          <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-neutral-800 mx-auto" />
-          <div className="h-4 bg-slate-200 dark:bg-neutral-800 rounded w-1/3 mx-auto" />
-          <div className="h-3 bg-slate-100 dark:bg-neutral-800/60 rounded w-1/4 mx-auto" />
-        </div>
-      )}
+      {/* Loading */}
+      {loading && <ListSkeleton />}
 
-      {/* ── Collapsible / Manual Link Form ───────────────────────────── */}
-      {!loading && (showLinkForm || matchedWarranties.length === 0) && (
-        <div className="no-print rounded-2xl border border-sky-200/90 dark:border-sky-900/40 bg-sky-50/60 dark:bg-sky-950/20 p-5 sm:p-7 space-y-4 shadow-xs">
-          <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-900/50 text-sky-600 dark:text-sky-300 flex items-center justify-center shrink-0">
-              <Shield size={20} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  {matchedWarranties.length === 0
-                    ? "No Warranty Certificate Automatically Found"
-                    : "Link Additional Warranty Certificate"}
-                </h3>
-                {showLinkForm && matchedWarranties.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowLinkForm(false)}
-                    className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-neutral-200 transition-colors"
-                  >
-                    <X size={16} />
-                  </button>
-                )}
-              </div>
-              <p className="text-xs text-slate-600 dark:text-neutral-400 mt-1 leading-relaxed">
-                {matchedWarranties.length === 0 ? (
-                  <>
-                    We searched for certificates registered directly to{" "}
-                    <strong className="text-slate-900 dark:text-white font-semibold">
-                      {user.email || user.displayName}
-                    </strong>
-                    . If your warranty was registered under another order reference or phone, enter your
-                    Warranty ID, Order Number, or Item ID below to link it permanently.
-                  </>
-                ) : (
-                  "Enter any additional Order Number, Warranty ID, or Item ID to keep all your certificates organized under your profile."
-                )}
-              </p>
-            </div>
-          </div>
+      {/* Link form (list view only) */}
+      {!activeWarranty && !loading && linkForm}
 
-          <form onSubmit={handleLinkCertificate} className="pt-1">
-            <div className="flex flex-col sm:flex-row gap-2.5">
-              <div className="relative flex-1">
-                <Search
-                  size={15}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-                <input
-                  type="text"
-                  value={linkInput}
-                  onChange={(e) => setLinkInput(e.target.value)}
-                  placeholder="Enter Warranty ID, Order Number, or Item ID"
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 font-mono"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={isLinking || !linkInput.trim()}
-                className="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
-              >
-                {isLinking ? (
-                  <>
-                    <Loader2 size={15} className="animate-spin" />
-                    <span>Verifying...</span>
-                  </>
-                ) : (
-                  <>
-                    <Plus size={15} />
-                    <span>Link Certificate</span>
-                  </>
-                )}
-              </button>
-            </div>
+      {/* List view */}
+      {!loading && !activeWarranty && matchedWarranties.length > 0 && (
+        <div className="space-y-4">
+          <p className="px-1 text-sm text-slate-500 dark:text-neutral-400">
+            {plural(matchedWarranties.length, "certificate")} on your account
+          </p>
 
-            <div className="mt-3.5 pt-3 border-t border-sky-200/60 dark:border-sky-900/30 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-neutral-400">
-              <span className="flex items-center gap-1.5">
-                <Phone size={12} className="text-sky-600 dark:text-sky-400" />
-                <span>Need assistance? Call {supportPhone}</span>
-              </span>
-              <span>Our team can also link your warranty directly.</span>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* 1. OVERVIEW CARDS VIEW (DEFAULT - NOT OPENED BY DEFAULT)                   */}
-      {/* ========================================================================= */}
-      {!loading && !activeWarranty && (
-        <div className="space-y-5">
-          {/* Status bar */}
-          {matchedWarranties.length > 0 && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                  Registered Certificates
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-neutral-400">
-                  {matchedWarranties.length} certificate{matchedWarranties.length > 1 ? "s" : ""} registered to your account. Select a card to view complete coverage details.
-                </p>
-              </div>
-
-              {matchedWarranties.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowLinkForm((prev) => !prev)}
-                  className="self-start sm:self-auto inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-neutral-300 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
-                >
-                  <Plus size={13} />
-                  <span>Link another certificate</span>
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Cards Grid */}
           {filteredWarranties.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="stagger grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {filteredWarranties.map((w) => {
-                const status = getStatusBadge(
+                const status = getStatus(
                   w.warranty?.status,
                   w.warranty?.startDate,
                   w.warranty?.endDate
                 );
                 const itemsCount = w.products?.length || 0;
-                const isManuallyLinked = linkedKeys.includes(w.warrantyNumber || "") || linkedKeys.includes(w.orderNumber || "");
+                const hasEnd = !!parseTime(w.warranty?.endDate);
 
                 return (
-                  <article
+                  <button
                     key={w.id || w.warrantyNumber}
-                    onClick={() => setSelectedWarrantyId(w.id || w.warrantyNumber || w.orderNumber)}
-                    className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md cursor-pointer dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700"
+                    type="button"
+                    onClick={() => openWarranty(w)}
+                    className="relative flex w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md active:scale-[.995] dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700"
                   >
-                    {/* Top Row: Status badge & Copy */}
-                    <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-neutral-800">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold uppercase tracking-wider border ${status.badgeClass}`}
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full ${status.dotClass}`} />
-                        <span>{status.label}</span>
-                      </span>
-
-                      <div className="flex items-center gap-1 text-[11px] font-mono text-slate-400">
-                        <span>{status.timeText}</span>
-                      </div>
-                    </div>
-
-                    {/* Certificate Identification */}
-                    <div className="py-3.5 space-y-2">
-                      <div>
-                        <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400 block font-medium">
-                          Warranty ID
-                        </span>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <h3 className="font-mono text-base font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                            {w.warrantyNumber || "—"}
-                          </h3>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              copyToClipboard(w.warrantyNumber, `card_${w.warrantyNumber}`);
-                            }}
-                            className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
-                            title="Copy Warranty ID"
-                          >
-                            {copiedKey === `card_${w.warrantyNumber}` ? (
-                              <Check size={12} className="text-emerald-500" />
-                            ) : (
-                              <Copy size={12} />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-xs font-mono pt-1">
-                        <div>
-                          <span className="text-[9px] uppercase text-slate-400 block font-sans">Order Ref</span>
-                          <span className="font-semibold text-slate-700 dark:text-neutral-300 truncate block">
-                            {w.orderNumber || w.quotationId || "—"}
+                    <div className="p-4 pb-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <StatusChip status={status} />
+                        {status.timeText && (
+                          <span className="text-xs text-slate-500 dark:text-neutral-400">
+                            {status.timeText}
                           </span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] uppercase text-slate-400 block font-sans">Coverage</span>
-                          <span className="font-semibold text-slate-700 dark:text-neutral-300 block">
-                            {w.warranty?.warrantyPeriodLabel || `${w.warranty?.durationMonths || 12}m`}
-                          </span>
-                        </div>
+                        )}
                       </div>
 
-                      {/* Site Address or Customer Preview */}
+                      <p className="mt-3 truncate text-base font-bold text-slate-900 dark:text-white">
+                        {w.warrantyNumber || "—"}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-neutral-400">
+                        {w.orderNumber || w.quotationId
+                          ? `Order ${w.orderNumber || w.quotationId}`
+                          : "No order reference"}
+                      </p>
+
                       {w.customer?.installationAddress ? (
-                        <div className="pt-1 flex items-start gap-1.5 text-[11px] text-slate-600 dark:text-neutral-400">
-                          <MapPin size={12} className="text-amber-500 shrink-0 mt-0.5" />
-                          <span className="truncate">{w.customer.installationAddress}</span>
-                        </div>
+                        <p className="mt-2.5 flex items-start gap-1.5 text-xs text-slate-600 dark:text-neutral-400">
+                          <MapPin size={13} className="mt-0.5 shrink-0 text-slate-400" />
+                          <span className="line-clamp-1">{w.customer.installationAddress}</span>
+                        </p>
                       ) : w.customer?.name ? (
-                        <div className="pt-1 text-[11px] text-slate-500 dark:text-neutral-400 truncate">
-                          Client: {w.customer.name}
-                        </div>
+                        <p className="mt-2.5 truncate text-xs text-slate-600 dark:text-neutral-400">
+                          {w.customer.name}
+                        </p>
                       ) : null}
                     </div>
 
-                    {/* Bottom Action Footer */}
-                    <div className="pt-3 border-t border-slate-100 dark:border-neutral-800 flex items-center justify-between gap-2">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-slate-500 dark:text-neutral-400">
-                        <Package size={12} />
-                        <span>{itemsCount} Item{itemsCount === 1 ? "" : "s"}</span>
-                      </span>
+                    <div className="mt-auto flex items-end justify-between gap-3 border-t border-slate-100 bg-slate-50/70 px-4 py-3 dark:border-neutral-800 dark:bg-neutral-800/50">
+                      <div className="min-w-0">
+                        <p className="text-xs text-slate-500 dark:text-neutral-400">
+                          {!hasEnd ? "Coverage" : status.tone === "expired" ? "Expired on" : "Valid until"}
+                        </p>
+                        <p className="mt-0.5 truncate text-sm font-semibold text-slate-900 dark:text-white">
+                          {hasEnd ? formatDate(w.warranty?.endDate) : coverageLabel(w)}
+                        </p>
+                      </div>
 
-                      <div className="flex items-center gap-2">
-                        {isManuallyLinked && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleUnlink(w);
-                            }}
-                            className="p-1 rounded text-red-500 hover:text-red-700 transition-colors"
-                            title="Unlink from profile"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        )}
-
-                        <span className="inline-flex items-center gap-1 text-xs font-bold text-slate-900 dark:text-white group-hover:translate-x-0.5 transition-transform">
-                          <span>View Certificate</span>
-                          <ChevronRight size={14} className="text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white" />
+                      <div className="flex shrink-0 items-center gap-3">
+                        <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-neutral-400">
+                          <Package size={13} />
+                          {plural(itemsCount, "item")}
+                        </span>
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm dark:border dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+                          <ChevronRight size={16} />
                         </span>
                       </div>
                     </div>
-                  </article>
+
+                    {status.remainingPct !== null && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute inset-x-0 bottom-0 h-[3px] bg-slate-100 dark:bg-neutral-800"
+                      >
+                        <span
+                          className={`block h-full rounded-r-full ${TONE[status.tone].bar}`}
+                          style={{ width: `${status.remainingPct}%` }}
+                        />
+                      </span>
+                    )}
+                  </button>
                 );
               })}
             </div>
-          ) : matchedWarranties.length > 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 dark:border-neutral-800 p-8 text-center text-xs text-slate-500 dark:text-neutral-400 space-y-2">
-              <p>No certificates match your search query "{searchFilter}".</p>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
+              <p>No certificates match &ldquo;{searchFilter}&rdquo;.</p>
               <button
                 type="button"
                 onClick={() => setSearchFilter("")}
-                className="text-xs font-semibold text-slate-900 dark:text-white underline cursor-pointer"
+                className="mt-2 cursor-pointer text-sm font-semibold text-slate-900 underline underline-offset-2 dark:text-white"
               >
-                Clear Search Filter
+                Clear search
               </button>
             </div>
-          ) : null}
+          )}
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* 2. OPENED CERTIFICATE DETAILS VIEW (ONLY WHEN USER CLICKS A CARD)          */}
-      {/* ========================================================================= */}
-      {!loading && activeWarranty && (
-        <div className="space-y-4">
-          {/* Back button strip (no-print) */}
-          <div className="no-print flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedWarrantyId(null)}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-neutral-300 dark:hover:text-white transition-colors cursor-pointer"
-            >
-              <ArrowLeft size={14} />
-              <span>Back to all certificates ({matchedWarranties.length})</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors shadow-2xs"
-            >
-              <Printer size={13} />
-              <span>Print A4 / PDF</span>
-            </button>
+      {/* Detail view */}
+      {!loading && activeWarranty && activeStatus && (
+        <div
+          key={warrantyKey(activeWarranty)}
+          className="w-rise print-clean grid gap-4 lg:grid-cols-3 lg:items-start print:block"
+        >
+          {/* Print-only heading */}
+          <div className="print-avoid-break mb-3 hidden border-b border-neutral-300 pb-3 print:block lg:col-span-3">
+            <p className="text-[9pt] font-semibold text-neutral-700">{storeName}</p>
+            <h1 className="mt-0.5 text-xl font-bold text-neutral-950">Warranty Certificate</h1>
+            <p className="mt-1 text-[9pt] text-neutral-700">
+              Warranty ID <strong className="text-black">{activeWarranty.warrantyNumber}</strong>
+              {activeWarranty.orderNumber && (
+                <>
+                  {"  "}Order <strong className="text-black">{activeWarranty.orderNumber}</strong>
+                </>
+              )}
+            </p>
           </div>
 
-          {/* Certificate Document */}
-          <article className="print-clean border border-slate-200 dark:border-neutral-800 rounded-2xl sm:rounded-3xl bg-white dark:bg-neutral-900 p-5 sm:p-9 space-y-7 shadow-sm print:p-0 print:border-none print:shadow-none print:rounded-none print:space-y-4">
-            {/* Header */}
-            <div className="print-avoid-break flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-100 dark:border-neutral-800 pb-5 print:pb-3 print:border-neutral-300">
-              <div className="space-y-1">
-                <span className="text-[10px] font-mono tracking-widest text-slate-400 dark:text-neutral-500 uppercase block print:text-[8pt] print:text-neutral-700 print:font-semibold">
-                  {storeName}
-                </span>
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white print:text-xl print:text-neutral-950">
-                  Warranty Certificate
-                </h1>
-                <p className="text-xs font-mono text-slate-500 dark:text-neutral-400 print:text-[9pt] print:text-neutral-700">
-                  Order <strong className="text-slate-900 dark:text-neutral-100 font-semibold print:text-black">{activeWarranty.orderNumber}</strong> • Warranty ID <strong className="text-slate-900 dark:text-neutral-100 font-semibold print:text-black">{activeWarranty.warrantyNumber}</strong>
-                </p>
+          {/* Summary + customer */}
+          <aside className="space-y-4 lg:sticky lg:top-28 lg:col-start-3 lg:row-start-1 print:static print:space-y-0">
+            <Panel className="print-avoid-break">
+              <div className="flex items-center justify-between gap-3">
+                <StatusChip status={activeStatus} />
+                {activeStatus.timeText && (
+                  <span className="text-xs text-slate-500 dark:text-neutral-400 print:hidden">
+                    {activeStatus.timeText}
+                  </span>
+                )}
               </div>
 
-              {activeStatus && (
-                <div className="flex items-center shrink-0">
-                  <span
-                    className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-semibold uppercase tracking-wider border shadow-2xs print:px-2.5 print:py-0.5 print:text-[8pt] print:border-neutral-400 print:bg-neutral-100 print:text-neutral-900 ${activeStatus.badgeClass}`}
-                  >
-                    <span className={`w-2 h-2 rounded-full ${activeStatus.dotClass} print:hidden`} />
-                    <span>{activeStatus.label} • {activeStatus.timeText}</span>
-                  </span>
+              {parseTime(activeWarranty.warranty?.endDate) !== null && (
+                <div className="mt-5">
+                  <p className="text-xs text-slate-500 dark:text-neutral-400">
+                    {activeStatus.tone === "expired" ? "Expired on" : "Valid until"}
+                  </p>
+                  <p className="mt-0.5 text-2xl font-bold tracking-tight text-slate-900 dark:text-white print:text-lg">
+                    {formatDate(activeWarranty.warranty?.endDate)}
+                  </p>
+                  {activeStatus.remainingPct !== null && (
+                    <div
+                      aria-hidden="true"
+                      className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-neutral-800 print:hidden"
+                    >
+                      <div
+                        className={`h-full rounded-full transition-[width] duration-700 ease-out ${TONE[activeStatus.tone].bar}`}
+                        style={{ width: `${activeStatus.remainingPct}%` }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
 
-            {/* Key Information 4-Grid */}
-            <div className="print-avoid-break grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono border-b border-slate-100 dark:border-neutral-800 pb-5 print:pb-3 print:gap-2 print:border-neutral-300">
-              <div>
-                <span className="text-[10px] text-slate-400 uppercase block font-sans font-medium">Order Number</span>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <strong className="text-slate-900 dark:text-white text-sm">{activeWarranty.orderNumber}</strong>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(activeWarranty.orderNumber, "orderNum")}
-                    className="no-print text-slate-400 hover:text-slate-700 dark:hover:text-neutral-200 transition-colors"
-                    title="Copy Order Number"
-                  >
-                    {copiedKey === "orderNum" ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <span className="text-[10px] text-slate-400 uppercase block font-sans font-medium">Warranty ID</span>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <strong className="text-slate-900 dark:text-white text-sm">{activeWarranty.warrantyNumber}</strong>
-                  <button
-                    type="button"
+              <dl className="mt-5 divide-y divide-slate-100 border-t border-slate-100 pt-4 dark:divide-neutral-800 dark:border-neutral-800 print:divide-neutral-200 print:border-neutral-300">
+                <Fact label="Warranty ID">
+                  <span className="truncate">{activeWarranty.warrantyNumber}</span>
+                  <CopyButton
+                    copied={copiedKey === "warrantyNum"}
+                    label="Copy Warranty ID"
                     onClick={() => copyToClipboard(activeWarranty.warrantyNumber, "warrantyNum")}
-                    className="no-print text-slate-400 hover:text-slate-700 dark:hover:text-neutral-200 transition-colors"
-                    title="Copy Warranty ID"
-                  >
-                    {copiedKey === "warrantyNum" ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
-                  </button>
+                  />
+                </Fact>
+                <Fact label="Order number">
+                  <span className="truncate">{activeWarranty.orderNumber || "—"}</span>
+                  {activeWarranty.orderNumber && (
+                    <CopyButton
+                      copied={copiedKey === "orderNum"}
+                      label="Copy order number"
+                      onClick={() => copyToClipboard(activeWarranty.orderNumber, "orderNum")}
+                    />
+                  )}
+                </Fact>
+                {activeWarranty.quotationId && (
+                  <Fact label="Quotation">
+                    <span className="truncate">{activeWarranty.quotationId}</span>
+                  </Fact>
+                )}
+                <Fact label="Coverage">{coverageLabel(activeWarranty)}</Fact>
+                <Fact label="Effective from">{formatDate(activeWarranty.warranty?.startDate)}</Fact>
+              </dl>
+
+              <a
+                href={`https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(
+                  `Hello ${storeName}, I am contacting you regarding warranty claim for Warranty No: ${activeWarranty.warrantyNumber} (Order: ${activeWarranty.orderNumber}).`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="no-print mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                <MessageCircle size={16} />
+                <span>Raise a claim on WhatsApp</span>
+              </a>
+            </Panel>
+
+            <Panel className="print-avoid-break">
+              <PanelTitle>Registered to</PanelTitle>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                    {activeWarranty.customer?.name || user.displayName || "Customer"}
+                  </p>
+                  <p className="mt-0.5 break-words text-sm text-slate-500 dark:text-neutral-400">
+                    {activeWarranty.customer?.mobile || user.phone || "—"}
+                  </p>
+                  <p className="break-all text-sm text-slate-500 dark:text-neutral-400">
+                    {activeWarranty.customer?.email || user.email || ""}
+                  </p>
                 </div>
-              </div>
 
-              <div>
-                <span className="text-[10px] text-slate-400 uppercase block font-sans font-medium">Quotation Ref</span>
-                <span className="text-slate-800 dark:text-neutral-200 text-sm mt-1 block truncate">
-                  {activeWarranty.quotationId || "—"}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-[10px] text-slate-400 uppercase block font-sans font-medium">Coverage Period</span>
-                <span className="text-slate-800 dark:text-neutral-200 text-sm mt-1 block">
-                  {activeWarranty.warranty?.warrantyPeriodLabel || `${activeWarranty.warranty?.durationMonths || 12}m`}
-                </span>
-              </div>
-            </div>
-
-            {/* Dates & Customer Details */}
-            <div className="print-avoid-break grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs border-b border-slate-100 dark:border-neutral-800 pb-5 print:pb-3 print:gap-3 print:border-neutral-300">
-              <div className="space-y-2">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-sans font-medium">
-                  Validity Period
-                </span>
-                <div className="flex items-baseline justify-between py-1.5 border-b border-slate-100 dark:border-neutral-800 font-mono">
-                  <span className="text-slate-500 dark:text-neutral-400">Effective Date:</span>
-                  <span className="font-semibold text-slate-900 dark:text-white">{formatDate(activeWarranty.warranty?.startDate)}</span>
-                </div>
-                <div className="flex items-baseline justify-between py-1.5 border-b border-slate-100 dark:border-neutral-800 font-mono">
-                  <span className="text-slate-500 dark:text-neutral-400">Expiration Date:</span>
-                  <span className="font-semibold text-slate-900 dark:text-white">{formatDate(activeWarranty.warranty?.endDate)}</span>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-sans font-medium">
-                  Registered Customer &amp; Site
-                </span>
-                <p className="font-semibold text-slate-900 dark:text-white text-sm">
-                  {activeWarranty.customer?.name || user.displayName || "Customer"}
-                </p>
-                <p className="text-slate-500 dark:text-neutral-400 font-mono text-xs">
-                  {activeWarranty.customer?.mobile || user.phone || "—"} • {activeWarranty.customer?.email || user.email}
-                </p>
                 {activeWarranty.customer?.installationAddress && (
-                  <div className="mt-1 p-2.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40 text-amber-900 dark:text-amber-200 text-xs">
-                    <span className="flex items-start gap-1.5">
-                      <MapPin size={13} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                      <span><strong>Site:</strong> {activeWarranty.customer.installationAddress}</span>
-                    </span>
+                  <div>
+                    <p className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-neutral-400">
+                      <MapPin size={13} /> Installation site
+                    </p>
+                    <p className="mt-0.5 text-sm leading-relaxed text-slate-700 dark:text-neutral-300">
+                      {activeWarranty.customer.installationAddress}
+                    </p>
                   </div>
                 )}
+
                 {activeWarranty.customer?.address && (
-                  <p className="text-slate-500 dark:text-neutral-400 text-[11px] leading-relaxed pt-0.5">
-                    <strong>Billing:</strong> {activeWarranty.customer.address}
-                  </p>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-neutral-400">Billing address</p>
+                    <p className="mt-0.5 text-sm leading-relaxed text-slate-700 dark:text-neutral-300">
+                      {activeWarranty.customer.address}
+                    </p>
+                  </div>
                 )}
+
                 {activeWarranty.customer?.gstin && (
-                  <p className="text-slate-400 font-mono text-[10px]">
-                    GSTIN: {activeWarranty.customer.gstin}
+                  <p className="text-xs text-slate-500 dark:text-neutral-400">
+                    GSTIN {activeWarranty.customer.gstin}
                   </p>
                 )}
               </div>
-            </div>
+            </Panel>
 
-            {/* Covered Products Section */}
-            <div className="space-y-4 print:space-y-2">
-              <div className="flex items-baseline justify-between">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-sans font-medium">
-                  Covered Products ({activeWarranty.products?.length || 0})
-                </span>
-              </div>
+            {isLinked(activeWarranty) && !isAutoMatch(activeWarranty) && (
+              <button
+                type="button"
+                onClick={() => setUnlinkTarget(activeWarranty)}
+                className="no-print inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-medium text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 dark:text-neutral-400 dark:hover:bg-rose-950/30 dark:hover:text-rose-400"
+              >
+                <Trash2 size={14} />
+                <span>Remove from my profile</span>
+              </button>
+            )}
+          </aside>
 
-              {/* SCREEN VIEW: 2-Column on Mobile, 2 or 3 Columns on Desktop */}
-              <div className="no-print grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          {/* Products, totals, terms */}
+          <div className="space-y-4 lg:col-span-2 lg:col-start-1 lg:row-start-1 print:space-y-0">
+            <Panel>
+              <PanelTitle aside={plural(activeWarranty.products?.length || 0, "item")}>
+                Covered products
+              </PanelTitle>
+
+              {/* Screen list */}
+              <ul className="no-print divide-y divide-slate-100 dark:divide-neutral-800">
                 {activeWarranty.products?.map((item: WarrantyProductItem, idx: number) => {
-                  const isNoWarranty = Boolean(
-                    item.hasWarranty === false ||
-                    item.warrantyPeriod?.trim().toLowerCase() === "none" ||
-                    item.warrantyPeriod?.trim().toLowerCase() === "no warranty" ||
-                    (item.noWarrantyReason && item.noWarrantyReason.trim().length > 0 && item.warrantyPeriod?.trim().toLowerCase() === "none")
-                  );
-
+                  const noWarranty = hasNoWarranty(item);
                   return (
-                    <div
-                      key={item.id || idx}
-                      className="rounded-2xl border border-slate-200 dark:border-neutral-800 bg-slate-50/50 dark:bg-neutral-800/40 p-3.5 space-y-2.5 transition-all hover:border-slate-300 dark:hover:border-neutral-700 flex flex-col justify-between"
-                    >
-                      <div className="space-y-2.5">
-                        {/* 1:1 Square Image */}
-                        {item.productImage && (
-                          <div className="w-full aspect-square rounded-xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-700/80 p-2 flex items-center justify-center overflow-hidden relative group">
-                            <img
-                              src={item.productImage}
-                              alt={item.productName}
-                              onClick={() => setPreviewImage(item.productImage || null)}
-                              className="w-full h-full object-contain cursor-pointer group-hover:scale-105 transition-transform duration-200"
-                            />
-                            <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[8px] font-mono px-1 rounded pointer-events-none">
-                              Zoom
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Item ID Badge Prominent on Top */}
-                        <div className="flex items-center justify-between gap-1.5 pb-1.5 border-b border-slate-200/80 dark:border-neutral-800">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-900 shrink-0">
-                            <span>ID:</span>
-                            <span>{item.id}</span>
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard(item.id, `item_${item.id}`)}
-                            className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
-                            title="Copy Item ID"
-                          >
-                            {copiedKey === `item_${item.id}` ? (
-                              <Check size={11} className="text-emerald-500" />
-                            ) : (
-                              <Copy size={11} />
-                            )}
-                          </button>
+                    <li key={item.id || idx} className="flex gap-3.5 py-4 first:pt-0 last:pb-0 sm:gap-4">
+                      {item.productImage ? (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewImage(item.productImage || null)}
+                          aria-label={`Enlarge image of ${item.productName}`}
+                          className="h-16 w-16 shrink-0 cursor-zoom-in overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-1 transition hover:border-slate-300 dark:border-neutral-700 dark:bg-neutral-800 sm:h-20 sm:w-20"
+                        >
+                          <img
+                            src={item.productImage}
+                            alt=""
+                            loading="lazy"
+                            className="h-full w-full object-contain"
+                          />
+                        </button>
+                      ) : (
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-300 dark:bg-neutral-800 dark:text-neutral-600 sm:h-20 sm:w-20">
+                          <Package size={22} />
                         </div>
+                      )}
 
-                        {/* Product Info */}
-                        <div className="space-y-0.5">
-                          <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug">
-                            {item.productName}
-                          </h4>
-                          {item.productCode && (
-                            <p className="text-[10px] sm:text-[11px] font-mono text-slate-500 dark:text-neutral-400">
-                              Code: {item.productCode}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900 dark:text-white">
+                              {item.productName}
                             </p>
-                          )}
+                            {item.productCode && (
+                              <p className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400">
+                                Code {item.productCode}
+                              </p>
+                            )}
+                          </div>
+                          {item.totalAmount ? (
+                            <p className="shrink-0 text-sm font-semibold text-slate-900 dark:text-white">
+                              {inr(item.totalAmount)}
+                            </p>
+                          ) : null}
                         </div>
 
-                        {/* Warranty Status */}
-                        {isNoWarranty ? (
-                          <div className="space-y-1 pt-0.5">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-900">
-                              <ShieldAlert size={11} className="shrink-0" />
-                              <span>No Warranty</span>
+                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                          {noWarranty ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+                              <ShieldAlert size={12} />
+                              No warranty
                             </span>
-                            {item.noWarrantyReason && (
-                              <p className="text-[10px] text-rose-700/90 dark:text-rose-400/90 bg-rose-50/50 dark:bg-rose-950/30 p-1.5 rounded border border-rose-100 dark:border-rose-900/30 leading-tight">
-                                {item.noWarrantyReason}
-                              </p>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="space-y-1 pt-0.5">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
-                              <ShieldCheck size={11} className="shrink-0 text-emerald-500" />
-                              <span>{item.warrantyPeriod || "Active Coverage"}</span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                              <ShieldCheck size={12} />
+                              {item.warrantyPeriod || "Covered"}
                             </span>
-                            {item.productSpecificWarranty && (
-                              <p className="text-[10px] text-slate-600 dark:text-neutral-400 leading-tight">
-                                {item.productSpecificWarranty}
-                              </p>
-                            )}
-                          </div>
-                        )}
+                          )}
 
+                          <span className="inline-flex items-center gap-0.5 text-xs text-slate-500 dark:text-neutral-400">
+                            Item ID {item.id}
+                            <CopyButton
+                              copied={copiedKey === `item_${item.id}`}
+                              label="Copy item ID"
+                              onClick={() => copyToClipboard(item.id, `item_${item.id}`)}
+                            />
+                          </span>
+                        </div>
+
+                        {noWarranty && item.noWarrantyReason && (
+                          <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-neutral-400">
+                            {item.noWarrantyReason}
+                          </p>
+                        )}
+                        {!noWarranty && item.productSpecificWarranty && (
+                          <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-neutral-300">
+                            {item.productSpecificWarranty}
+                          </p>
+                        )}
                         {item.productSpecification && (
-                          <p className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono bg-white dark:bg-neutral-900 p-2 rounded border border-slate-100 dark:border-neutral-800 line-clamp-3 leading-snug">
+                          <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-slate-500 dark:text-neutral-400">
                             {item.productSpecification}
                           </p>
                         )}
                       </div>
-
-                      {item.totalAmount ? (
-                        <div className="pt-2 border-t border-slate-200/60 dark:border-neutral-800 flex items-baseline justify-between text-[11px] font-mono">
-                          <span className="text-slate-400 text-[9px] uppercase font-sans">Value</span>
-                          <strong className="text-slate-900 dark:text-white">
-                            ₹{item.totalAmount.toLocaleString("en-IN")}
-                          </strong>
-                        </div>
-                      ) : null}
-                    </div>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
 
-              {/* PDF / PRINT VIEW: Clean Professional Table (No Images, Exact Page Breaks) */}
-              <div className="hidden print:block w-full overflow-hidden rounded-xl border border-neutral-300">
-                <table className="w-full text-left border-collapse print-table">
+              {/* Print table */}
+              <div className="hidden w-full print:block">
+                <table className="print-table w-full border-collapse text-left">
                   <thead>
-                    <tr className="bg-neutral-100 border-b border-neutral-300 font-mono text-[9px] uppercase tracking-wider text-neutral-700">
-                      <th className="py-2 px-2.5 w-8">#</th>
-                      <th className="py-2 px-2.5 w-28">Item ID</th>
-                      <th className="py-2 px-2.5">Product &amp; Specifications</th>
-                      <th className="py-2 px-2.5 w-28">Code / Category</th>
-                      <th className="py-2 px-2.5 w-36">Warranty Status</th>
-                      <th className="py-2 px-2.5 text-right w-24">Validity</th>
+                    <tr>
+                      <th className="w-8">#</th>
+                      <th className="w-28">Item ID</th>
+                      <th>Product &amp; specification</th>
+                      <th className="w-28">Code</th>
+                      <th className="w-32">Warranty</th>
+                      <th className="w-24 text-right">Valid until</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-200 text-xs">
+                  <tbody>
                     {activeWarranty.products?.map((item: WarrantyProductItem, idx: number) => {
-                      const isNoWarranty = Boolean(
-                        item.hasWarranty === false ||
-                        item.warrantyPeriod?.trim().toLowerCase() === "none" ||
-                        item.warrantyPeriod?.trim().toLowerCase() === "no warranty"
-                      );
-
+                      const noWarranty = hasNoWarranty(item);
                       return (
                         <tr key={item.id || idx} className="print-row">
-                          <td className="py-2 px-2.5 font-mono text-[10px] text-neutral-500 align-top">
-                            {idx + 1}
-                          </td>
-                          <td className="py-2 px-2.5 font-mono text-[11px] font-bold text-neutral-900 align-top">
-                            {item.id}
-                          </td>
-                          <td className="py-2 px-2.5 align-top space-y-0.5">
-                            <span className="font-semibold text-neutral-900 block font-sans text-xs">
-                              {item.productName}
-                            </span>
+                          <td>{idx + 1}</td>
+                          <td className="font-semibold">{item.id}</td>
+                          <td>
+                            <span className="block font-semibold">{item.productName}</span>
                             {item.productSpecification && (
-                              <span className="text-[10px] text-neutral-600 font-mono block leading-snug">
+                              <span className="block leading-snug text-neutral-600">
                                 {item.productSpecification}
                               </span>
                             )}
                           </td>
-                          <td className="py-2 px-2.5 font-mono text-[10px] align-top">
-                            <span className="font-semibold text-neutral-800 block">
-                              {item.productCode || "—"}
-                            </span>
+                          <td>
+                            <span className="block">{item.productCode || "—"}</span>
                             {item.productCategory && (
-                              <span className="text-neutral-500 block">
-                                {item.productCategory}
-                              </span>
+                              <span className="block text-neutral-500">{item.productCategory}</span>
                             )}
                           </td>
-                          <td className="py-2 px-2.5 font-mono text-[10px] align-top">
-                            {isNoWarranty ? (
-                              <span className="font-bold text-rose-700 block">No Warranty</span>
+                          <td>
+                            {noWarranty ? (
+                              <span className="font-bold text-rose-700">No warranty</span>
                             ) : (
-                              <span className="font-semibold text-emerald-800 block">
-                                {item.warrantyPeriod || "Active"}
+                              <span className="font-semibold">
+                                {item.warrantyPeriod || coverageLabel(activeWarranty)}
                               </span>
                             )}
                           </td>
-                          <td className="py-2 px-2.5 font-mono text-[10px] text-right align-top">
-                            {item.warrantyPeriod || activeWarranty.warranty?.warrantyPeriodLabel || "5 Years"}
+                          <td className="text-right">
+                            {noWarranty ? "—" : formatDate(activeWarranty.warranty?.endDate)}
                           </td>
                         </tr>
                       );
@@ -1184,126 +1242,149 @@ export const WarrantyTab: React.FC<WarrantyTabProps> = ({ user, onGoHome }) => {
                   </tbody>
                 </table>
               </div>
-            </div>
+            </Panel>
 
-            {/* Financial Summary (if available) */}
             {activeWarranty.summary && (
-              <div className="print-avoid-break border-t border-slate-100 dark:border-neutral-800 pt-4 flex flex-col sm:flex-row sm:items-center justify-between text-xs font-mono text-slate-500 dark:text-neutral-400 gap-2 print:pt-2 print:border-neutral-300">
-                <span>Total Items: {activeWarranty.summary.totalProducts}</span>
-                <div className="flex flex-wrap items-center gap-4">
-                  <span>Subtotal: ₹{activeWarranty.summary.subTotal.toLocaleString("en-IN")}</span>
-                  <span>GST: ₹{activeWarranty.summary.totalGst.toLocaleString("en-IN")}</span>
-                  <strong className="text-slate-900 dark:text-white text-sm print:text-sm">
-                    Grand Total: ₹{activeWarranty.summary.grandTotal.toLocaleString("en-IN")}
-                  </strong>
-                </div>
-              </div>
+              <Panel className="print-avoid-break">
+                <dl className="space-y-2 text-sm">
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-slate-500 dark:text-neutral-400">Items</dt>
+                    <dd className="font-semibold text-slate-900 dark:text-white">
+                      {activeWarranty.summary.totalProducts}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-slate-500 dark:text-neutral-400">Subtotal</dt>
+                    <dd className="font-semibold text-slate-900 dark:text-white">
+                      {inr(activeWarranty.summary.subTotal)}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-slate-500 dark:text-neutral-400">GST</dt>
+                    <dd className="font-semibold text-slate-900 dark:text-white">
+                      {inr(activeWarranty.summary.totalGst)}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3 border-t border-slate-100 pt-3 text-base dark:border-neutral-800 print:border-neutral-300">
+                    <dt className="font-bold text-slate-900 dark:text-white">Grand total</dt>
+                    <dd className="font-bold text-slate-900 dark:text-white">
+                      {inr(activeWarranty.summary.grandTotal)}
+                    </dd>
+                  </div>
+                </dl>
+              </Panel>
             )}
 
-            {/* Terms and Conditions */}
             {termsList.length > 0 && (
-              <div className="print-terms print-avoid-break border-t border-slate-100 dark:border-neutral-800 pt-5 space-y-2.5 print:pt-2 print:border-neutral-300">
-                <span className="font-mono uppercase tracking-wider text-[10px] text-slate-400 block font-sans font-medium print:text-neutral-700 print:font-semibold">
-                  Official Terms &amp; Conditions
-                </span>
-                <ol className="space-y-1.5 text-xs text-slate-600 dark:text-neutral-400 print:text-[8pt] print:text-neutral-800">
+              <Panel className="print-avoid-break">
+                <PanelTitle>Terms and conditions</PanelTitle>
+                <ol className="space-y-2.5 text-sm leading-relaxed text-slate-600 dark:text-neutral-400 print:space-y-1.5 print:text-[8.5pt] print:text-neutral-800">
                   {termsList.map((term, idx) => (
-                    <li key={idx} className="print-avoid-break flex items-start gap-2 leading-relaxed print:leading-snug">
-                      <span className="font-mono text-[10px] font-semibold text-slate-400 dark:text-neutral-500 shrink-0 mt-0.5 print:text-[8pt] print:text-neutral-600">
-                        {String(idx + 1).padStart(2, "0")}.
+                    <li
+                      key={idx}
+                      className={`gap-3 ${
+                        idx >= TERMS_PREVIEW_COUNT && !termsOpen ? "hidden print:flex" : "flex"
+                      }`}
+                    >
+                      <span className="w-5 shrink-0 text-slate-400 dark:text-neutral-500 print:text-neutral-600">
+                        {idx + 1}.
                       </span>
                       <span>{term}</span>
                     </li>
                   ))}
                 </ol>
-              </div>
-            )}
 
-            {/* Official Print Footer / Authentication Seal */}
-            <div className="hidden print:flex items-center justify-between pt-3 border-t border-neutral-300 text-[7.5pt] font-mono text-neutral-600 print-avoid-break">
-              <span>Verified Certificate • Digitally Tracked</span>
-              <span>Issued by {storeName}</span>
-              <span>Valid across authorized service locations</span>
-            </div>
-
-            {/* Bottom Actions Bar (no-print) */}
-            <div className="no-print pt-5 border-t border-slate-100 dark:border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs font-semibold hover:opacity-90 transition-all cursor-pointer shadow-xs w-full sm:w-auto"
-                >
-                  <Printer size={13} />
-                  <span>Print Certificate / PDF</span>
-                </button>
-
-                <a
-                  href={`https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(
-                    `Hello ${storeName}, I am contacting you regarding warranty claim for Warranty No: ${activeWarranty.warrantyNumber} (Order: ${activeWarranty.orderNumber}).`
-                  )}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs w-full sm:w-auto"
-                >
-                  <MessageCircle size={13} />
-                  <span>WhatsApp Support</span>
-                </a>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(activeWarranty.warrantyNumber, "bottomCopy")}
-                  className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer"
-                >
-                  {copiedKey === "bottomCopy" ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
-                  <span>Copy ID</span>
-                </button>
-
-                {linkedKeys.includes(activeWarranty.warrantyNumber || "") && (
+                {termsList.length > TERMS_PREVIEW_COUNT && (
                   <button
                     type="button"
-                    onClick={() => handleUnlink(activeWarranty)}
-                    className="inline-flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors cursor-pointer ml-3"
-                    title="Remove manual link from your profile"
+                    onClick={() => setTermsOpen((open) => !open)}
+                    aria-expanded={termsOpen}
+                    className="no-print mt-4 inline-flex cursor-pointer items-center gap-1 text-sm font-semibold text-slate-900 dark:text-white"
                   >
-                    <Trash2 size={12} />
-                    <span>Unlink</span>
+                    <span>
+                      {termsOpen
+                        ? "Show fewer"
+                        : `Show all ${termsList.length} terms`}
+                    </span>
+                    <ChevronDown
+                      size={15}
+                      className={`transition-transform duration-300 ${termsOpen ? "rotate-180" : ""}`}
+                    />
                   </button>
                 )}
-              </div>
+              </Panel>
+            )}
+
+            {/* Print footer */}
+            <div className="print-avoid-break hidden items-center justify-between border-t border-neutral-300 pt-3 text-[7.5pt] text-neutral-600 print:flex">
+              <span>Verified certificate, digitally tracked</span>
+              <span>Issued by {storeName}</span>
+              <span>Valid across authorised service locations</span>
             </div>
-          </article>
+          </div>
         </div>
       )}
 
-      {/* ── Image Lightbox Modal ─────────────────────────────────────── */}
-      {previewImage && (
+      {/* Unlink confirmation */}
+      {unlinkTarget && (
         <div
-          className="no-print fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in"
-          onClick={() => setPreviewImage(null)}
+          className="no-print w-fade fixed !m-0 inset-0 z-50 flex items-end justify-center bg-slate-950/40 backdrop-blur-sm sm:items-center sm:p-4"
+          onClick={() => setUnlinkTarget(null)}
         >
           <div
-            className="relative max-w-xl max-h-[85vh] bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden p-3 border border-neutral-800 shadow-2xl space-y-3"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="unlink-title"
             onClick={(e) => e.stopPropagation()}
+            className="app-sheet w-full max-w-sm overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl dark:bg-neutral-900 sm:rounded-3xl"
           >
-            <div className="flex items-center justify-between pb-1">
-              <span className="text-xs font-mono text-neutral-400">Product Image Preview</span>
+            <h2 id="unlink-title" className="text-lg font-bold text-slate-900 dark:text-white">
+              Remove this certificate?
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-neutral-400">
+              {unlinkTarget.warrantyNumber || unlinkTarget.orderNumber} will be removed from your
+              profile. You can link it again any time with its Warranty ID.
+            </p>
+            <div className="mt-6 flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end">
               <button
                 type="button"
-                onClick={() => setPreviewImage(null)}
-                className="p-1 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+                onClick={() => setUnlinkTarget(null)}
+                className="cursor-pointer rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
               >
-                <X size={16} />
+                Keep it
+              </button>
+              <button
+                type="button"
+                onClick={confirmUnlink}
+                className="cursor-pointer rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700"
+              >
+                Remove
               </button>
             </div>
-            <img
-              src={previewImage}
-              alt="Enlarged view"
-              className="w-auto h-auto max-w-full max-h-[70vh] object-contain block mx-auto rounded-xl"
-            />
           </div>
+        </div>
+      )}
+
+      {/* Image preview */}
+      {previewImage && (
+        <div
+          className="no-print w-fade fixed !m-0 inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+          onClick={() => setPreviewImage(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setPreviewImage(null)}
+            aria-label="Close preview"
+            className="absolute right-4 top-4 cursor-pointer rounded-full bg-white/10 p-2.5 text-white transition hover:bg-white/20"
+          >
+            <X size={20} />
+          </button>
+          <img
+            src={previewImage}
+            alt="Enlarged product"
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[85vh] max-w-full rounded-2xl bg-white object-contain p-3 shadow-2xl"
+          />
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ref, push, onValue } from '../config/firebase';
 import { database } from '../config/firebase';
 import {
@@ -75,6 +75,113 @@ function Surface({
       {children}
     </div>
   );
+}
+
+interface BusinessHourItem {
+  days: string;
+  hours: string;
+  isClosed: boolean;
+  isToday: boolean;
+}
+
+function parseBusinessHours(rawHours: string): BusinessHourItem[] {
+  const fallback: BusinessHourItem[] = [
+    { days: 'Mon – Fri', hours: '9 AM – 6 PM', isClosed: false, isToday: false },
+    { days: 'Sat', hours: '10 AM – 4 PM', isClosed: false, isToday: false },
+    { days: 'Sun', hours: 'Closed', isClosed: true, isToday: false },
+  ];
+
+  if (!rawHours || typeof rawHours !== 'string' || !rawHours.trim()) {
+    return tagToday(fallback);
+  }
+
+  // Handle newlines placed between day and time (e.g. "Mon-Fri\n9AM-6PM")
+  let str = rawHours.trim();
+  str = str.replace(/([a-zA-Z\- ]+)\n+(\d)/g, '$1: $2');
+
+  // Split by comma, semicolon, or newline
+  const rawSegments = str.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean);
+  if (rawSegments.length === 0) return tagToday(fallback);
+
+  const results: BusinessHourItem[] = [];
+
+  for (const seg of rawSegments) {
+    let days = '';
+    let hours = '';
+
+    if (seg.includes(':')) {
+      const colonIdx = seg.indexOf(':');
+      days = seg.slice(0, colonIdx).trim();
+      hours = seg.slice(colonIdx + 1).trim();
+    } else {
+      const match = seg.match(/^([a-zA-Z\s\-]+?)\s*[-:]?\s*(\d.*|closed.*)$/i);
+      if (match) {
+        days = match[1].trim();
+        hours = match[2].trim();
+      } else {
+        days = seg;
+        hours = /closed/i.test(seg) ? 'Closed' : '';
+      }
+    }
+
+    days = days.replace(/\s*-\s*/, ' – ');
+    const isClosed = /closed/i.test(hours) || /closed/i.test(days);
+    const formattedHours = isClosed ? 'Closed' : formatHours(hours);
+
+    results.push({
+      days,
+      hours: formattedHours,
+      isClosed,
+      isToday: false,
+    });
+  }
+
+  return tagToday(results.length > 0 ? results : fallback);
+}
+
+function formatHours(raw: string): string {
+  if (!raw) return '';
+  if (/closed/i.test(raw)) return 'Closed';
+  return raw
+    .replace(/\s*-\s*/, ' – ')
+    .replace(/(\d+)\s*([ap]m)/gi, '$1 $2')
+    .trim();
+}
+
+function tagToday(list: BusinessHourItem[]): BusinessHourItem[] {
+  const day = new Date().getDay(); // 0 = Sun, 1 = Mon ... 6 = Sat
+  return list.map((item) => {
+    let isToday = false;
+    const d = item.days.toLowerCase();
+    if (day === 0 && d.includes('sun')) isToday = true;
+    else if (day === 6 && d.includes('sat')) isToday = true;
+    else if (day >= 1 && day <= 5 && (d.includes('mon') || d.includes('fri') || d.includes('weekday'))) isToday = true;
+
+    return { ...item, isToday };
+  });
+}
+
+function getStoreLiveStatus(schedule: BusinessHourItem[]) {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  if (dayOfWeek === 0) {
+    const sun = schedule.find((s) => /sun/i.test(s.days));
+    if (!sun || sun.isClosed) {
+      return { isOpen: false, label: 'Closed Today' };
+    }
+  } else if (dayOfWeek === 6) {
+    if (currentMinutes >= 10 * 60 && currentMinutes < 16 * 60) {
+      return { isOpen: true, label: 'Open Now' };
+    }
+    return { isOpen: false, label: 'Closed' };
+  } else {
+    if (currentMinutes >= 9 * 60 && currentMinutes < 18 * 60) {
+      return { isOpen: true, label: 'Open Now' };
+    }
+    return { isOpen: false, label: 'Closed' };
+  }
 }
 
 const Contact: React.FC = () => {
@@ -224,6 +331,8 @@ const Contact: React.FC = () => {
   const primaryPhone = getSetting('primary_phone');
   const storeAddress = getSetting('store_address');
   const storeHours = getSetting('store_hours');
+  const businessHoursList = useMemo(() => parseBusinessHours(storeHours), [storeHours]);
+  const liveStatus = useMemo(() => getStoreLiveStatus(businessHoursList), [businessHoursList]);
 
   const inputBase =
     'peer w-full rounded-xl border bg-neutral-50/70 dark:bg-neutral-950/60 px-4 pt-6 pb-3 text-sm text-neutral-900 dark:text-white placeholder-transparent outline-none transition-all duration-200';
@@ -508,36 +617,58 @@ const Contact: React.FC = () => {
                     <IconTile icon={Clock} tone="gold" />
 
                     <div className="pt-0.5 flex-1 min-w-0">
-                      <p className="text-xs uppercase tracking-wider text-neutral-400 dark:text-neutral-500 mb-2">
-                        Business Hours
-                      </p>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <p className="text-xs uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                          Business Hours
+                        </p>
+                        {liveStatus && (
+                          <span
+                            className={`inline-flex items-center gap-1.5 text-[11px] font-medium ${
+                              liveStatus.isOpen
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-neutral-400 dark:text-neutral-500"
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                liveStatus.isOpen
+                                  ? "bg-emerald-500 animate-pulse"
+                                  : "bg-neutral-400 dark:bg-neutral-500"
+                              }`}
+                            />
+                            {liveStatus.label}
+                          </span>
+                        )}
+                      </div>
 
-                      <div className="space-y-1.5">
-                        {storeHours.split('\n').map((segment, idx) => {
-                          const separatorIndex = segment.indexOf(':');
+                      <div className="space-y-1">
+                        {businessHoursList.map((item, idx) => (
+                          <div
+                            key={idx}
+                            className={`flex items-center justify-between gap-4 text-sm transition-colors ${
+                              item.isToday
+                                ? "text-neutral-900 dark:text-neutral-100 font-medium"
+                                : "text-neutral-600 dark:text-neutral-400"
+                            }`}
+                          >
+                            <span className="flex items-center gap-1.5">
+                              {item.isToday && (
+                                <span className="w-1 h-1 rounded-full bg-amber-500 dark:bg-amber-400 shrink-0" />
+                              )}
+                              <span>{item.days}</span>
+                            </span>
 
-                          const day =
-                            separatorIndex >= 0
-                              ? segment.slice(0, separatorIndex)
-                              : segment;
-
-                          const time =
-                            separatorIndex >= 0
-                              ? segment.slice(separatorIndex + 1)
-                              : '';
-
-                          return (
-                            <div
-                              key={idx}
-                              className="flex justify-between gap-4 text-sm text-neutral-600 dark:text-neutral-400"
+                            <span
+                              className={
+                                item.isClosed
+                                  ? "text-neutral-400 dark:text-neutral-500 text-xs"
+                                  : "tabular-nums text-neutral-700 dark:text-neutral-300"
+                              }
                             >
-                              <span>{day?.trim()}</span>
-                              <span className="text-right">
-                                {time?.trim()}
-                              </span>
-                            </div>
-                          );
-                        })}
+                              {item.hours}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>

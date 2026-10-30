@@ -133,7 +133,7 @@ const Footer: React.FC = () => {
                 />
               </div>
               <span className="text-2xl font-bold">
-                {getSetting("store_name")}
+                Instyle
               </span>
             </div>
             <p className="text-gray-400 leading-relaxed">
