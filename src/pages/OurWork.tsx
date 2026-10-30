@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Spinner from '../components/common/Spinner';
 import { ref, onValue } from '../config/firebase';
 import { database as db } from '../config/firebase';
 import Lightbox from 'yet-another-react-lightbox';
@@ -238,6 +239,10 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
               ))
             : items.map((item) => renderItem(item))}
         </div>
+      ) : loading ? (
+        <div className="py-24 flex items-center justify-center w-full">
+          <Spinner fullScreen={false} text="Loading our portfolio..." />
+        </div>
       ) : (
         /* Masonry grid mode */
         <div
@@ -249,9 +254,7 @@ const OurWorkPublic: React.FC<OurWorkPublicProps> = ({
         >
           {columnsArray.map((column, colIndex) => (
             <div key={`col-${colIndex}`} className="masonry-column">
-              {loading
-                ? Array(5).fill(0).map((_, i) => <Skeleton key={`skeleton-${colIndex}-${i}`} />)
-                : column.map((item) => renderItem(item))}
+              {column.map((item) => renderItem(item))}
             </div>
           ))}
         </div>

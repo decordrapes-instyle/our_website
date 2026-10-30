@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import TestimonialForm from "./testimonials/TestimonialForm";
+import Spinner from "./common/Spinner";
 import { Review, ReviewsProps } from "../types";
 import { BadgeCheckIcon } from "lucide-react";
 
@@ -118,11 +118,8 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews, isEmbedded = false }) =
 
   if (loading) {
     return (
-      <div className={isEmbedded ? "w-full py-6" : "max-w-7xl mx-auto py-12 px-4"}>
-        <div className="flex flex-col items-center justify-center h-64">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading reviews...</p>
-        </div>
+      <div className={isEmbedded ? "w-full py-12" : "max-w-7xl mx-auto py-16 px-4"}>
+        <Spinner fullScreen={false} text="Loading reviews..." />
       </div>
     );
   }
@@ -134,12 +131,7 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews, isEmbedded = false }) =
   return (
     <div className={isEmbedded ? "w-full" : "max-w-7xl mx-auto py-12 px-4"} id="reviews-section">
       {/* Google Badge with Stats */}
-      <motion.div
-        className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-neutral-50 dark:bg-neutral-900 p-6 rounded-2xl shadow-sm mb-10"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-neutral-50 dark:bg-neutral-900 p-6 rounded-2xl shadow-sm mb-10">
         {/* Left: Rating */}
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
           <div className="flex items-center justify-center w-16 h-16 bg-neutral-100 dark:bg-neutral-700 rounded-xl shadow-sm">
@@ -263,137 +255,115 @@ const Reviews: React.FC<ReviewsProps> = ({ localReviews, isEmbedded = false }) =
             </button>
           </div>
         </div>
-      </motion.div>
-
-      <AnimatePresence>
-        {showReviewOptions && (
-          <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowReviewOptions(false)}
+      </div>
+      {showReviewOptions && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn"
+          onClick={() => setShowReviewOptions(false)}
+        >
+          <div
+            className="bg-neutral-50 dark:bg-neutral-900 rounded-2xl p-6 max-w-md w-full shadow-2xl transition-all animate-pop-in"
+            onClick={(e) => e.stopPropagation()}
           >
-            <motion.div
-              className="bg-neutral-50 dark:bg-neutral-900 rounded-2xl p-6 max-w-md w-full"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-xl font-bold text-neutral-800 dark:text-neutral-100 mb-4">
-                How would you like to review?
-              </h3>
+            <h3 className="text-xl font-bold text-neutral-800 dark:text-neutral-100 mb-4">
+              How would you like to review?
+            </h3>
 
-              <div className="space-y-4">
-                {/* Google Review Link */}
-                <a
-                  href="https://search.google.com/local/writereview?placeid=ChIJ81gT5P0VrjsRin99GBddcFE"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-4 p-4 border border-neutral-300 dark:border-neutral-700 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                >
-                  <div className="w-10 h-10 bg-neutral-100 dark:bg-neutral-700 rounded-lg flex items-center justify-center">
-                    <svg
-                      className="w-6 h-6 text-neutral-800 dark:text-neutral-200"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        fill="currentColor"
-                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 16l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-8 8z"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="font-medium text-neutral-900 dark:text-neutral-100">
-                      Write on Google
-                    </div>
-                    <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                      Share your experience publicly on Google
-                    </div>
-                  </div>
-                </a>
-
-                {/* Website Review Button */}
-                <button
-                  onClick={() => {
-                    setShowReviewOptions(false);
-                    setShowTestimonialForm(true);
-                  }}
-                  className="flex items-center gap-4 p-4 border border-neutral-300 dark:border-neutral-700 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors w-full text-left"
-                >
-                  <div className="w-10 h-10 bg-neutral-100 dark:bg-neutral-700 rounded-lg flex items-center justify-center">
-                    <svg
-                      className="w-6 h-6 text-neutral-800 dark:text-neutral-200"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="font-medium text-neutral-900 dark:text-neutral-100">
-                      Submit on our website
-                    </div>
-                    <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                      Share your feedback directly with us
-                    </div>
-                  </div>
-                </button>
-              </div>
-
-              {/* Cancel Button */}
-              <button
-                onClick={() => setShowReviewOptions(false)}
-                className="mt-6 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300"
+            <div className="space-y-4">
+              {/* Google Review Link */}
+              <a
+                href="https://search.google.com/local/writereview?placeid=ChIJ81gT5P0VrjsRin99GBddcFE"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-4 p-4 border border-neutral-300 dark:border-neutral-700 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
-                Cancel
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-        {showTestimonialForm && (
-          <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowTestimonialForm(false)}
-          >
-            <motion.div
-              className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <TestimonialForm
-                isOpen={showTestimonialForm}
-                onClose={() => setShowTestimonialForm(false)}
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                <div className="w-10 h-10 bg-neutral-100 dark:bg-neutral-700 rounded-lg flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-neutral-800 dark:text-neutral-200"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 16l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-8 8z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <div className="font-medium text-neutral-900 dark:text-neutral-100">
+                    Write on Google
+                  </div>
+                  <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Share your experience publicly on Google
+                  </div>
+                </div>
+              </a>
 
-      <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6">
-        <AnimatePresence>
-          {displayedReviews.map((review, index) => (
-            <motion.div
-              key={review.id}
-              className="break-inside-avoid bg-neutral-50 dark:bg-neutral-900 rounded-2xl shadow-sm p-6 mb-6 border border-neutral-200 dark:border-neutral-700 hover:shadow-md transition-all duration-300 overflow-hidden"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4, delay: index * 0.05 }}
-              layout
+              {/* Website Review Button */}
+              <button
+                onClick={() => {
+                  setShowReviewOptions(false);
+                  setShowTestimonialForm(true);
+                }}
+                className="flex items-center gap-4 p-4 border border-neutral-300 dark:border-neutral-700 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors w-full text-left"
+              >
+                <div className="w-10 h-10 bg-neutral-100 dark:bg-neutral-700 rounded-lg flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-neutral-800 dark:text-neutral-200"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <div className="font-medium text-neutral-900 dark:text-neutral-100">
+                    Submit on our website
+                  </div>
+                  <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Share your feedback directly with us
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {/* Cancel Button */}
+            <button
+              onClick={() => setShowReviewOptions(false)}
+              className="mt-6 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300"
             >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+      {showTestimonialForm && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn"
+          onClick={() => setShowTestimonialForm(false)}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full shadow-2xl transition-all animate-pop-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <TestimonialForm
+              isOpen={showTestimonialForm}
+              onClose={() => setShowTestimonialForm(false)}
+            />
+          </div>
+        </div>
+      )}
+      <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6">
+        {displayedReviews.map((review) => (
+          <div
+            key={review.id}
+            className="break-inside-avoid bg-neutral-50 dark:bg-neutral-900 rounded-2xl shadow-sm p-6 mb-6 border border-neutral-200 dark:border-neutral-700 hover:shadow-md transition-all duration-300 overflow-hidden"
+          >
               {/* Review Source Badge */}
               <div className="flex justify-between items-start mb-4">
                 <div
@@ -540,32 +510,19 @@ transition-colors duration-200
                     {expandedReplies[review.id]
                       ? "Hide response"
                       : "View response"}
-                    <motion.svg
-                      className="w-4 h-4 ml-1"
-                      animate={{ rotate: expandedReplies[review.id] ? 180 : 0 }}
-                      transition={{ duration: 0.3 }}
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
+                    <svg className={`w-4 h-4 ml-1 transition-transform duration-300 ${expandedReplies[review.id] ? "rotate-180" : "rotate-0"}`} viewBox="0 0 20 20" fill="currentColor">
                       <path
                         fillRule="evenodd"
                         d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
                         clipRule="evenodd"
                       />
-                    </motion.svg>
+                    </svg>
                   </button>
                 </div>
               )}
 
-              <AnimatePresence>
-                {review.reviewReply?.comment && expandedReplies[review.id] && (
-                  <motion.div
-                    className="bg-neutral-100 dark:bg-neutral-800 p-4 rounded-xl mt-4 border border-neutral-200 dark:border-neutral-700"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
+              {review.reviewReply?.comment && expandedReplies[review.id] && (
+                  <div className="bg-neutral-100 dark:bg-neutral-800 p-4 rounded-xl mt-4 border border-neutral-200 dark:border-neutral-700 animate-fadeIn">
                     <div className="flex items-start gap-3">
                       <img
                         src={businessAuthor.image}
@@ -586,19 +543,16 @@ transition-colors duration-200
                         </p>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 )}
-              </AnimatePresence>
-            </motion.div>
+            </div>
           ))}
-        </AnimatePresence>
+        
       </div>
 
       <div className="flex justify-center mt-8 gap-4">
         {hasMore && (
-          <motion.button
-            onClick={loadMore}
-            className="
+          <button onClick={loadMore} className="
         bg-neutral-50 dark:bg-neutral-800
         text-neutral-900 dark:text-neutral-100
         border border-neutral-200 dark:border-neutral-700
@@ -609,11 +563,7 @@ transition-colors duration-200
         flex items-center gap-2
         hover:bg-neutral-100 dark:hover:bg-neutral-700
         transition-colors
-      "
-            whileHover={{ y: -2 }}
-            whileTap={{ y: 0 }}
-            disabled={isLoadingMore}
-          >
+       hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200" disabled={isLoadingMore}>
             {isLoadingMore ? (
               <>
                 <svg
@@ -655,13 +605,11 @@ transition-colors duration-200
                 </svg>
               </>
             )}
-          </motion.button>
+          </button>
         )}
 
         {showLoadLess && (
-          <motion.button
-            onClick={loadLess}
-            className="
+          <button onClick={loadLess} className="
         bg-neutral-100 dark:bg-neutral-700
         text-neutral-800 dark:text-neutral-200
         px-6 py-3
@@ -671,10 +619,7 @@ transition-colors duration-200
         flex items-center gap-2
         hover:bg-neutral-200 dark:hover:bg-neutral-600
         transition-colors
-      "
-            whileHover={{ y: -2 }}
-            whileTap={{ y: 0 }}
-          >
+       hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200">
             Less
             <svg
               className="w-5 h-5"
@@ -689,7 +634,7 @@ transition-colors duration-200
                 d="M5 15l7-7 7 7"
               />
             </svg>
-          </motion.button>
+          </button>
         )}
       </div>
     </div>

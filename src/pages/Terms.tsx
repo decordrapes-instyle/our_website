@@ -30,10 +30,10 @@ export default function TermsPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-white dark:bg-neutral-950 transition-colors duration-200 text-neutral-800 dark:text-neutral-300">
+    <main className="min-h-screen  transition-colors duration-200 text-neutral-800 max-w-7xl mx-auto dark:text-neutral-300">
       {/* Header */}
       <section className="bg-neutral-50 dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
-        <div className="max-w-5xl mx-auto px-6 py-12">
+        <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="mb-8">
             <Link
               to="/"
@@ -52,7 +52,7 @@ export default function TermsPage() {
       </section>
 
       {/* Content */}
-      <section className="max-w-5xl mx-auto px-6 py-10">
+      <section className="max-w-7xl mx-auto px-6 py-10">
         <div className="grid gap-6">
           {/* Scope */}
           <article className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 shadow-sm">

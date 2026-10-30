@@ -15,6 +15,7 @@ export default {
       fontFamily: {
         sans: ['"Inter"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
         display: ['"Plus Jakarta Sans"', '"Inter"', 'system-ui', 'sans-serif'],
+        serif: ['"Playfair Display"', 'Georgia', 'serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
       aspectRatio: {
@@ -37,12 +38,27 @@ export default {
           '0%': { transform: 'translateY(0)', opacity: '1' },
           '100%': { transform: 'translateY(100%)', opacity: '0' },
         },
+        fadeUp: {
+          '0%': { opacity: '0', transform: 'translateY(24px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        sceneGlide: {
+          '0%': { opacity: '0', transform: 'translateY(14px) scale(0.97)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
+        popIn: {
+          '0%': { opacity: '0', transform: 'scale(0.94)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
       },
       animation: {
         fadeIn: 'fadeIn 0.3s ease-in-out',
         fadeOut: 'fadeOut 0.3s ease-in-out',
         'slide-in-up': 'slideInUp 0.3s ease-in-out',
         'slide-out-down': 'slideOutDown 0.3s ease-in-out',
+        'fade-up': 'fadeUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'scene-glide': 'sceneGlide 0.45s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'pop-in': 'popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both',
       },
     },
   },

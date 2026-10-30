@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Bell, BellOff, Building2, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight,
   CircleUserRound, Clock, FileText, Home, IndianRupee, Layers, LogOut, Mail,
@@ -16,13 +17,17 @@ import {
   ZoomOut,
   LayoutGrid,
   List,
+  ArrowLeft,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { database, onValue, push, ref, set } from "../config/firebase";
 import { useAuth } from "../context/AuthContext";
+import { ThemeContext } from "../context/ThemeContext";
 import { User as UserType } from "../types";
 import type { ElementType } from "react";
 import { uploadToCloudinary } from "../config/cloudinary";
+import WarrantyTab from "../components/profile/WarrantyTab";
+import TabHeader from "../components/profile/TabHeader";
 
 type AppTabProps = { icon: ElementType; label: string; active: boolean; locked?: boolean; mobileOnly?: boolean; onClick: () => void };
 
@@ -54,7 +59,7 @@ const BRAND_LOGO_URL = "https://res.cloudinary.com/dmiwq3l2s/image/upload/v17647
 const ADMIN_CONTACT = { name: "Portal admin | Pankaj", phone: "+91 98459 18992", email: "contact@decordrapesinstyle.com", whatsapp: "919842918992" };
 const READ_NOTIFICATIONS_KEY = "portal-read-notifications";
 
-type Tab = "home" | "pricelist" | "quotations" | "profile";
+type Tab = "home" | "pricelist" | "quotations" | "warranty" | "profile";
 type ProfileSection = "list" | "personal" | "company";
 type ProfileUser = UserType & { gst?: string; role?: string; uid?: string; id?: string };
 type ProfileForm = { displayName: string; phone: string; address: string; company: string; gst: string; bio: string };
@@ -221,7 +226,7 @@ const Profile: React.FC = () => {
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const { resolvedTheme, setTheme } = useContext(ThemeContext);
   const [form, setForm] = useState<ProfileForm>({ displayName: "", phone: "", address: "", company: "", gst: "", bio: "" });
 
   useEffect(() => {
@@ -265,22 +270,6 @@ const Profile: React.FC = () => {
     return onValue(ref(database, "pricelist"), (snapshot) => setPriceList(snapshot.val() || {}));
   }, [canView]);
 
-  useEffect(() => {
-    const savedTheme = window.localStorage.getItem("portal-theme");
-    const nextTheme = savedTheme === "dark" ? "dark" : "light";
-    setTheme(nextTheme);
-    document.documentElement.classList.toggle("dark", nextTheme === "dark");
-    document.documentElement.dataset.theme = nextTheme;
-    document.documentElement.style.colorScheme = nextTheme;
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.style.colorScheme = theme;
-    window.localStorage.setItem("portal-theme", theme);
-  }, [theme]);
-
   // persist which notifications have already been read so they stay hidden
   useEffect(() => {
     try {
@@ -315,7 +304,7 @@ const Profile: React.FC = () => {
     const route = () => {
       const hash = window.location.hash.replace(/^#/, "");
       const [rawTab, rawPart, ...rest] = hash.split("/");
-      const known: Tab[] = ["home", "pricelist", "quotations", "profile"];
+      const known: Tab[] = ["home", "pricelist", "quotations", "warranty", "profile"];
       const nextTab = known.includes(rawTab as Tab) ? rawTab as Tab : "home";
       const category = nextTab === "pricelist" && rawPart === "category" ? decodeURIComponent(rest.join("/")) : null;
       const quotation = nextTab === "quotations" && rawPart ? decodeURIComponent([rawPart, ...rest].join("/")) : null;
@@ -439,7 +428,7 @@ const Profile: React.FC = () => {
     setProfileSection(section);
     setEditIntent(true);
   };
-  const activeTab: Tab = restricted && tab === "home" ? "profile" : tab;
+  const activeTab: Tab = restricted && tab !== "warranty" && tab !== "profile" ? "profile" : tab;
   // persist the Cloudinary URL (was never passed to ProfileTab before — avatar upload would have crashed)
   const updateProfileImage = async (url: string) => {
     await updateProfile(user.displayName || "", undefined, { profileImage: url });
@@ -509,16 +498,16 @@ html[data-theme="dark"] .app-status-scrim { background: rgba(10,10,10,.92); }
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
-html[data-theme="dark"] body { background:#0a0a0a; }
-html[data-theme="dark"] .portal-surface { background:#0a0a0a !important; color:#fff !important; }
-html[data-theme="dark"] .portal-surface .bg-white { background:#171717 !important; }
-html[data-theme="dark"] .portal-surface .bg-slate-50 { background:#1f1f1f !important; }
-html[data-theme="dark"] .portal-surface .bg-slate-100 { background:#262626 !important; }
-html[data-theme="dark"] .portal-surface .text-slate-900, html[data-theme="dark"] .portal-surface .text-slate-800 { color:#fff !important; }
-html[data-theme="dark"] .portal-surface .text-slate-700, html[data-theme="dark"] .portal-surface .text-slate-600 { color:#d4d4d4 !important; }
-html[data-theme="dark"] .portal-surface .text-slate-500, html[data-theme="dark"] .portal-surface .text-slate-400 { color:#a3a3a3 !important; }
-html[data-theme="dark"] .portal-surface .border-slate-200, html[data-theme="dark"] .portal-surface .border-slate-300 { border-color:#404040 !important; }
-html[data-theme="dark"] .portal-muted { color:#a3a3a3 !important; }
+html[data-theme="dark"] body, html.dark body { background:#0a0a0a; }
+html[data-theme="dark"] .portal-surface, html.dark .portal-surface { background:#0a0a0a !important; color:#fff !important; }
+html[data-theme="dark"] .portal-surface .bg-white, html.dark .portal-surface .bg-white { background:#171717 !important; }
+html[data-theme="dark"] .portal-surface .bg-slate-50, html.dark .portal-surface .bg-slate-50 { background:#1f1f1f !important; }
+html[data-theme="dark"] .portal-surface .bg-slate-100, html.dark .portal-surface .bg-slate-100 { background:#262626 !important; }
+html[data-theme="dark"] .portal-surface .text-slate-900, html[data-theme="dark"] .portal-surface .text-slate-800, html.dark .portal-surface .text-slate-900, html.dark .portal-surface .text-slate-800 { color:#fff !important; }
+html[data-theme="dark"] .portal-surface .text-slate-700, html[data-theme="dark"] .portal-surface .text-slate-600, html.dark .portal-surface .text-slate-700, html.dark .portal-surface .text-slate-600 { color:#d4d4d4 !important; }
+html[data-theme="dark"] .portal-surface .text-slate-500, html[data-theme="dark"] .portal-surface .text-slate-400, html.dark .portal-surface .text-slate-500, html.dark .portal-surface .text-slate-400 { color:#a3a3a3 !important; }
+html[data-theme="dark"] .portal-surface .border-slate-200, html[data-theme="dark"] .portal-surface .border-slate-300, html.dark .portal-surface .border-slate-200, html.dark .portal-surface .border-slate-300 { border-color:#404040 !important; }
+html[data-theme="dark"] .portal-muted, html.dark .portal-muted { color:#a3a3a3 !important; }
 
 /* ---- desktop shell ---- */
 @media (min-width: 768px) {
@@ -533,30 +522,33 @@ html[data-theme="dark"] .portal-muted { color:#a3a3a3 !important; }
   .desk-header {
     background: #ffffff !important;
     border: 1px solid #e8ecf1 !important;
-    border-radius: 20px !important;
+    border-top: none !important;
+    border-radius: 0 0 20px 20px !important;
     box-shadow: 0 1px 2px rgba(15,23,42,.03), 0 24px 40px -28px rgba(15,23,42,.14) !important;
-    padding: 26px 36px !important;
-    margin-top: 20px !important;
+    padding: 16px 24px !important;
+    margin-top: 0 !important;
     margin-bottom: 8px !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
   }
   /* Higher specificity than \`.portal-surface .bg-white\` so dark mode picks this up */
-  html[data-theme="dark"] .portal-surface .desk-header {
+  html[data-theme="dark"] .portal-surface .desk-header, html.dark .portal-surface .desk-header {
     background: #191919 !important;
     border-color: rgba(255,255,255,.07) !important;
+    border-top-color: transparent !important;
+    border-radius: 0 0 20px 20px !important;
     box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 24px 40px -28px rgba(0,0,0,.55) !important;
   }
 
   .desk-header .desk-search { background:#f8fafc; border-color:#e2e8f0; }
-  html[data-theme="dark"] .portal-surface .desk-header .desk-search {
+  html[data-theme="dark"] .portal-surface .desk-header .desk-search, html.dark .portal-surface .desk-header .desk-search {
     background:#1c1c1c !important;
     border-color:#333 !important;
   }
 }
 .nav-indicator { position:absolute; left:0; right:0; top:0; height:44px; border-radius:12px; background:#0f172a; pointer-events:none;
   transform:translateY(calc(var(--idx,0) * 48px)); transition:transform .5s cubic-bezier(.34,1.35,.64,1), opacity .2s; opacity:var(--on,1); }
-html[data-theme="dark"] .nav-indicator { background:#fff; }
+html[data-theme="dark"] .nav-indicator, html.dark .nav-indicator { background:#fff; }
 .nav-tab:hover .nav-icon { transform:translateY(-1px) scale(1.08); }
 .nav-icon { transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
 
@@ -575,7 +567,7 @@ html[data-theme="dark"] .nav-indicator { background:#fff; }
 .lock-wiggle:hover svg { animation:wiggle .5s ease; }
 .pop { animation:pop .35s cubic-bezier(.34,1.56,.64,1); }
 .skeleton { background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%); background-size:200% 100%; animation:shimmer 1.4s linear infinite; }
-html[data-theme="dark"] .skeleton { background:linear-gradient(90deg,#262626 25%,#333 50%,#262626 75%); background-size:200% 100%; }
+html[data-theme="dark"] .skeleton, html.dark .skeleton { background:linear-gradient(90deg,#262626 25%,#333 50%,#262626 75%); background-size:200% 100%; }
 @keyframes shimmer { to { background-position:-200% 0; } }
 .portal-surface :focus-visible { outline:2px solid #6366f1; outline-offset:2px; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition-duration:.01ms !important; } }`}</style>
@@ -591,11 +583,12 @@ html[data-theme="dark"] .skeleton { background:linear-gradient(90deg,#262626 25%
         onNewOrder={() => setOrderSheetOpen(true)}
         onOpenQuotation={openQuotation}
       /> : <>
-        {tab === "home" && !restricted && <HomeTab user={user} quotations={quotations} orderRequests={orderRequests} unreadCount={unreadNotifications.length} onNewOrder={() => setOrderSheetOpen(true)} onViewAllRequests={() => openOrderRequestsPage()} onOpenRequest={(id) => (id ? openOrderRequestQuickView(id) : openOrderRequestsPage())} onOpenQuotation={openQuotation} onOpenNotifications={() => setNotificationOpen(true)} />}
+        {tab === "home" && !restricted && <HomeTab user={user} quotations={quotations} orderRequests={orderRequests} unreadCount={unreadNotifications.length} onNewOrder={() => setOrderSheetOpen(true)} onViewAllRequests={() => openOrderRequestsPage()} onOpenRequest={(id) => (id ? openOrderRequestQuickView(id) : openOrderRequestsPage())} onOpenQuotation={openQuotation} onOpenNotifications={() => setNotificationOpen(true)} onOpenWarranty={() => openTab("warranty")} />}
         {tab === "home" && !restricted && quickViewRequest && <OrderRequestSheetDetail request={quickViewRequest} onClose={() => window.history.back()} onOpenQuotation={openQuotation} />}
         {tab === "pricelist" && <PriceListTab priceList={priceList} selected={selectedCategory} setSelected={setSelectedCategory} search={search} setSearch={setSearch} onGoHome={() => openTab("home")} />}
         {tab === "quotations" && <QuotationsTab quotations={quotations} search={search} setSearch={setSearch} selectedQuotationNumber={selectedQuotationNumber} onOpenQuotation={openQuotation} onGoHome={() => openTab("home")} />}
-        {activeTab === "profile" && <ProfileTab role={role} restricted={restricted} onRequestEdit={openProfileEdit} editIntent={editIntent} onEditIntentHandled={() => setEditIntent(false)} onUpdateProfileImage={updateProfileImage} user={user} section={profileSection} setSection={setProfileSection} form={form} saving={saving} updateField={updateField} resetForm={resetForm} save={save} logout={logout} theme={theme} setTheme={setTheme} onGoHome={() => openTab("home")} />}
+        {activeTab === "warranty" && <WarrantyTab user={user} onGoHome={() => openTab("home")} />}
+        {activeTab === "profile" && <ProfileTab role={role} restricted={restricted} onRequestEdit={openProfileEdit} editIntent={editIntent} onEditIntentHandled={() => setEditIntent(false)} onUpdateProfileImage={updateProfileImage} user={user} section={profileSection} setSection={setProfileSection} form={form} saving={saving} updateField={updateField} resetForm={resetForm} save={save} logout={logout} theme={resolvedTheme} setTheme={setTheme} onGoHome={() => openTab("home")} onOpenWarranty={() => openTab("warranty")} />}
       </>}
     </main>
 
@@ -608,29 +601,49 @@ html[data-theme="dark"] .skeleton { background:linear-gradient(90deg,#262626 25%
       onClose={() => setNotificationOpen(false)}
     />}
 
-    {/* Non-viewer accounts get no navigation at all — their only page is Profile */}
-    {!restricted && (() => {
-      const items: { tab: Tab; icon: ElementType; label: string; locked?: boolean }[] = [
-        { tab: "home", icon: Home, label: "Home" },
-        { tab: "pricelist", icon: Tag, label: "Pricelist" },
-        { tab: "quotations", icon: FileText, label: "Quotations" },
-        { tab: "profile", icon: CircleUserRound, label: "Profile" },
-      ];
+    {(() => {
+      const items: { tab: Tab; icon: ElementType; label: string; locked?: boolean }[] = restricted
+        ? [
+            { tab: "warranty", icon: ShieldCheck, label: "Warranty" },
+            { tab: "profile", icon: CircleUserRound, label: "Profile" },
+          ]
+        : [
+            { tab: "home", icon: Home, label: "Home" },
+            { tab: "pricelist", icon: Tag, label: "Pricelist" },
+            { tab: "quotations", icon: FileText, label: "Quotations" },
+            { tab: "warranty", icon: ShieldCheck, label: "Warranty" },
+            { tab: "profile", icon: CircleUserRound, label: "Profile" },
+          ];
       // On desktop, Profile lives in the account card at the bottom of the sidebar, so it is not repeated as a nav row.
       const desktopIdx = items.filter((item) => item.tab !== "profile").findIndex((item) => item.tab === activeTab);
       const profileActive = activeTab === "profile";
       return <nav className="app-nav fixed bottom-0 left-0 right-0 z-30 border-t border-slate-200 bg-white/95 px-2 pt-2 backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/95 md:bottom-0 md:right-auto md:top-0 md:flex md:w-[248px] md:flex-col md:border-r md:border-t-0 md:px-4 md:py-6 md:backdrop-blur-none">
-        <div className="hidden items-center gap-3 px-2 pb-8 md:flex">
-          <BrandLogo />
-          <div className="min-w-0"><p className="truncate text-sm font-bold">Decor Drapes</p><p className="text-xs text-slate-400">Customer portal</p></div>
+        <div className="hidden items-center gap-3 px-2 pb-6 md:flex">
+          <Link to="/" className="group flex items-center gap-3 transition hover:opacity-85" title="Go to Decor Drapes Instyle website">
+            <BrandLogo />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-slate-900 dark:text-white">Decor Drapes</p>
+              <p className="text-xs text-slate-400">Customer portal</p>
+            </div>
+          </Link>
         </div>
-        <div className="relative mx-auto grid w-full max-w-lg grid-cols-4 gap-1 md:max-w-none md:grid-cols-1 md:gap-1">
+        <div className="hidden md:block px-2 pb-5">
+          <Link
+            to="/"
+            className="flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-slate-50/80 px-3 py-2 text-xs font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-100 hover:text-slate-900 dark:border-neutral-800 dark:bg-neutral-800/40 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white"
+            title="Return to main website"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 shrink-0 text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white" />
+            <span className="truncate">Back to Website</span>
+          </Link>
+        </div>
+        <div className={`relative mx-auto grid w-full max-w-lg ${restricted ? "grid-cols-2" : "grid-cols-5"} gap-1 md:max-w-none md:grid-cols-1 md:gap-1`}>
           <span aria-hidden="true" className="nav-indicator hidden md:block" style={{ ["--idx" as string]: Math.max(desktopIdx, 0), ["--on" as string]: desktopIdx < 0 ? 0 : 1 }} />
           {items.map((item) => <AppTab key={item.tab} icon={item.icon} label={item.label} locked={item.locked} mobileOnly={item.tab === "profile"} active={activeTab === item.tab} onClick={() => openTab(item.tab)} />)}
         </div>
         <button type="button" onClick={() => openTab("profile")} aria-current={profileActive ? "page" : undefined} className={`mt-auto hidden w-full items-center gap-3 rounded-xl border p-2.5 text-left transition md:flex ${profileActive ? "border-slate-900 bg-slate-50 dark:border-white dark:bg-neutral-800" : "border-slate-200 hover:bg-slate-50 dark:border-neutral-800 dark:hover:bg-neutral-800"}`}>
           {user.profileImage ? <img src={user.profileImage} alt="" className="h-9 w-9 rounded-full object-cover" /> : <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 dark:bg-neutral-800"><User className="h-4 w-4 text-slate-500" /></span>}
-          <span className="min-w-0 flex-1"><span className="block truncate text-xs font-bold">{user.displayName || "Account"}</span><span className="block truncate text-[11px] text-slate-400">{role === "admin" ? "Admin" : "Viewer"}</span></span>
+          <span className="min-w-0 flex-1"><span className="block truncate text-xs font-bold">{user.displayName || "Account"}</span><span className="block truncate text-[11px] text-slate-400">{role === "admin" ? "Admin" : restricted ? "Customer" : "Viewer"}</span></span>
           <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
         </button>
       </nav>;
@@ -711,138 +724,11 @@ const BrandLogo = () => {
 /* on desktop (padding handled by .desk-header in the CSS above).     */
 /* ------------------------------------------------------------------ */
 
-const TabHeader = ({ eyebrow, title, meta, search, setSearch, placeholder, extra, onBack, deskEyebrow, deskTitle, deskMeta }: {
-  eyebrow: string;
-  title: string;
-  meta?: React.ReactNode;
-  search?: string;
-  setSearch?: (value: string) => void;
-  placeholder?: string;
-  extra?: React.ReactNode;
-  onBack?: () => void;
-  /** optional overrides shown from md (tablet/desktop) upward — mobile keeps eyebrow/title */
-  deskEyebrow?: string;
-  deskTitle?: string;
-  deskMeta?: React.ReactNode;
-}) => {
-  const [searchOpen, setSearchOpen] = useState(false);
-  const hasSearch = typeof setSearch === "function";
-  const hasDeskTitle = !!deskTitle;
-
-  useEffect(() => { setSearchOpen(false); }, [title]);
-
-  return (
-    <div className="desk-header app-header-sticky app-bleed rounded-b-[28px] bg-white px-5 pb-6 pt-[calc(var(--safe-top)+18px)] shadow-sm dark:bg-neutral-900 sm:rounded-3xl sm:px-7 sm:pb-7 sm:pt-7 md:rounded-none md:border-b md:border-slate-200/80 md:px-8 md:pb-8 md:pt-10 md:shadow-none lg:px-10 dark:md:border-neutral-800/80">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-1">
-          {onBack && (
-            <button
-              type="button"
-              onClick={onBack}
-              aria-label="Go back"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-          )}
-
-          <div className={`h-11 min-w-0 flex-col justify-center ${hasDeskTitle ? "flex md:hidden" : "flex"}`}>
-            {!!eyebrow && (
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                {eyebrow}
-              </p>
-            )}
-            <h1 className={`truncate text-xl font-bold tracking-tight text-slate-900 dark:text-white ${eyebrow ? "mt-0.5" : ""}`}>
-              {title}
-            </h1>
-          </div>
-
-          {hasDeskTitle && (
-            <div className="hidden h-11 min-w-0 flex-col justify-center md:flex">
-              {!!deskEyebrow && (
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  {deskEyebrow}
-                </p>
-              )}
-              <h1 className="truncate text-2xl font-bold leading-tight tracking-tight text-slate-900 dark:text-white">
-                {deskTitle}
-              </h1>
-            </div>
-          )}
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2">
-          {extra}
-
-          {hasSearch && (
-            <>
-              {/* tablet / desktop: search is always visible */}
-              <div className="desk-search hidden h-10 w-64 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 transition focus-within:border-slate-400 focus-within:bg-white lg:w-80 md:flex dark:border-neutral-700 dark:focus-within:border-neutral-500">
-                <Search className="h-4 w-4 shrink-0 text-slate-400" />
-                <input
-                  value={search}
-                  onChange={(event) => setSearch!(event.target.value)}
-                  placeholder={placeholder}
-                  aria-label={placeholder || "Search"}
-                  className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
-                />
-                {!!search && (
-                  <button type="button" onClick={() => setSearch!("")} aria-label="Clear search" className="rounded-full p-1 text-slate-400 hover:text-slate-700">
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {/* mobile: tap to expand */}
-              <button
-                type="button"
-                onClick={() => setSearchOpen((current) => !current)}
-                aria-label={searchOpen ? "Close search" : "Search"}
-                className={`flex h-10 w-10 touch-manipulation items-center justify-center rounded-full transition active:scale-95 md:hidden ${
-                  searchOpen
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-                    : "bg-slate-100 text-slate-600 dark:bg-neutral-800 dark:text-neutral-300"
-                }`}
-              >
-                {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {meta}
-
-      {!!deskMeta && (
-        <div className={`mt-3 hidden flex-wrap items-center gap-2 md:flex ${onBack ? "md:pl-9" : ""}`}>{deskMeta}</div>
-      )}
-
-      {hasSearch && searchOpen && (
-        <div className="mt-3 flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 md:hidden dark:border-neutral-800 dark:bg-neutral-800">
-          <Search className="h-4 w-4 shrink-0 text-slate-400" />
-          <input
-            autoFocus
-            value={search}
-            onChange={(event) => setSearch!(event.target.value)}
-            placeholder={placeholder}
-            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
-          />
-          {!!search && (
-            <button type="button" onClick={() => setSearch!("")} className="rounded-full p-1 text-slate-400">
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
 /* ------------------------------------------------------------------ */
 /* Home                                                                */
 /* ------------------------------------------------------------------ */
 
-const HomeTab = ({ user, quotations, orderRequests, unreadCount, onNewOrder, onViewAllRequests, onOpenRequest, onOpenQuotation, onOpenNotifications }: {
+const HomeTab = ({ user, quotations, orderRequests, unreadCount, onNewOrder, onViewAllRequests, onOpenRequest, onOpenQuotation, onOpenNotifications, onOpenWarranty }: {
   user: ProfileUser;
   quotations: Quotation[];
   orderRequests: OrderRequest[];
@@ -852,6 +738,7 @@ const HomeTab = ({ user, quotations, orderRequests, unreadCount, onNewOrder, onV
   onOpenRequest: (id?: string) => void;
   onOpenQuotation: (quotationNumber: string) => void;
   onOpenNotifications: () => void;
+  onOpenWarranty?: () => void;
 }) => {
   const activities = [
     ...orderRequests.slice(0, 6).map((request) => ({ id: `request-${request.id}`, type: "request" as const, time: request.createdAt, request })),
@@ -870,7 +757,7 @@ const HomeTab = ({ user, quotations, orderRequests, unreadCount, onNewOrder, onV
 
   return <div className="space-y-8 sm:space-y-9">
     <div
-      className={`app-header-sticky app-bleed rounded-b-[28px] px-5 pb-6 pt-[calc(var(--safe-top)+18px)] transition-all duration-300 ease-out sm:rounded-3xl sm:px-7 sm:pb-7 sm:pt-7 md:px-8 md:pb-8 md:pt-10 md:rounded-3xl md:mt-5 md:border ${ isScrolled ? "border-slate-200/70 bg-white/95 backdrop-blur-xl shadow-sm dark:border-neutral-800/70 dark:bg-neutral-900/95" : "border-transparent bg-transparent shadow-none" }`}
+      className={`app-header-sticky app-bleed rounded-t-none rounded-b-2xl px-5 py-3.5 transition-all duration-300 ease-out sm:rounded-t-none sm:rounded-b-2xl sm:px-7 sm:py-4 md:px-8 md:py-4 md:rounded-t-none md:rounded-b-2xl md:mt-0 md:border md:border-t-0 ${ isScrolled ? "border-slate-200/70 bg-white/95 backdrop-blur-xl shadow-xs dark:border-neutral-800/70 dark:bg-neutral-900/95" : "border-transparent bg-transparent shadow-none" }`}
     >
       <div className="flex items-center justify-between gap-3 px-1">
         <div className="flex min-w-0 items-center gap-3">
@@ -883,27 +770,37 @@ const HomeTab = ({ user, quotations, orderRequests, unreadCount, onNewOrder, onV
           )}
           <div className="min-w-0">
             <p className="text-[10px] font-medium text-slate-400">Hi,</p>
-            <p className="truncate text-lg font-bold tracking-tight">{user.displayName || "there"}</p>
+            <p className="truncate text-lg font-bold tracking-tight text-slate-900 dark:text-white">{user.displayName || "there"}</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onOpenNotifications}
-          aria-label="Notifications"
-          className="relative flex h-12 w-12 touch-manipulation select-none items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition active:scale-95 hover:bg-slate-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
-        >
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ring-white dark:ring-neutral-900">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/"
+            className="flex h-12 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-sm transition active:scale-95 hover:bg-slate-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
+            title="Return to main website"
+          >
+            <ArrowLeft className="h-4 w-4 text-indigo-500" />
+            <span>Website</span>
+          </Link>
+          <button
+            type="button"
+            onClick={onOpenNotifications}
+            aria-label="Notifications"
+            className="relative flex h-12 w-12 touch-manipulation select-none items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition active:scale-95 hover:bg-slate-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
+          >
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ring-white dark:ring-neutral-900">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
     </div>
 
     {/* hero — a color-block panel that stands apart from the body, not a floating card */}
-    <section className="relative mt-4 overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 px-5 py-7 text-white shadow-[0_18px_40px_-18px_rgba(15,23,42,0.55)] sm:mt-6 sm:rounded-[32px] sm:px-8 sm:py-8">
+    <section className="relative mt-2.5 sm:mt-4 overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 dark:from-neutral-900 dark:via-neutral-900/95 dark:to-indigo-950/40 dark:border dark:border-neutral-800 px-5 py-7 text-white shadow-[0_18px_40px_-18px_rgba(15,23,42,0.55)] sm:mt-6 sm:rounded-[32px] sm:px-8 sm:py-8">
       <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
       <div className="pointer-events-none absolute -bottom-20 -left-10 h-52 w-52 rounded-full bg-indigo-500/20 blur-2xl" />
       <div className="pointer-events-none absolute inset-0 rounded-[28px] ring-1 ring-inset ring-white/10 sm:rounded-[32px]" />
@@ -948,12 +845,41 @@ const HomeTab = ({ user, quotations, orderRequests, unreadCount, onNewOrder, onV
       </div>
     </section>
 
+    {/* warranty quick card */}
+    {onOpenWarranty && (
+      <section className="mt-6 rounded-2xl border border-emerald-200/80 bg-gradient-to-r from-emerald-50/70 via-emerald-50/40 to-transparent p-4 sm:p-5 dark:border-emerald-900/40 dark:bg-gradient-to-r dark:from-emerald-950/30 dark:via-neutral-900 dark:to-neutral-900/80">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Warranty &amp; Certificates
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-neutral-400">
+                View registered product guarantees, validity dates, or link a new certificate.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenWarranty}
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-700 active:scale-95 shrink-0 cursor-pointer"
+          >
+            <span>View Warranties</span>
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </section>
+    )}
+
     {/* recent activity — no surrounding card, app-style scroller */}
     <section className="mt-6 space-y-3 sm:mt-8">
       <div className="flex items-end justify-between gap-3 px-1">
         <div>
-          <h2 className="text-base font-bold">Recent activity</h2>
-          <p className="mt-0.5 text-xs text-slate-500">Tap a card to open its details.</p>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">Recent activity</h2>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-neutral-400">Tap a card to open its details.</p>
         </div>
         <button
           type="button"
@@ -979,7 +905,7 @@ const HomeTab = ({ user, quotations, orderRequests, unreadCount, onNewOrder, onV
           )}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-xs text-slate-500 dark:border-neutral-700">
+        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-neutral-800 bg-slate-50/50 dark:bg-neutral-900/50 p-6 text-center text-xs text-slate-500 dark:text-neutral-400">
           Your requests and quotations will appear here.
         </div>
       )}
@@ -1016,8 +942,8 @@ const OrderRequestCard = ({ request, variant = "list", onOpen, onOpenQuotation }
         <span className="shrink-0 text-[10px] font-medium text-slate-400">{formatShortDate(request.createdAt)}</span>
       </div>
 
-      <p className="mt-3 text-sm font-bold">Order request</p>
-      <p className="mt-0.5 text-[11px] text-slate-500">{meta?.note}</p>
+      <p className="mt-3 text-sm font-bold text-slate-900 dark:text-white">Order request</p>
+      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-neutral-400">{meta?.note}</p>
 
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         <Chip icon={Package} text={`${items.length} item${items.length === 1 ? "" : "s"}`} />
@@ -1044,7 +970,7 @@ const OrderRequestCard = ({ request, variant = "list", onOpen, onOpenQuotation }
         </span>
       </span>
       <ChevronRight className="h-4 w-4 shrink-0 text-indigo-500" />
-    </button> : <div className="border-t border-slate-100 px-4 py-2.5 text-[10px] font-medium text-slate-400 dark:border-neutral-800">Quotation not generated yet</div>}
+    </button> : <div className="border-t border-slate-100 px-4 py-2.5 text-[10px] font-medium text-slate-400 dark:border-neutral-800 dark:text-neutral-500">Quotation not generated yet</div>}
   </article>;
 };
 
@@ -1453,8 +1379,8 @@ const QuotationCard = ({ quotation, variant = "list", onOpen }: { quotation: Quo
     <div className="flex items-start justify-between gap-2 p-4 pb-3">
       <div className="min-w-0">
         <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"><FileText className="h-3 w-3" />Quotation</span>
-        <p className="mt-2 truncate text-sm font-bold">{quotation.quotationNumber}</p>
-        <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-500"><CalendarDays className="h-3.5 w-3.5" />{formatShortDate(quotation.createdAt)}</p>
+        <p className="mt-2 truncate text-sm font-bold text-slate-900 dark:text-white">{quotation.quotationNumber}</p>
+        <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-500 dark:text-neutral-400"><CalendarDays className="h-3.5 w-3.5" />{formatShortDate(quotation.createdAt)}</p>
       </div>
       <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold capitalize ${getQuotationTone(quotation.status)}`}>{quotation.status || "Pending"}</span>
     </div>
@@ -1462,10 +1388,10 @@ const QuotationCard = ({ quotation, variant = "list", onOpen }: { quotation: Quo
     <div className="mt-auto flex items-end justify-between gap-3 border-t border-slate-100 bg-slate-50/70 px-4 py-3 dark:border-neutral-800 dark:bg-neutral-800/50">
       <div className="min-w-0">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Grand total</p>
-        <p className="mt-0.5 truncate text-lg font-extrabold leading-tight">₹{Math.round(Number(quotation.grandTotal || 0)).toLocaleString("en-IN")}</p>
+        <p className="mt-0.5 truncate text-lg font-extrabold leading-tight text-slate-900 dark:text-white">₹{Math.round(Number(quotation.grandTotal || 0)).toLocaleString("en-IN")}</p>
         {itemCount > 0 && <p className="mt-0.5 text-[10px] text-slate-400">{itemCount} item{itemCount === 1 ? "" : "s"}</p>}
       </div>
-      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm dark:bg-neutral-900"><ChevronRight className="h-4 w-4" /></span>
+      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm dark:bg-neutral-800 dark:text-neutral-300 dark:border dark:border-neutral-700"><ChevronRight className="h-4 w-4" /></span>
     </div>
   </button>;
 };
@@ -1872,7 +1798,7 @@ const AvatarCropModal = ({ file, busy, onCancel, onConfirm }: {
   </div>;
 };
 
-const ProfileTab = ({ user, section, setSection, form, saving, updateField, resetForm, save, logout, theme, setTheme, onGoHome, onUpdateProfileImage, role, restricted, onRequestEdit, editIntent, onEditIntentHandled }: {
+const ProfileTab = ({ user, section, setSection, form, saving, updateField, resetForm, save, logout, theme, setTheme, onGoHome, onUpdateProfileImage, role, restricted, onRequestEdit, editIntent, onEditIntentHandled, onOpenWarranty }: {
   onRequestEdit: (section: ProfileSection) => void;
   editIntent: boolean;
   onEditIntentHandled: () => void;
@@ -1891,6 +1817,7 @@ const ProfileTab = ({ user, section, setSection, form, saving, updateField, rese
   setTheme: (value: "light" | "dark") => void;
   onGoHome?: () => void;
   onUpdateProfileImage: (url: string) => Promise<void>; // persists the Cloudinary URL to your DB
+  onOpenWarranty?: () => void;
 }) => {
   const [editing, setEditing] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -1945,10 +1872,25 @@ const ProfileTab = ({ user, section, setSection, form, saving, updateField, rese
       type="button"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
       aria-label="Switch theme"
-      className="flex h-10 w-10 touch-manipulation items-center justify-center rounded-full bg-slate-100 text-slate-600 transition active:scale-95 dark:bg-neutral-800 dark:text-neutral-300"
+      title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+      className="flex h-10 w-10 touch-manipulation items-center justify-center rounded-full bg-slate-100 text-slate-600 transition active:scale-95 hover:bg-slate-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
     >
-      {theme === "dark" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+      {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </button>
+  );
+
+  const profileHeaderExtra = (
+    <div className="flex items-center gap-2">
+      <Link
+        to="/"
+        className="flex h-10 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-2xs transition active:scale-95 hover:bg-slate-50 dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+        title="Return to main website"
+      >
+        <Home className="h-3.5 w-3.5 text-indigo-500" />
+        <span className="hidden sm:inline">Website</span>
+      </Link>
+      {themeToggle}
+    </div>
   );
 
   if (section === "list") {
@@ -1965,10 +1907,11 @@ const ProfileTab = ({ user, section, setSection, form, saving, updateField, rese
     const menuItems = [
       { key: "personal", icon: User, title: "Personal information", description: user.phone ? user.phone : "Name, phone and bio", onClick: () => setSection("personal") },
       { key: "company", icon: Building2, title: "Company information", description: user.company || "Company, GST and address", onClick: () => setSection("company") },
+      { key: "warranty", icon: ShieldCheck, title: "Warranty Certificates", description: "Official product coverage & certificates", onClick: () => { if (onOpenWarranty) onOpenWarranty(); else if (onGoHome) onGoHome(); } },
     ];
 
     return <div className="space-y-6">
-      <TabHeader eyebrow="" title="Profile" onBack={restricted ? undefined : onGoHome} extra={themeToggle} />
+      <TabHeader eyebrow="" title="Profile" onBack={restricted ? undefined : onGoHome} extra={profileHeaderExtra} />
 
       {/* Identity + details sit on the page background — no surrounding card, only whitespace. */}
       <div className="grid gap-10 lg:grid-cols-[300px_1fr] lg:items-start lg:gap-16">
@@ -2193,6 +2136,7 @@ const AccessRestricted = ({ feature, hasCompany, company, userName, onAddCompany
       <div className="mt-6 flex flex-wrap gap-2">
         <button type="button" onClick={onAddCompany} className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition ${hasCompany ? "border border-slate-200 hover:bg-slate-50 dark:border-neutral-700 dark:hover:bg-neutral-800" : "bg-slate-900 text-white dark:bg-white dark:text-slate-900"}`}><Building2 className="h-3.5 w-3.5" />{hasCompany ? "Edit company details" : "Add company name"}</button>
         <button type="button" onClick={onGoProfile} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2 text-xs font-bold transition hover:bg-slate-50 dark:border-neutral-700 dark:hover:bg-neutral-800"><ChevronLeft className="h-3.5 w-3.5" />Back to profile</button>
+        <Link to="/" className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2 text-xs font-bold transition hover:bg-slate-50 dark:border-neutral-700 dark:hover:bg-neutral-800"><Home className="h-3.5 w-3.5 text-indigo-500" />Back to website</Link>
       </div>
     </section>
     <div className="space-y-2"><p className="px-1 text-sm font-bold">Contact the admin</p><AdminContactCard userName={userName} company={company} /></div>

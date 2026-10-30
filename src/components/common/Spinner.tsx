@@ -1,36 +1,81 @@
 import React from "react";
 
-const Spinner: React.FC = () => {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-50/80 backdrop-blur-sm dark:bg-neutral-950/80">
-      <div className="flex flex-col items-center gap-4">
-        {/* Spinner */}
-        <div className="relative h-12 w-12">
-          {/* Soft brand glow */}
-          <div className="absolute inset-0 rounded-full bg-sky-400/20 blur-xl" />
+export interface SpinnerProps {
+  fullScreen?: boolean;
+  text?: string;
+  size?: "sm" | "md" | "lg";
+  className?: string;
+}
 
-          {/* Base ring */}
-          <div className="absolute inset-0 rounded-full border-[3px] border-neutral-200 dark:border-neutral-800" />
+export const BrandLoader: React.FC<SpinnerProps> = ({
+  fullScreen = true,
+  text = "Loading...",
+  size = "md",
+  className = "",
+}) => {
+  const logoDimensions =
+    size === "sm"
+      ? "w-8 h-8"
+      : size === "lg"
+      ? "w-16 h-16"
+      : "w-12 h-12";
 
-          {/* Animated ring */}
-          <div className="absolute inset-0 animate-spin rounded-full border-[3px] border-transparent border-t-sky-500 border-r-amber-400 dark:border-t-sky-400 dark:border-r-amber-300" />
+  const ringDimensions =
+    size === "sm"
+      ? "w-12 h-12"
+      : size === "lg"
+      ? "w-24 h-24"
+      : "w-18 h-18";
 
-          {/* Center dot */}
-          <div className="absolute inset-0 m-auto h-2 w-2 rounded-full bg-sky-500 dark:bg-sky-400" />
-        </div>
+  const textSize =
+    size === "sm"
+      ? "text-xs"
+      : size === "lg"
+      ? "text-base"
+      : "text-sm";
 
-        {/* Loading text */}
-        <div className="flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400">
-          <span>Loading</span>
-          <span className="flex gap-1">
-            <span className="h-1 w-1 animate-pulse rounded-full bg-sky-500" />
-            <span className="h-1 w-1 animate-pulse rounded-full bg-sky-500 [animation-delay:150ms]" />
-            <span className="h-1 w-1 animate-pulse rounded-full bg-amber-400 [animation-delay:300ms]" />
-          </span>
-        </div>
+  const content = (
+    <div
+      className={`flex flex-col items-center justify-center gap-4 ${className}`}
+    >
+      {/* Branded Logo Container */}
+      <div className="relative flex items-center justify-center">
+        {/* Subtle rotating accent ring */}
+        <div
+          className={`absolute rounded-full border border-neutral-200/80 dark:border-neutral-800/80 border-t-emerald-600 dark:border-t-emerald-400 animate-spin [animation-duration:2.5s] ${ringDimensions}`}
+        />
+
+        {/* Center Navbar Logo with gentle pulse */}
+        <img
+          src="https://res.cloudinary.com/dmiwq3l2s/image/upload/v1764768203/vfw82jmca7zl5p86czhy.png"
+          alt="Decor Drapes Instyle"
+          className={`relative ${logoDimensions} object-contain select-none animate-logo-pulse drop-shadow-sm`}
+        />
       </div>
+
+      {/* Shimmer Loading Text */}
+      {text && (
+        <div className="flex flex-col items-center gap-1.5 mt-1">
+          <p
+            className={`font-display font-semibold tracking-wider ${textSize} animate-shimmer-text select-none`}
+          >
+            {text}
+          </p>
+          
+        </div>
+      )}
+    </div>
+  );
+
+  if (!fullScreen) {
+    return content;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/90 dark:bg-neutral-950/90 backdrop-blur-md transition-colors">
+      {content}
     </div>
   );
 };
 
-export default Spinner;
+export default BrandLoader;

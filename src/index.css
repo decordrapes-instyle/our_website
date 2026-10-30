@@ -197,3 +197,266 @@
 .animate-marquee-reverse {
   animation: marquee-reverse 22s linear infinite;
 }
+
+/* ------------------------------------------------------------- */
+/*  Lightweight Native CSS Animation Utilities & Stagger Delays  */
+/* ------------------------------------------------------------- */
+.delay-50 { animation-delay: 50ms; }
+.delay-75 { animation-delay: 75ms; }
+.delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-250 { animation-delay: 250ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-600 { animation-delay: 600ms; }
+
+@keyframes chipFloat {
+  0% {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-chip-float {
+  animation: chipFloat 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Designer Typography Utilities */
+.designer-heading-gradient {
+  background: linear-gradient(135deg, #171717 0%, #404040 50%, #171717 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dark .designer-heading-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #d4d4d4 50%, #a3a3a3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.designer-card-lift {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease;
+  will-change: transform;
+}
+
+.designer-card-lift:hover {
+  transform: translateY(-5px);
+}
+
+/* ------------------------------------------------------------- */
+/*  Branded Shimmer Loading Animation                            */
+/* ------------------------------------------------------------- */
+@keyframes textShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer-text {
+  background: linear-gradient(
+    90deg,
+    #737373 0%,
+    #171717 40%,
+    #e5e5e5 50%,
+    #171717 60%,
+    #737373 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: textShimmer 2.4s infinite linear;
+}
+
+.dark .animate-shimmer-text {
+  background: linear-gradient(
+    90deg,
+    #737373 0%,
+    #d4d4d4 40%,
+    #ffffff 50%,
+    #d4d4d4 60%,
+    #737373 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: textShimmer 2.4s infinite linear;
+}
+
+@keyframes logoPulseRing {
+  0%, 100% {
+    transform: scale(0.96);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+}
+
+.animate-logo-pulse {
+  animation: logoPulseRing 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ------------------------------------------------------------- */
+/*  Navbar Mega Menu Native CSS Animations                       */
+/* ------------------------------------------------------------- */
+@keyframes megaMenuCard {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-mega-menu {
+  animation: megaMenuCard 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top center;
+  will-change: transform, opacity;
+}
+
+@keyframes megaItemSlide {
+  0% {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-mega-item {
+  animation: megaItemSlide 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes megaCardFade {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-mega-showcase {
+  animation: megaCardFade 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+
+/* ============================================================= */
+/*  App Toast Notification Styles (Mobile Notch & Dark Mode)     */
+/* ============================================================= */
+
+/* Toast Container */
+.app-toaster-container,
+div[data-rht-toaster],
+div:has(> .app-notch-toast) {
+  z-index: 999999 !important;
+}
+
+/* Base Toast Card / Pill */
+.app-notch-toast {
+  pointer-events: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  line-height: 1.4 !important;
+  user-select: none !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+/* Light Mode (Default) */
+.app-notch-toast {
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: #171717 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  box-shadow: 
+    0 10px 28px -4px rgba(0, 0, 0, 0.12),
+    0 2px 8px -1px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+.app-notch-toast > div[role="status"] {
+  color: #171717 !important;
+}
+
+/* Dark Mode */
+html.dark .app-notch-toast,
+.dark .app-notch-toast {
+  background: rgba(22, 22, 25, 0.94) !important;
+  color: #f5f5f5 !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  backdrop-filter: blur(22px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(190%) !important;
+  box-shadow: 
+    0 18px 40px -4px rgba(0, 0, 0, 0.72),
+    0 4px 14px -2px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+}
+
+html.dark .app-notch-toast > div[role="status"],
+.dark .app-notch-toast > div[role="status"] {
+  color: #f5f5f5 !important;
+}
+
+/* ------------------------------------------------------------- */
+/* Mobile: Notch Dynamic Island Pill (< 768px)                   */
+/* ------------------------------------------------------------- */
+@media (max-width: 767px) {
+  .app-toaster-container,
+  div:has(> .app-notch-toast) {
+    top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    pointer-events: none !important;
+  }
+
+  .app-notch-toast {
+    border-radius: 9999px !important; /* Dynamic Island Capsule Pill */
+    padding: 8px 18px !important;
+    min-height: 40px !important;
+    max-width: min(calc(100vw - 28px), 380px) !important;
+    font-size: 13.5px !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.01em !important;
+    gap: 8px !important;
+  }
+
+  .app-notch-toast > div[role="status"] {
+    margin: 2px 6px !important;
+    text-align: center;
+  }
+}
+
+/* ------------------------------------------------------------- */
+/* Desktop: Luxury Card (>= 768px)                               */
+/* ------------------------------------------------------------- */
+@media (min-width: 768px) {
+  .app-notch-toast {
+    border-radius: 16px !important;
+    padding: 12px 20px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.01em !important;
+    gap: 12px !important;
+    min-width: 240px !important;
+    max-width: 440px !important;
+  }
+}

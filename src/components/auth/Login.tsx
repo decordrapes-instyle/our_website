@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import Spinner from "../common/Spinner";
 import { useNavigate, Link } from "react-router-dom";
 import {
   signInWithEmailAndPassword,
@@ -646,16 +647,7 @@ const Login = () => {
   );
 
   if (!authChecked && !verificationRequired) {
-    return (
-      <div className="min-h-screen w-full bg-gray-50 dark:bg-neutral-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
-            Please wait...
-          </p>
-        </div>
-      </div>
-    );
+    return <Spinner fullScreen text="Loading account..." />;
   }
 
   return (

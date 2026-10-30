@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 
 interface ProductCardProps {
   product: {
@@ -22,12 +21,10 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
       : [DEFAULT_IMG];
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [direction, setDirection] = useState(1);
 
   useEffect(() => {
     if (allImages.length <= 1) return;
     const interval = setInterval(() => {
-      setDirection(1);
       setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
     }, 3500);
     return () => clearInterval(interval);
@@ -35,20 +32,12 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
 
   const handleNextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setDirection(1);
     setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
   };
 
   const handlePrevImage = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setDirection(-1);
     setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
-  };
-
-  const slideVariants = {
-    enter: (dir: number) => ({ x: dir > 0 ? 100 : -100, opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (dir: number) => ({ x: dir > 0 ? -100 : 100, opacity: 0 }),
   };
 
   return (
@@ -63,27 +52,16 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
     >
       {/* Image Container */}
       <div className="w-full aspect-square overflow-hidden rounded-t-xl relative">
-        <AnimatePresence mode="wait" custom={direction}>
-          <motion.img
-            key={allImages[currentImageIndex]}
-            src={allImages[currentImageIndex]}
-            alt={product.name}
-            className="absolute inset-0 w-full h-full object-cover object-center"
-            loading="lazy"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = DEFAULT_IMG;
-            }}
-            variants={slideVariants}
-            custom={direction}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              x: { type: "spring", stiffness: 300, damping: 30 },
-              opacity: { duration: 0.2 },
-            }}
-          />
-        </AnimatePresence>
+        <img
+          key={allImages[currentImageIndex]}
+          src={allImages[currentImageIndex]}
+          alt={product.name}
+          className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-300 ease-in-out"
+          loading="lazy"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = DEFAULT_IMG;
+          }}
+        />
 
         {/* Slideshow Indicators */}
         {allImages.length > 1 && (
@@ -106,7 +84,8 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
           <>
             <button
               onClick={handlePrevImage}
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-800 dark:text-gray-200 rounded-full p-1 transition shadow-sm z-10"
+              aria-label="Previous image"
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-800 dark:text-gray-200 rounded-full p-1 transition shadow-sm z-10 cursor-pointer"
             >
               <svg
                 className="w-4 h-4"
@@ -124,7 +103,8 @@ export default function ProductCard({ product, onViewDetails }: ProductCardProps
             </button>
             <button
               onClick={handleNextImage}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-800 dark:text-gray-200 rounded-full p-1 transition shadow-sm z-10"
+              aria-label="Next image"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-800 dark:text-gray-200 rounded-full p-1 transition shadow-sm z-10 cursor-pointer"
             >
               <svg
                 className="w-4 h-4"

@@ -6,6 +6,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider } from './context/AuthContext.tsx'
 import { BrowserRouter as Router } from 'react-router-dom'
 import MaintenancePage from './pages/MaintenancePage.tsx'
+import Spinner from './components/common/Spinner'
 
 const isMaintenanceMode = false; // import.meta.env.VITE_MAINTENANCE_MODE === "true";
 
@@ -15,7 +16,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <AuthProvider>
         <Router>
           {isMaintenanceMode ? (
-            <Suspense fallback={<div>Loading...</div>}>
+            <Suspense fallback={<Spinner fullScreen text="Loading..." />}>
               <MaintenancePage />
             </Suspense>
           ) : (

@@ -240,7 +240,7 @@ const Contact: React.FC = () => {
         <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[400px] rounded-full bg-sky-400/5 blur-3xl" />
         <div className="pointer-events-none absolute top-40 right-0 w-[300px] h-[300px] rounded-full bg-amber-400/5 blur-3xl" />
 
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 lg:py-24">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 lg:py-24">
           <header className="text-center max-w-3xl mx-auto mb-14 md:mb-20">
             <div className="flex justify-center mb-6">
               <BrandMark />

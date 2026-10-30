@@ -4,7 +4,7 @@ type Theme = "light" | "dark" | "system";
 
 interface ThemeContextProps {
   theme: Theme;
-  resolvedTheme: "light" | "dark" | "system";
+  resolvedTheme: "light" | "dark";
   setTheme: (theme: Theme) => void;
 }
 
@@ -39,12 +39,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (activeTheme === "dark") {
       document.documentElement.classList.add("dark");
+      document.documentElement.dataset.theme = "dark";
       document.documentElement.style.colorScheme = "dark";
       if (themeColorMeta) {
         themeColorMeta.setAttribute("content", "#0a0a0a");
       }
     } else {
       document.documentElement.classList.remove("dark");
+      document.documentElement.dataset.theme = "light";
       document.documentElement.style.colorScheme = "light";
       if (themeColorMeta) {
         themeColorMeta.setAttribute("content", "#ffffff");
@@ -59,6 +61,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const newSystemTheme = e.matches ? "dark" : "light";
         setResolvedTheme(newSystemTheme);
         document.documentElement.classList.toggle("dark", e.matches);
+        document.documentElement.dataset.theme = newSystemTheme;
         document.documentElement.style.colorScheme = e.matches ? "dark" : "light";
         if (themeColorMeta) {
           themeColorMeta.setAttribute("content", e.matches ? "#171717" : "#ffffff");

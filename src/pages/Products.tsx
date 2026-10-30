@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Spinner from '../components/common/Spinner';
 import { Link } from 'react-router-dom';
 import { ref, onValue, runTransaction, set, get } from '../config/firebase';
 import { getAuth, onAuthStateChanged, User as FirebaseUser } from '../config/firebase';
@@ -210,11 +211,7 @@ const Products: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
-        <div className="animate-spin rounded-full h-20 w-20 border-b-2 border-indigo-600 dark:border-indigo-400" />
-      </div>
-    );
+    return <Spinner fullScreen text="Loading products..." />;
   }
 
   return (

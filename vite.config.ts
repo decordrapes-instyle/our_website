@@ -17,7 +17,6 @@ export default defineConfig({
           // Big libraries
           if (id.includes("firebase")) return `chunk-firebase-[hash]`;
           if (id.includes("recharts")) return `chunk-charts-[hash]`;
-          if (id.includes("framer-motion")) return `chunk-motion-[hash]`;
 
           // Merge all small helpers/components into one chunk
           if (

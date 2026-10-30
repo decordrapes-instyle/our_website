@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, FormEvent } from 'react';
+import Spinner from '../components/common/Spinner';
 import { useSearchParams } from 'react-router-dom';
 import {
   Search,
@@ -20,283 +21,7 @@ import { WarrantyRecord, WarrantyProductItem } from '../types/warranty';
 
 const DAILY_SEARCH_LIMIT = 10;
 
-// Reference data from actual customer installation order (sparse multi-item motors + accessories)
-const SAMPLE_HAPPYMONK: WarrantyRecord = {
-  id: "WAR-2026-Q-60747",
-  orderNumber: "DDI-Q-60747",
-  warrantyNumber: "WAR-2026-Q-60747",
-  quotationId: "DDI-Q-60747",
-  customer: {
-    name: "Happymonk Technology Pvt Ltd",
-    mobile: "+19 82961 33666",
-    email: "accounts@happymonk.co.in",
-    address: "J.P Nagar Bangalore Karnataka - 560029",
-    installationAddress: "SPARSH Hospital, Hennur",
-    gstin: "29AADCH6575K1ZZ",
-  },
-  metadata: {
-    source: "quotation",
-    updatedAt: "2026-10-26T12:19:50.973Z",
-    notes: "Site installation at SPARSH Hospital completed.",
-  },
-  products: [
-    {
-      id: "202605140077",
-      productName: "Tuya 3 Wire WiFi Motor",
-      productCode: "WSCMXG-12-9W",
-      productCategory: "Wistar",
-      productSpecification: "50kg Load Capacity | 60RPM | IP40 | 18W",
-      productImage: "https://res.cloudinary.com/ds6um53cx/image/upload/v1790763448/otqz6x6gcclhdj7s4yjp.png",
-      productSpecificWarranty: "5 Years Manufacturer Replacement Guarantee",
-      hasWarranty: true,
-      noWarrantyReason: "",
-      amount: 3800,
-      gst: 18,
-      gstAmount: 684,
-      totalAmount: 4484,
-      startDate: "2026-10-26",
-      endDate: "2031-10-25",
-      warrantyPeriod: "5 Years",
-    },
-    {
-      id: "202605140112",
-      productName: "Tuya 3 Wire WiFi Motor",
-      productCode: "WSCMXG-12-9W",
-      productCategory: "Wistar",
-      productSpecification: "50kg Load Capacity | 60RPM | IP40 | 18W",
-      productImage: "https://res.cloudinary.com/ds6um53cx/image/upload/v1790763448/otqz6x6gcclhdj7s4yjp.png",
-      productSpecificWarranty: "",
-      hasWarranty: false,
-      noWarrantyReason: "Excluded from warranty coverage per terms of sale",
-      amount: 0,
-      gst: 18,
-      gstAmount: 0,
-      totalAmount: 0,
-      startDate: "2026-10-26",
-      endDate: "2028-10-25",
-      warrantyPeriod: "None",
-    },
-    {
-      id: "202605140076",
-      productName: "Tuya 3 Wire WiFi Motor",
-      productCode: "WSCMXG-12-9W",
-      productCategory: "Wistar",
-      productSpecification: "50kg Load Capacity | 60RPM | IP40 | 18W",
-      productImage: "https://res.cloudinary.com/ds6um53cx/image/upload/v1790763448/otqz6x6gcclhdj7s4yjp.png",
-      productSpecificWarranty: "",
-      hasWarranty: true,
-      amount: 0,
-      gst: 18,
-      gstAmount: 0,
-      totalAmount: 0,
-      startDate: "2026-10-26",
-      endDate: "2031-10-25",
-      warrantyPeriod: "5 Years",
-    },
-    {
-      id: "202605140117",
-      productName: "Tuya 3 Wire WiFi Motor",
-      productCode: "WSCMXG-12-9W",
-      productCategory: "Wistar",
-      productSpecification: "50kg Load Capacity | 60RPM | IP40 | 18W",
-      productImage: "https://res.cloudinary.com/ds6um53cx/image/upload/v1790763448/otqz6x6gcclhdj7s4yjp.png",
-      productSpecificWarranty: "",
-      hasWarranty: true,
-      amount: 0,
-      gst: 18,
-      gstAmount: 0,
-      totalAmount: 0,
-      startDate: "2026-10-26",
-      endDate: "2031-10-25",
-      warrantyPeriod: "5 Years",
-    },
-    {
-      id: "202605140087",
-      productName: "Tuya 3 Wire WiFi Motor",
-      productCode: "WSCMXG-12-9W",
-      productCategory: "Wistar",
-      productSpecification: "50kg Load Capacity | 60RPM | IP40 | 18W",
-      productImage: "https://res.cloudinary.com/ds6um53cx/image/upload/v1790763448/otqz6x6gcclhdj7s4yjp.png",
-      productSpecificWarranty: "",
-      hasWarranty: true,
-      amount: 0,
-      gst: 18,
-      gstAmount: 0,
-      totalAmount: 0,
-      startDate: "2026-10-26",
-      endDate: "2031-10-25",
-      warrantyPeriod: "5 Years",
-    },
-    {
-      id: "202605140085",
-      productName: "Tuya 3 Wire WiFi Motor",
-      productCode: "WSCMXG-12-9W",
-      productCategory: "Wistar",
-      productSpecification: "50kg Load Capacity | 60RPM | IP40 | 18W",
-      productImage: "https://res.cloudinary.com/ds6um53cx/image/upload/v1790763448/otqz6x6gcclhdj7s4yjp.png",
-      productSpecificWarranty: "",
-      hasWarranty: true,
-      amount: 0,
-      gst: 18,
-      gstAmount: 0,
-      totalAmount: 0,
-      startDate: "2026-10-26",
-      endDate: "2031-10-25",
-      warrantyPeriod: "5 Years",
-    },
-    {
-      id: "202605140074",
-      productName: "Tuya 3 Wire WiFi Motor",
-      productCode: "WSCMXG-12-9W",
-      productCategory: "Wistar",
-      productSpecification: "50kg Load Capacity | 60RPM | IP40 | 18W",
-      productImage: "https://res.cloudinary.com/ds6um53cx/image/upload/v1790763448/otqz6x6gcclhdj7s4yjp.png",
-      productSpecificWarranty: "",
-      hasWarranty: true,
-      amount: 0,
-      gst: 18,
-      gstAmount: 0,
-      totalAmount: 0,
-      startDate: "2026-10-26",
-      endDate: "2031-10-25",
-      warrantyPeriod: "5 Years",
-    },
-    {
-      id: "202605140078",
-      productName: "Tuya 3 Wire WiFi Motor",
-      productCode: "WSCMXG-12-9W",
-      productCategory: "Wistar",
-      productSpecification: "50kg Load Capacity | 60RPM | IP40 | 18W",
-      productImage: "https://res.cloudinary.com/ds6um53cx/image/upload/v1790763448/otqz6x6gcclhdj7s4yjp.png",
-      productSpecificWarranty: "",
-      hasWarranty: true,
-      amount: 0,
-      gst: 18,
-      gstAmount: 0,
-      totalAmount: 0,
-      startDate: "2026-10-26",
-      endDate: "2031-10-25",
-      warrantyPeriod: "5 Years",
-    },
-    {
-      id: "BC156724",
-      productName: "Remote 4 Channel",
-      productCode: "WSXE302",
-      productCategory: "Motor & Accessories",
-      productSpecification: "Four individual emitter channels to operate Tuya WSCMXG-12-9W motors",
-      productImage: "https://res.cloudinary.com/dmiwq3l2s/image/upload/v1766227093/xixyu8gyx30wbhbauxi9.jpg",
-      productSpecificWarranty: "",
-      hasWarranty: false,
-      noWarrantyReason: "Remote control and accessories are not covered under warranty",
-      amount: 8400,
-      gst: 18,
-      gstAmount: 1512,
-      totalAmount: 9912,
-      startDate: "2026-10-26",
-      endDate: "2031-10-25",
-      warrantyPeriod: "None",
-    },
-  ],
-  summary: {
-    totalProducts: 9,
-    subTotal: 12200,
-    totalGst: 2196,
-    grandTotal: 14396,
-  },
-  warranty: {
-    startDate: "2026-10-26",
-    endDate: "2031-10-25",
-    durationMonths: 60,
-    warrantyPeriodLabel: "5 Years",
-    status: "active",
-    termsAndConditions:
-      "1. Motor warranty is valid for 5 years against manufacturing defects under normal use.\n2. Physical damage and short-circuit damage are not covered.\n3. Remote control and accessories are not covered under warranty.\n4. Warranty claims require this certificate or a valid Warranty Number.",
-  },
-};
-
-// Fallback reference data matching user JSON
-const SAMPLE_RAJESH: WarrantyRecord = {
-  id: "-Oi87abC123def456",
-  orderNumber: "DDI-2026-042",
-  warrantyNumber: "87654B98",
-  quotationId: "-Nxyz890abc123",
-
-  customer: {
-    name: "Rajesh Kumar",
-    mobile: "+91 98765 43210",
-    email: "rajesh.kumar@example.com",
-    address: "Flat 402, Sunshine Heights, MG Road, Bengaluru, Karnataka - 560001",
-    gstin: "29AAAAA0000A1Z5",
-  },
-
-  warranty: {
-    startDate: "2026-10-26",
-    endDate: "2029-10-25",
-    durationMonths: 36,
-    warrantyPeriodLabel: "3 Years",
-    status: "active",
-    termsAndConditions:
-      "1. Warranty covers manufacturing defects, motor mechanism faults, and electronic drive failures. 2. Physical abuse or water damage is excluded. 3. Repairs must be handled only by authorized service technicians. 4. Original warranty document or digital record must be presented for claims.",
-  },
-
-  products: [
-    {
-      id: "prod_1",
-      productName: "Motorized Zebra Blind",
-      productCode: "ZBR-MTR-004",
-      productCategory: "Blinds",
-      productSpecification:
-        "Dimensions: 60\" W × 84\" H (sqft: 35) • Fabric: Charcoal Blackout • Motor: Somfy Altus 40 RTS",
-      productImage:
-        "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80",
-      productSpecificWarranty: "5 Years on Somfy Motor, 3 Years on Fabric colorfastness",
-      hasWarranty: true,
-      amount: 14500,
-      gst: 18,
-      gstAmount: 2610,
-      totalAmount: 17110,
-      startDate: "2026-10-26",
-      endDate: "2031-10-25",
-      warrantyPeriod: "5 Years",
-    },
-    {
-      id: "prod_2",
-      productName: "Heavy Duty Ripple Fold Curtain Track",
-      productCode: "TRK-RPL-002",
-      productCategory: "Tracks",
-      productSpecification:
-        "Length: 14 Running Feet • Color: Matte White • Runners: 60mm Spacing",
-      productImage:
-        "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80",
-      productSpecificWarranty: "3 Years on Track mechanism & smooth glide warranty",
-      hasWarranty: true,
-      amount: 6300,
-      gst: 18,
-      gstAmount: 1134,
-      totalAmount: 7434,
-      startDate: "2026-10-26",
-      endDate: "2029-10-25",
-      warrantyPeriod: "3 Years",
-    },
-  ],
-
-  summary: {
-    totalProducts: 2,
-    subTotal: 20800,
-    totalGst: 3744,
-    grandTotal: 24544,
-  },
-
-  metadata: {
-    source: "quotation",
-    createdAt: "2026-10-26T09:15:00.000Z",
-    updatedAt: "2026-10-26T09:15:00.000Z",
-    createdBy: "admin@decordrapes.com",
-    notes: "Full home installation completed. Handover signoff received.",
-  },
-};
-
-const DEFAULT_WARRANTIES: WarrantyRecord[] = [SAMPLE_HAPPYMONK, SAMPLE_RAJESH];
+export const DEFAULT_WARRANTIES: WarrantyRecord[] = [];
 
 // Rate limiting helpers (10 searches/day, kept strictly in background without counter display)
 function getDailyUsage(): { date: string; count: number; history: string[] } {
@@ -565,19 +290,17 @@ function ProductItemCard({
           {/* Item ID Header - Prominently highlighted as main distinction (no group name over Item ID) */}
           <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-neutral-100 dark:border-neutral-800/80">
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-[9px] uppercase font-sans tracking-wider text-neutral-400 font-semibold shrink-0">
-                Item ID
-              </span>
-              <span className="font-mono text-xs font-bold text-neutral-900 dark:text-white truncate">
-                {item.id}
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-mono text-[11px] font-bold bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shrink-0 shadow-2xs">
+                <span>Item ID:</span>
+                <span className="tracking-wide">{item.id}</span>
               </span>
               <button
                 type="button"
                 onClick={handleCopyId}
                 title="Copy Item ID"
-                className="no-print p-0.5 rounded text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors shrink-0"
+                className="no-print p-1 rounded-md text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0 cursor-pointer"
               >
-                {copiedId ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
+                {copiedId ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
               </button>
             </div>
           </div>
@@ -760,7 +483,7 @@ function cleanSearchQuery(raw: string): string {
  * Handles single record objects at root, arrays, or object maps keyed by pushId.
  * Guarantees each record's `products` is always an array of WarrantyProductItem.
  */
-function parseWarrantiesData(data: any): WarrantyRecord[] {
+export function parseWarrantiesData(data: any): WarrantyRecord[] {
   if (!data) return [];
 
   const normalizeRec = (raw: any, fallbackId: string): WarrantyRecord => {
@@ -890,6 +613,27 @@ function SearchBar({
   );
 }
 
+// Fresh read directly from Firebase on each search - zero caching
+export const fetchFreshWarranties = async (): Promise<WarrantyRecord[]> => {
+  try {
+    let snap = await get(ref(database, 'warrantymanagement'));
+    if (!snap.exists()) {
+      snap = await get(ref(database, 'warranties'));
+      if (!snap.exists()) {
+        snap = await get(ref(database, 'warranty'));
+      }
+    }
+
+    if (snap.exists()) {
+      const data = snap.val();
+      return parseWarrantiesData(data);
+    }
+  } catch (err) {
+    console.error('Fresh fetch error:', err);
+  }
+  return [];
+};
+
 export default function Warranty() {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -897,7 +641,7 @@ export default function Warranty() {
   const initialParam = getSearchQueryFromParams(searchParams);
   const [inputVal, setInputVal] = useState(initialParam);
   const [submittedQuery, setSubmittedQuery] = useState('');
-  const [warranties, setWarranties] = useState<WarrantyRecord[]>(DEFAULT_WARRANTIES);
+  const [warranties, setWarranties] = useState<WarrantyRecord[]>([]);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [limitReached, setLimitReached] = useState(false);
   const [showAllProducts, setShowAllProducts] = useState(false);
@@ -908,43 +652,22 @@ export default function Warranty() {
   const storeName = getSetting('store_name') || 'Decor Drapes Instyle';
   const supportPhone = getSetting('primary_phone') || '+91 98765 43210';
 
-  // Initialize quota status silently
+  // Initialize quota status silently and pre-load real warranties in background
   useEffect(() => {
     const usage = getDailyUsage();
     if (usage.count >= DAILY_SEARCH_LIMIT) {
       setLimitReached(true);
     }
+
+    let active = true;
+    fetchFreshWarranties().then((list) => {
+      if (active) setWarranties(list);
+    });
+
+    return () => {
+      active = false;
+    };
   }, []);
-
-  // Fresh read directly from Firebase on each search - zero caching
-  const fetchFreshWarranties = async (): Promise<WarrantyRecord[]> => {
-    try {
-      let snap = await get(ref(database, 'warrantymanagement'));
-      if (!snap.exists()) {
-        snap = await get(ref(database, 'warranties'));
-        if (!snap.exists()) {
-          snap = await get(ref(database, 'warranty'));
-        }
-      }
-
-      if (snap.exists()) {
-        const data = snap.val();
-        const list = parseWarrantiesData(data);
-        if (list.length > 0) {
-          // Merge with sample defaults so demo records always stay available
-          for (const def of DEFAULT_WARRANTIES) {
-            if (!list.some((w) => w.orderNumber === def.orderNumber || w.warrantyNumber === def.warrantyNumber)) {
-              list.push(def);
-            }
-          }
-          return list;
-        }
-      }
-    } catch (err) {
-      console.error('Fresh fetch error:', err);
-    }
-    return DEFAULT_WARRANTIES;
-  };
 
   // Sync whenever URL search parameters change (or on direct arrival with search params)
   useEffect(() => {
@@ -1242,17 +965,7 @@ export default function Warranty() {
       {/* ========================================================================= */}
       {isVerifying && (
         <main className="min-h-screen flex flex-col items-center justify-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-          <div className="w-full max-w-sm mx-auto text-center space-y-4">
-            <div className="w-8 h-8 mx-auto border-2 border-neutral-300 dark:border-neutral-700 border-t-neutral-900 dark:border-t-white rounded-full animate-spin" />
-            <div className="space-y-1">
-              <h3 className="text-base sm:text-lg font-medium text-neutral-900 dark:text-white font-display">
-                Verifying Warranty Certificate
-              </h3>
-              <p className="text-xs font-mono text-neutral-500 dark:text-neutral-400">
-                Querying {storeName} warranty database...
-              </p>
-            </div>
-          </div>
+          <Spinner fullScreen={false} text="Verifying Warranty Certificate..." size="lg" />
         </main>
       )}
 
@@ -1671,6 +1384,13 @@ export default function Warranty() {
             </div>
 
             {/* ========================================================================= */}
+            {/* Official Print Footer / Authentication Seal */}
+            <div className="hidden print:flex items-center justify-between pt-3 border-t border-neutral-300 text-[7.5pt] font-mono text-neutral-600 print-avoid-break">
+              <span>Verified Certificate • Digitally Tracked</span>
+              <span>Issued by {storeName}</span>
+              <span>Valid across authorized service locations</span>
+            </div>
+
             {/* BOTTOM ACTIONS: PDF & SUPPORT (MOVED FROM TOP TO BOTTOM AS REQUESTED)     */}
             {/* ========================================================================= */}
             <div className="no-print pt-6 border-t border-neutral-100 dark:border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-3">

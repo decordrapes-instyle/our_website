@@ -1,5 +1,5 @@
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState, useEffect } from "react";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import Catalogue from "./pages/Catalogue";
@@ -13,6 +13,7 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PageRouteGuard from "./components/common/PageRouteGuard";
+import Spinner from "./components/common/Spinner";
 
 const Login = lazy(() => import("./components/auth/Login"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -26,8 +27,25 @@ const Toaster = lazy(() =>
   import("react-hot-toast").then((m) => ({ default: m.Toaster }))
 );
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false
+  );
+
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 767px)");
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    setIsMobile(mql.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+
+  return isMobile;
+}
+
 function App() {
   const location = useLocation();
+  const isMobile = useIsMobile();
 
   const hideHeaderFooter =
     location.pathname.startsWith("/profile") ||
@@ -53,7 +71,7 @@ function App() {
       )}
 
       <main>
-        <Suspense fallback={null}>
+        <Suspense fallback={<Spinner fullScreen text="Loading page..." />}>
           <Routes>
             <Route
               path="/"
@@ -159,11 +177,29 @@ function App() {
 
       <Suspense fallback={null}>
         <Toaster
-          position="top-right"
+          position={isMobile ? "top-center" : "top-right"}
+          containerClassName="app-toaster-container"
+          containerStyle={{
+            top: isMobile ? "calc(env(safe-area-inset-top, 0px) + 8px)" : 24,
+            right: isMobile ? 12 : 24,
+            left: isMobile ? 12 : "auto",
+            zIndex: 999999,
+          }}
           toastOptions={{
-            duration: 3000,
-            className:
-              "bg-neutral-900 text-neutral-100 dark:bg-neutral-100 dark:text-neutral-900 border border-neutral-800 dark:border-neutral-200",
+            duration: 3200,
+            className: "app-notch-toast",
+            success: {
+              iconTheme: {
+                primary: "#10b981",
+                secondary: "#ffffff",
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: "#f43f5e",
+                secondary: "#ffffff",
+              },
+            },
           }}
         />
       </Suspense>

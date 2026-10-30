@@ -7,6 +7,7 @@ import { ProductDetailPage } from './pages/ProductDetailPage';
 import { AdminPage } from './pages/admin/AdminPage';
 import { ToastProvider } from './context/ToastContext';
 import { ThemeProvider } from './context/ThemeContext';
+import Spinner from '../components/common/Spinner';
 
 export const App: React.FC = () => {
   const [catalogues, setCatalogues] = useState<Catalogue[]>([]);
@@ -166,8 +167,8 @@ export const App: React.FC = () => {
       <ThemeProvider>
         <ToastProvider>
         {loading ? (
-          <div style={{ display: 'grid', placeItems: 'center', height: '100vh', color: 'var(--muted)' }}>
-            Loading...
+          <div className="min-h-screen flex items-center justify-center">
+            <Spinner fullScreen={false} text="Loading catalogue..." size="lg" />
           </div>
         ) : activeCatalogueSlug === 'admin' ? (
           /* Standalone Non-Modal Admin Page */

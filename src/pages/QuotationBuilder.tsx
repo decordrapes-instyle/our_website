@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "../context/AuthContext";
 import {
   Building2,
   User,
@@ -280,14 +281,63 @@ function LogoUpload({
 const STEPS = ["Company", "Payment", "Customer", "Items", "Terms & Download"] as const;
 
 export default function QuotationBuilder({ onClose }: { onClose: () => void }) {
+  const { currentUser } = useAuth();
   const [step, setStep] = useState(0);
-  const [company, setCompany] = useState<CompanyInfo>(emptyCompany());
-  const [customer, setCustomer] = useState<CustomerInfo>(emptyCustomer());
+  const [company, setCompany] = useState<CompanyInfo>(() => {
+    const base = emptyCompany();
+    if (!currentUser) return base;
+    return {
+      ...base,
+      companyName: currentUser.company?.trim() ? currentUser.company.trim() : base.companyName,
+      companyEmail: currentUser.email || base.companyEmail,
+      companyPhone: currentUser.phone || base.companyPhone,
+      companyAddress: currentUser.address || base.companyAddress,
+      companyGSTIN: (currentUser as any)?.gst || (currentUser as any)?.gstin || base.companyGSTIN,
+      companyLogo: currentUser.profileImage || base.companyLogo,
+      companyLogoSquare: currentUser.profileImage || base.companyLogoSquare,
+    };
+  });
+  const [customer, setCustomer] = useState<CustomerInfo>(() => {
+    const base = emptyCustomer();
+    if (!currentUser) return base;
+    return {
+      name: currentUser.displayName || "",
+      address: currentUser.address || "",
+      mobile: currentUser.phone || "",
+      email: currentUser.email || "",
+      gstin: (currentUser as any)?.gst || (currentUser as any)?.gstin || "",
+      logo: currentUser.profileImage || "",
+    };
+  });
   const [items, setItems] = useState<ItemRow[]>([emptyItem()]);
   const [quotationNumber, setQuotationNumber] = useState(
     `Q-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`
   );
   const [termsText, setTermsText] = useState("");
+
+  // Sync / fill all user profile data if auth loads or updates
+  useEffect(() => {
+    if (currentUser) {
+      setCustomer((prev) => ({
+        name: prev.name || currentUser.displayName || "",
+        address: prev.address || currentUser.address || "",
+        mobile: prev.mobile || currentUser.phone || "",
+        email: prev.email || currentUser.email || "",
+        gstin: prev.gstin || (currentUser as any)?.gst || (currentUser as any)?.gstin || "",
+        logo: prev.logo || currentUser.profileImage || "",
+      }));
+      setCompany((prev) => ({
+        ...prev,
+        companyName: currentUser.company?.trim() ? currentUser.company.trim() : prev.companyName,
+        companyEmail: prev.companyEmail || currentUser.email || "",
+        companyPhone: prev.companyPhone || currentUser.phone || "",
+        companyAddress: prev.companyAddress || currentUser.address || "",
+        companyGSTIN: (currentUser as any)?.gst || (currentUser as any)?.gstin || prev.companyGSTIN,
+        companyLogo: prev.companyLogo || currentUser.profileImage || "",
+        companyLogoSquare: prev.companyLogoSquare || currentUser.profileImage || "",
+      }));
+    }
+  }, [currentUser]);
 
   const [templateHtml, setTemplateHtml] = useState<string | null>(null);
   const [templateCss, setTemplateCss] = useState<string | null>(null);

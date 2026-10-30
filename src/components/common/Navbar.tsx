@@ -9,11 +9,13 @@ import {
   Info,
   Home,
   Phone,
-  ChevronRight,
-  Sparkles,
+  ArrowRight,
   ShoppingBag,
   BookOpen,
   ShieldCheck,
+  ChevronRight,
+  ChevronDown,
+  Star,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { ref, onValue } from "../../config/firebase";
@@ -82,6 +84,25 @@ const Navbar: React.FC = () => {
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
 
+  const [aboutMenuOpen, setAboutMenuOpen] = useState(false);
+  const aboutMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const aboutMenuRef = useRef<HTMLDivElement>(null);
+
+  const handleAboutMouseEnter = () => {
+    if (aboutMenuTimeoutRef.current) clearTimeout(aboutMenuTimeoutRef.current);
+    setAboutMenuOpen(true);
+  };
+
+  const handleAboutMouseLeave = () => {
+    aboutMenuTimeoutRef.current = setTimeout(() => {
+      setAboutMenuOpen(false);
+    }, 160);
+  };
+
+  useEffect(() => {
+    setAboutMenuOpen(false);
+  }, [location.pathname]);
+
   // Close dropdowns on outside click
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -95,10 +116,18 @@ const Navbar: React.FC = () => {
       ) {
         setProfileMenuOpen(false);
       }
+      // About mega menu
+      if (
+        aboutMenuOpen &&
+        aboutMenuRef.current &&
+        !aboutMenuRef.current.contains(e.target as Node)
+      ) {
+        setAboutMenuOpen(false);
+      }
     }
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
-  }, [profileMenuOpen]);
+  }, [profileMenuOpen, aboutMenuOpen]);
 
   const getDashboardPath = () => {
     if (currentUser?.role === "production") {
@@ -176,16 +205,16 @@ const Navbar: React.FC = () => {
     {
       label: "Estimate",
       to: "/estimate",
-      icon: <Sparkles size={14} />,
+      icon: <ArrowRight size={14} />,
     },
   ];
 
   // Quick action links for features (used in mobile sidebar only)
   const quickFeatureLinks = [
     {
-      label: "Browse Products",
-      to: "/products",
-      icon: <ShoppingBag size={12} />,
+      label: "Our Work",
+      to: "/our-work",
+      icon: <Star size={12} />,
     },
     {
       label: "Virtual Catalogue",
@@ -196,6 +225,11 @@ const Navbar: React.FC = () => {
       label: "Check Warranty",
       to: "/warranty",
       icon: <ShieldCheck size={12} />,
+    },
+    {
+      label: "About Us",
+      to: "/about",
+      icon: <Info size={12} />,
     },
   ];
 
@@ -212,50 +246,196 @@ const Navbar: React.FC = () => {
           <div className="flex items-center justify-between h-16">
             {/* Left Section - Logo & Navigation */}
             <div className="flex items-center space-x-8">
-              {/* Logo */}
+              {/* Minimal Brand Identity */}
               <Link
                 to="/"
-                className="flex items-center space-x-2 flex-shrink-0 group"
+                className="flex items-center gap-2 flex-shrink-0 group focus:outline-none"
+                title={storeName || "Decor Drapes Instyle"}
               >
                 <img
                   src="https://res.cloudinary.com/dmiwq3l2s/image/upload/v1764768203/vfw82jmca7zl5p86czhy.png"
-                  alt={`${storeName} Logo`}
-                  className="w-8 h-8 sm:w-9 sm:h-9 object-contain transition-transform duration-300"
+                  alt="Instyle Logo"
+                  className="w-7 h-7 sm:w-8 sm:h-8 object-contain transition-transform duration-300 group-hover:scale-105"
                 />
-                <div>
-                  {/* Desktop: Single line, stylish */}
-                  <span className="hidden sm:block font-semibold text-xl text-neutral-800 dark:text-white">
-                    {storeName}
-                  </span>
-
-                  {/* Mobile: Two lines */}
-                  <div className="sm:hidden text-neutral-900 dark:text-white leading-tight">
-                    <span className="font-bold text-2xl text-uppercase">
-                      {storeName.split(" ")[0]}
-                    </span>
-                    <span className="block text-xs font-normal text-gray-500 dark:text-gray-400 -mt-1">
-                      {storeName.split(" ").slice(1).join(" ")}
-                    </span>
-                  </div>
-                </div>
+                <span className="font-display font-bold text-base sm:text-lg tracking-tight text-neutral-900 dark:text-white group-hover:text-neutral-700 dark:group-hover:text-neutral-200 transition-colors">
+                  Instyle
+                </span>
               </Link>
 
               {/* Desktop Navigation Links - Simple and Clean */}
               <div className="hidden lg:flex items-center space-x-1">
-                {navLinks.map((item) => (
-                  <Link
-                    key={item.label}
-                    to={item.to || "#"}
-                    className={`flex items-center space-x-1.5 px-3 py-2 text-sm font-medium transition-all duration-200 rounded-full ${
-                      location.pathname === item.to
-                        ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white"
-                        : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 hover:text-neutral-900 dark:hover:text-white"
-                    }`}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </Link>
-                ))}
+                {navLinks.map((item) => {
+                  if (item.label === "About") {
+                    const isAboutActive =
+                      location.pathname === "/about" ||
+                      location.pathname === "/our-work" ||
+                      location.pathname === "/catalogue" ||
+                      location.pathname === "/warranty";
+
+                    return (
+                      <div
+                        key="About"
+                        ref={aboutMenuRef}
+                        className="relative"
+                        onMouseEnter={handleAboutMouseEnter}
+                        onMouseLeave={handleAboutMouseLeave}
+                      >
+                        <Link
+                          to="/about"
+                          className={`flex items-center space-x-1.5 px-3 py-2 text-sm font-medium transition-all duration-200 rounded-full ${
+                            isAboutActive
+                              ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white"
+                              : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 hover:text-neutral-900 dark:hover:text-white"
+                          }`}
+                        >
+                          <Info size={14} />
+                          <span>About</span>
+                          <ChevronDown
+                            size={12}
+                            className={`transition-transform duration-300 ease-out ${
+                              aboutMenuOpen ? "rotate-180 text-emerald-600 dark:text-emerald-400" : ""
+                            }`}
+                          />
+                        </Link>
+
+                        {/* Mega Menu Dropdown */}
+                        {aboutMenuOpen && (
+                          <div
+                            className="absolute top-full left-1/2 -translate-x-1/2 pt-2 z-50"
+                            onMouseEnter={handleAboutMouseEnter}
+                            onMouseLeave={handleAboutMouseLeave}
+                          >
+                            <div className="w-[620px] rounded-3xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border border-neutral-200/90 dark:border-neutral-800 shadow-2xl p-4 overflow-hidden animate-mega-menu">
+                              <div className="grid grid-cols-[1.05fr_1.35fr] gap-4">
+                                {/* Featured Showcase Image Card */}
+                                <Link
+                                  to="/about"
+                                  onClick={() => setAboutMenuOpen(false)}
+                                  className="group relative rounded-2xl overflow-hidden bg-neutral-950 flex flex-col justify-end p-5 min-h-[260px] border border-neutral-200/50 dark:border-neutral-800 animate-mega-showcase"
+                                >
+                                  <img
+                                    src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=700&q=80"
+                                    alt="Decor Drapes luxury curtains & blinds"
+                                    className="absolute inset-0 w-full h-full object-cover opacity-65 group-hover:scale-105 transition-transform duration-500"
+                                  />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-transparent" />
+                                  <div className="relative z-10 space-y-1 text-white">
+                                    <span className="inline-block text-[10px] font-mono uppercase tracking-widest text-sky-400 font-semibold">
+                                      Decor Drapes Instyle
+                                    </span>
+                                    <h4 className="text-base font-semibold leading-tight">
+                                      Bespoke Curtains &amp; Automation
+                                    </h4>
+                                    <p className="text-xs text-neutral-300 line-clamp-2">
+                                      Crafting luxury window dressings and motorization across 500+ homes &amp; offices.
+                                    </p>
+                                    <span className="inline-flex items-center gap-1 text-xs text-sky-400 font-medium pt-1 group-hover:translate-x-1 transition-transform">
+                                      Read our story →
+                                    </span>
+                                  </div>
+                                </Link>
+
+                                {/* Mega Menu Links: Our Work, Catalogue, Warranty, About Us */}
+                                <div className="flex flex-col justify-between space-y-1 py-0.5">
+                                  <Link
+                                    to="/our-work"
+                                    onClick={() => setAboutMenuOpen(false)}
+                                    className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-neutral-100/70 dark:hover:bg-neutral-800/70 transition-all duration-150 group animate-mega-item"
+                                  >
+                                    <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                      <Star size={16} />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="text-sm font-semibold text-neutral-900 dark:text-white flex items-center justify-between">
+                                        <span>Our Work</span>
+                                        <ChevronRight size={13} className="text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
+                                      </div>
+                                      <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                                        Explore residential &amp; corporate installations
+                                      </p>
+                                    </div>
+                                  </Link>
+
+                                  <Link
+                                    to="/catalogue"
+                                    onClick={() => setAboutMenuOpen(false)}
+                                    className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-neutral-100/70 dark:hover:bg-neutral-800/70 transition-all duration-150 group animate-mega-item [animation-delay:40ms]"
+                                  >
+                                    <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-400/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                      <BookOpen size={16} />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="text-sm font-semibold text-neutral-900 dark:text-white flex items-center justify-between">
+                                        <span>Catalogue</span>
+                                        <ChevronRight size={13} className="text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
+                                      </div>
+                                      <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                                        Browse fabrics, motorized tracks &amp; blinds
+                                      </p>
+                                    </div>
+                                  </Link>
+
+                                  <Link
+                                    to="/warranty"
+                                    onClick={() => setAboutMenuOpen(false)}
+                                    className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-neutral-100/70 dark:hover:bg-neutral-800/70 transition-all duration-150 group animate-mega-item [animation-delay:80ms]"
+                                  >
+                                    <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                      <ShieldCheck size={16} />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="text-sm font-semibold text-neutral-900 dark:text-white flex items-center justify-between">
+                                        <span>Warranty</span>
+                                        <ChevronRight size={13} className="text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
+                                      </div>
+                                      <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                                        Verify certificate &amp; product warranty coverage
+                                      </p>
+                                    </div>
+                                  </Link>
+
+                                  <Link
+                                    to="/about"
+                                    onClick={() => setAboutMenuOpen(false)}
+                                    className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-neutral-100/70 dark:hover:bg-neutral-800/70 transition-all duration-150 group animate-mega-item [animation-delay:120ms]"
+                                  >
+                                    <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-400/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                      <Info size={16} />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="text-sm font-semibold text-neutral-900 dark:text-white flex items-center justify-between">
+                                        <span>About Us</span>
+                                        <ChevronRight size={13} className="text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
+                                      </div>
+                                      <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                                        Our history, craftsmanship, team &amp; values
+                                      </p>
+                                    </div>
+                                  </Link>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <Link
+                      key={item.label}
+                      to={item.to || "#"}
+                      className={`flex items-center space-x-1.5 px-3 py-2 text-sm font-medium transition-all duration-200 rounded-full ${
+                        location.pathname === item.to
+                          ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white"
+                          : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 hover:text-neutral-900 dark:hover:text-white"
+                      }`}
+                    >
+                      {item.icon}
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
 
@@ -348,15 +528,6 @@ const Navbar: React.FC = () => {
                 </div>
               ) : (
                 <div className="flex items-center space-x-3">
-                  {/* <Link
-                    to="/login"
-                    className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 
-             hover:text-neutral-900 dark:hover:text-white transition-colors duration-200 
-             rounded-full hidden sm:inline-block"
-                  >
-                    Sign In
-                  </Link> */}
-
                   <Link
                     to="/login"
                     className="px-5 py-2 text-sm font-medium 
@@ -415,16 +586,16 @@ const Navbar: React.FC = () => {
               <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
                 <Link
                   to="/"
-                  className="flex items-center space-x-2"
+                  className="flex items-center gap-2"
                   onClick={() => setSidebarOpen(false)}
                 >
                   <img
                     src="https://res.cloudinary.com/dmiwq3l2s/image/upload/v1764768203/vfw82jmca7zl5p86czhy.png"
-                    alt="Logo"
-                    className="w-8 h-8"
+                    alt="Instyle Logo"
+                    className="w-7 h-7 object-contain"
                   />
-                  <div className="font-bold text-neutral-900 dark:text-white text-sm">
-                    {storeName}
+                  <div className="font-display font-bold text-neutral-900 dark:text-white text-base">
+                    Instyle
                   </div>
                 </Link>
                 <button

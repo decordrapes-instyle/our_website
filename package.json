@@ -14,11 +14,10 @@
   "dependencies": {
     "cloudinary": "^2.7.0",
     "firebase": "^12.2.1",
-    "framer-motion": "^12.23.12",
     "gapi-script": "^1.2.0",
     "jspdf": "^4.0.0",
     "jspdf-autotable": "^5.0.7",
-    "lucide-react": "^0.344.0",
+    "lucide-react": "^1.65.0",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
