@@ -7,27 +7,31 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
-        entryFileNames: "assets/chunk-[hash].js",
-        chunkFileNames: "assets/chunk-[hash].js",
+        entryFileNames: "assets/[name]-[hash].js",
+        chunkFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash][extname]",
 
         manualChunks(id) {
-          if (id.includes("/src/pages/")) return `chunk-pages-[hash]`;
-
-          // Big libraries
-          if (id.includes("firebase")) return `chunk-firebase-[hash]`;
-          if (id.includes("recharts")) return `chunk-charts-[hash]`;
-
-          // Merge all small helpers/components into one chunk
-          if (
-            id.includes("Navbar") ||
-            id.includes("Footer") ||
-            id.includes("TitleUpdater") ||
-            id.includes("FaviconUpdater") ||
-            id.includes("Toaster") ||
-            id.includes("Auth")
-          )
-            return `chunk-utils-[hash]`;
+          if (id.includes("node_modules")) {
+            if (
+              id.includes("/react/") ||
+              id.includes("/react-dom/") ||
+              id.includes("/react-router/") ||
+              id.includes("/react-router-dom/") ||
+              id.includes("/scheduler/")
+            ) {
+              return "vendor-react";
+            }
+            if (id.includes("firebase")) {
+              return "vendor-firebase";
+            }
+            if (id.includes("recharts")) {
+              return "vendor-charts";
+            }
+            if (id.includes("jspdf")) {
+              return "vendor-pdf";
+            }
+          }
         },
       },
     },
