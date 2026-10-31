@@ -28,7 +28,7 @@ export type PageKey =
 export const PAGE_STATUS: Record<PageKey, boolean> = {
   home: true,
   products: true,
-  catalogue: false,
+  catalogue: true,
   ourWork: true,
   about: true,
   contact: true,

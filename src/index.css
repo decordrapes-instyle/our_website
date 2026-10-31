@@ -460,3 +460,23 @@ html.dark .app-notch-toast > div[role="status"],
     max-width: 440px !important;
   }
 }
+
+/* ------------------------------------------------------------- */
+/* Creator Card Popover Animation                                */
+/* ------------------------------------------------------------- */
+@keyframes popoverIn {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-popover-in {
+  animation: popoverIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: bottom right;
+}
+
