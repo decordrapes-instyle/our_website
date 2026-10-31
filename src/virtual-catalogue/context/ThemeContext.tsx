@@ -1,45 +1,43 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useContext } from 'react';
+import { ThemeContext as MainThemeContext } from '../../context/ThemeContext';
 
-interface ThemeContextValue {
+export interface ThemeContextValue {
   isDark: boolean;
   toggleDark: () => void;
+  theme?: string;
+  setTheme?: (theme: 'light' | 'dark' | 'system') => void;
 }
 
-const ThemeContext = createContext<ThemeContextValue | null>(null);
-
+/**
+ * Proxy ThemeProvider that leverages the unified main website ThemeContext.
+ * Guarantees zero theme drift between Virtual Catalogue and the rest of the website.
+ */
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    const saved = localStorage.getItem('v1_theme');
-    if (saved) return saved === 'dark';
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      document.body.classList.add('dark');
-      localStorage.setItem('v1_theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.body.classList.remove('dark');
-      localStorage.setItem('v1_theme', 'light');
-    }
-  }, [isDark]);
-
-  const toggleDark = () => setIsDark((prev) => !prev);
-
-  return (
-    <ThemeContext.Provider value={{ isDark, toggleDark }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <>{children}</>;
 };
 
 export function useTheme(): ThemeContextValue {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within ThemeProvider');
-  }
-  return context;
-}
+  const context = useContext(MainThemeContext);
 
+  if (!context) {
+    // Fallback if rendered outside main ThemeProvider in isolation
+    const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+    return {
+      isDark,
+      toggleDark: () => {
+        if (typeof document !== 'undefined') {
+          document.documentElement.classList.toggle('dark');
+        }
+      },
+    };
+  }
+
+  return {
+    isDark: context.resolvedTheme === 'dark',
+    toggleDark: () => {
+      context.setTheme(context.resolvedTheme === 'dark' ? 'light' : 'dark');
+    },
+    theme: context.theme,
+    setTheme: context.setTheme,
+  };
+}

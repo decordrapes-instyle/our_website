@@ -47,7 +47,6 @@ body[data-fit="height"] {
   color: var(--muted);
 }
 
-body:has(#virtual-catalogue-root),
 body.catalogue-active {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 16px;
@@ -299,6 +298,8 @@ svg.i {
   background: #f4f4f6;
   min-height: 0;
   height: 100%;
+  aspect-ratio: 3 / 4;
+  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -312,6 +313,7 @@ svg.i {
 .ph img {
   width: 100%;
   height: 100%;
+  aspect-ratio: 3 / 4;
   object-fit: contain;
   display: block;
 }

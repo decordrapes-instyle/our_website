@@ -580,7 +580,7 @@ type Slide = {
 const Hero: React.FC = () => {
   const { get } = useSiteSettings();
   const [activeSlide, setActiveSlide] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
+  const [_isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -737,36 +737,36 @@ const Hero: React.FC = () => {
       <div className="relative z-10">
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-16 pb-20">
-        {/* Instant Help & Consultation Badge */}
-          
-          
-<div className="flex items-center gap-2 mb-5 animate-fade-up">
-  {/* Need Help Badge */}
-  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
+          {/* Instant Help & Consultation Badge */}
+
+
+          <div className="flex items-center gap-2 mb-5 animate-fade-up">
+            {/* Need Help Badge */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
     bg-neutral-100 dark:bg-neutral-900
     border border-neutral-200 dark:border-neutral-800"
-  >
-    <MailQuestion className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400 shrink-0" />
-    <span className="text-xs font-medium text-neutral-700 dark:text-neutral-300 whitespace-nowrap">
-      Need Help?
-    </span>
-  </div>
+            >
+              <MailQuestion className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400 shrink-0" />
+              <span className="text-xs font-medium text-neutral-700 dark:text-neutral-300 whitespace-nowrap">
+                Need Help?
+              </span>
+            </div>
 
-  {/* Call Badge */}
-  <a
-    href={`tel:${phoneNumber}`}
-    title={`Call ${phoneNumber}`}
-    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
+            {/* Call Badge */}
+            <a
+              href={`tel:${phoneNumber}`}
+              title={`Call ${phoneNumber}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
       bg-neutral-900 dark:bg-white
       text-white dark:text-neutral-900
       text-xs font-semibold
       hover:bg-neutral-800 dark:hover:bg-neutral-100
       active:scale-95 transition-all shrink-0"
-  >
-    <Phone className="w-3.5 h-3.5 text-emerald-400 dark:text-emerald-600" />
-    <span>Call Now</span>
-  </a>
-</div>
+            >
+              <Phone className="w-3.5 h-3.5 text-emerald-400 dark:text-emerald-600" />
+              <span>Call Now</span>
+            </a>
+          </div>
           {/* Updated Layout: Stack vertically on mobile, grid on desktop */}
           <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left Column - Content - Now comes first on mobile */}
@@ -774,20 +774,20 @@ const Hero: React.FC = () => {
               {/* Heading Hierarchy */}
               <div className="mb-6">
                 {/* Designer Kicker Pill */}
-                
-<div className="inline-flex items-center gap-2 mb-6 animate-fade-up">
-  <span className="text-[11px] sm:text-xs font-bold tracking-[0.16em] uppercase
+
+                <div className="inline-flex items-center gap-2 mb-6 animate-fade-up">
+                  <span className="text-[11px] sm:text-xs font-bold tracking-[0.16em] uppercase
     text-neutral-900 dark:text-white">
-    Decor Drapes Instyle
-  </span>
+                    Decor Drapes Instyle
+                  </span>
 
-  <span className="h-3 w-px bg-neutral-300 dark:bg-neutral-700" />
+                  <span className="h-3 w-px bg-neutral-300 dark:bg-neutral-700" />
 
-  <span className="text-[10px] sm:text-xs font-medium tracking-wide
+                  <span className="text-[10px] sm:text-xs font-medium tracking-wide
     text-neutral-500 dark:text-neutral-400">
-    Bespoke Window Treatments
-  </span>
-</div>
+                    Bespoke Window Treatments
+                  </span>
+                </div>
 
 
                 {/* Designer Typography Heading */}
@@ -815,55 +815,46 @@ const Hero: React.FC = () => {
                 <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white dark:from-neutral-950 to-transparent z-10" />
                 <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-neutral-950 to-transparent z-10" />
 
-                <div className="flex gap-3 animate-scroll-horizontal hover:pause-scroll" style={{ width: "max-content" }}>
-                  {/* Benefits */}
-                  {[...benefits, ...benefits].map((item, index) => (
-                    <div
-                      key={`benefit-${index}`}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium min-w-max ${item.bgColor} ${item.color}`}
-                    >
-                      <item.icon className="w-4 h-4" />
-                      <span>{item.text}</span>
+                <div className="flex animate-scroll-horizontal hover:pause-scroll" style={{ width: "max-content" }}>
+                  {[0, 1].map((copy) => (
+                    <div key={`badge-group-${copy}`} className="flex gap-3 pr-3">
+                      {/* Benefits */}
+                      {benefits.map((item, index) => (
+                        <div
+                          key={`benefit-${copy}-${index}`}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium min-w-max border border-neutral-200 bg-neutral-100 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+                        >
+                          <item.icon className={`w-3.5 h-3.5 ${item.color}`} />
+                          <span>{item.text}</span>
+                        </div>
+                      ))}
+
+                      {/* Stats */}
+                      {stats.map((item, index) => {
+                        const Icon = item.icon;
+
+                        return (
+                          <div
+                            key={`stat-${copy}-${index}`}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold min-w-max border border-neutral-200 bg-neutral-100 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+                          >
+                            <Icon className={`w-3.5 h-3.5 shrink-0 ${
+                              index % 4 === 0
+                                ? "text-purple-600 dark:text-purple-400"
+                                : index % 4 === 1
+                                  ? "text-pink-600 dark:text-pink-400"
+                                  : index % 4 === 2
+                                    ? "text-indigo-600 dark:text-indigo-400"
+                                    : "text-teal-600 dark:text-teal-400"
+                            }`} />
+                            <span className="whitespace-nowrap">
+                              {item.value} {item.label}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   ))}
-
-                  {/* Stats */}
-                  {[...stats, ...stats].map((item, index) => {
-                    const Icon = item.icon;
-
-                    return (
-                      <div
-                        key={`stat-${index}`}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold min-w-max
-            ${
-              index % 4 === 0
-                ? "bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-400"
-                : ""
-            }
-            ${
-              index % 4 === 1
-                ? "bg-pink-100 text-pink-600 dark:bg-pink-900 dark:text-pink-400"
-                : ""
-            }
-            ${
-              index % 4 === 2
-                ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-400"
-                : ""
-            }
-            ${
-              index % 4 === 3
-                ? "bg-teal-100 text-teal-600 dark:bg-teal-900 dark:text-teal-400"
-                : ""
-            }
-          `}
-                      >
-                        <Icon className="w-4 h-4 shrink-0" />
-                        <span className="whitespace-nowrap">
-                          {item.value} {item.label}
-                        </span>
-                      </div>
-                    );
-                  })}
                 </div>
               </div>
 
@@ -871,41 +862,43 @@ const Hero: React.FC = () => {
               <style>{SCENE_CSS}</style>
 
               {/* Scroll animation */}
-              <style>{`
-  @keyframes scroll-horizontal {
-    0% { transform: translateX(0%); }
-    100% { transform: translateX(-50%); }
-  }
+              <style>
+                {`
+                  @keyframes scroll-horizontal {
+                    0% { transform: translateX(0%); }
+                    100% { transform: translateX(-50%); }
+                  }
 
-  .animate-scroll-horizontal {
-    animation: scroll-horizontal 40s linear infinite;
-  }
+                  .animate-scroll-horizontal {
+                    animation: scroll-horizontal 40s linear infinite;
+                  }
 
-  .hover\\:pause-scroll:hover {
-    animation-play-state: paused;
-  }
-`}</style>
+                  .hover\\:pause-scroll:hover {
+                    animation-play-state: paused;
+                  }
+                `}
+              </style>
 
               {/* CTA Buttons - Not full width */}
-              <div className="flex flex-wrap gap-3.5 justify-start animate-fade-up delay-250">
-                <a href="/estimate" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-semibold rounded-full hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95">
-                  <Quote className="w-4 h-4" />
-                  <span>Get Free Quote</span>
-                  <ArrowRight className="w-4 h-4" />
+              <div className="flex flex-nowrap gap-2 sm:gap-3.5 justify-start animate-fade-up delay-250">
+                <a href="/products" className="inline-flex items-center justify-center gap-1 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-base bg-[#0fa5e5] text-white font-semibold rounded-full hover:bg-[#0b8fc5] hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95">
+                  <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                  <span className="whitespace-nowrap">View Products</span>
                 </a>
 
-                <a href="/products" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 font-semibold rounded-full hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95">
-                  <ShoppingBag className="w-4 h-4" />
-                  <span>View Products</span>
+                <a href="/estimate" className="inline-flex items-center justify-center gap-1 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-base bg-transparent border border-[#c78d2e] text-[#c78d2e] font-semibold rounded-full hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95">
+                  <Quote className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                  <span className="whitespace-nowrap">Get Free Quote</span>
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                 </a>
 
-                {/* Call Button - Mobile Visible, Desktop Hidden */}
+                {/* Call Button - Mobile Visible, Desktop Hidden
                 {isMobile && (
                   <a href={`tel:${phoneNumber}`} className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white font-semibold rounded-full hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95">
                     <Phone className="w-4 h-4" />
                     <span>Call Now</span>
                   </a>
-                )}
+                )} */}
               </div>
             </div>
             {/* Right Column - Carousel - Comes after content on mobile */}
@@ -914,58 +907,58 @@ const Hero: React.FC = () => {
                 {/* Stage: the window floats straight on the hero, no card or frame */}
                 <div className="relative h-[320px] sm:h-[420px] lg:h-[470px]">
                   <div key={current.id} className="absolute inset-0 animate-scene-glide">
-                      {/* Soft colour glow that changes with the product */}
-                      <div
-                        aria-hidden
-                        className="absolute left-1/2 top-1/2 h-[88%] w-[88%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-60 dark:opacity-30"
-                        style={{
-                          background: `radial-gradient(closest-side, ${accent}, transparent)`,
-                        }}
-                      />
+                    {/* Soft colour glow that changes with the product */}
+                    <div
+                      aria-hidden
+                      className="absolute left-1/2 top-1/2 h-[88%] w-[88%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-60 dark:opacity-30"
+                      style={{
+                        background: `radial-gradient(closest-side, ${accent}, transparent)`,
+                      }}
+                    />
 
-                      <div className="relative h-full w-full">
-                        <Art />
-                      </div>
-
-                      {/* Floating feature chips (tablet and desktop) */}
-                      <div className="hidden md:block">
-                        {current.features.map((feature, i) => (
-                          <span key={feature} className="absolute inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md border border-neutral-200/80 dark:border-neutral-800/80 shadow-lg text-xs xl:text-sm font-medium text-neutral-800 dark:text-neutral-100 animate-chip-float" style={{
-                              top: ["14%", "42%", "68%"][i],
-                              left: ["2%", "0%", "5%"][i],
-                            }}>
-                            <span
-                              className="h-1.5 w-1.5 rounded-full"
-                              style={{ background: accent }}
-                            />
-                            {feature}
-                          </span>
-                        ))}
-                      </div>
+                    <div className="relative h-full w-full">
+                      <Art />
                     </div>
+
+                    {/* Floating feature chips (tablet and desktop) */}
+                    <div className="hidden md:block">
+                      {current.features.map((feature, i) => (
+                        <span key={feature} className="absolute inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md border border-neutral-200/80 dark:border-neutral-800/80 shadow-lg text-xs xl:text-sm font-medium text-neutral-800 dark:text-neutral-100 animate-chip-float" style={{
+                          top: ["14%", "42%", "68%"][i],
+                          left: ["2%", "0%", "5%"][i],
+                        }}>
+                          <span
+                            className="h-1.5 w-1.5 rounded-full"
+                            style={{ background: accent }}
+                          />
+                          {feature}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Caption + arrows */}
                 <div className="mt-2 flex items-end justify-between gap-4">
                   <div className="min-w-0">
                     <div key={current.id} className="animate-scene-glide">
-                        <h3 className="text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-white">
-                          {current.title}
-                        </h3>
-                        <p className="mt-1 text-sm sm:text-base text-neutral-600 dark:text-neutral-400 max-w-md">
-                          {current.description}
-                        </p>
-                        <div className="mt-3 flex flex-wrap gap-2 md:hidden">
-                          {current.features.map((feature) => (
-                            <span
-                              key={feature}
-                              className="px-2.5 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-xs font-medium text-neutral-700 dark:text-neutral-300"
-                            >
-                              {feature}
-                            </span>
-                          ))}
-                        </div>
+                      <h3 className="text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-white">
+                        {current.title}
+                      </h3>
+                      <p className="mt-1 text-sm sm:text-base text-neutral-600 dark:text-neutral-400 max-w-md">
+                        {current.description}
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2 md:hidden">
+                        {current.features.map((feature) => (
+                          <span
+                            key={feature}
+                            className="px-2.5 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-xs font-medium text-neutral-700 dark:text-neutral-300"
+                          >
+                            {feature}
+                          </span>
+                        ))}
                       </div>
+                    </div>
                   </div>
 
                   <div className="flex gap-2 shrink-0">
@@ -993,11 +986,10 @@ const Hero: React.FC = () => {
                       key={s.id}
                       onClick={() => setActiveSlide(i)}
                       aria-label={`Show ${s.title}`}
-                      className={`relative h-1.5 rounded-full overflow-hidden bg-neutral-300 dark:bg-neutral-700 transition-all duration-300 ${
-                        i === activeSlide
-                          ? "w-8"
-                          : "w-1.5 hover:bg-neutral-400 dark:hover:bg-neutral-500"
-                      }`}
+                      className={`relative h-1.5 rounded-full overflow-hidden bg-neutral-300 dark:bg-neutral-700 transition-all duration-300 ${i === activeSlide
+                        ? "w-8"
+                        : "w-1.5 hover:bg-neutral-400 dark:hover:bg-neutral-500"
+                        }`}
                     >
                       {i === activeSlide && (
                         <span className="hs-prog absolute inset-0 bg-neutral-900 dark:bg-white" />

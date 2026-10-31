@@ -25,7 +25,7 @@ export const BrandLoader: React.FC<SpinnerProps> = ({
       ? "w-12 h-12"
       : size === "lg"
       ? "w-24 h-24"
-      : "w-18 h-18";
+      : "w-20 h-20";
 
   const textSize =
     size === "sm"
@@ -42,14 +42,13 @@ export const BrandLoader: React.FC<SpinnerProps> = ({
       <div className="relative flex items-center justify-center">
         {/* Subtle rotating accent ring */}
         <div
-          className={`absolute rounded-full border border-neutral-200/80 dark:border-neutral-800/80 border-t-emerald-600 dark:border-t-emerald-400 animate-spin [animation-duration:2.5s] ${ringDimensions}`}
+          className={`absolute ${ringDimensions} rounded-full border-2 border-amber-500/20 border-t-amber-500 animate-spin`}
         />
-
         {/* Center Navbar Logo with gentle pulse */}
         <img
-          src="https://res.cloudinary.com/dmiwq3l2s/image/upload/v1764768203/vfw82jmca7zl5p86czhy.png"
+          src="https://www.decordrapesinstyle.com/assets/image/logo-minified.png"
           alt="Decor Drapes Instyle"
-          className={`relative ${logoDimensions} object-contain select-none animate-logo-pulse drop-shadow-sm`}
+          className={`relative ${logoDimensions} object-contain select-none drop-shadow-sm`}
         />
       </div>
 

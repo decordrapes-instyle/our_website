@@ -4,7 +4,6 @@ import { getCatalogues, getProducts } from './services/rtdb';
 import { IndexPage } from './pages/IndexPage';
 import { CataloguePage } from './pages/CataloguePage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
-import { AdminPage } from './pages/admin/AdminPage';
 import { ToastProvider } from './context/ToastContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Spinner from '../components/common/Spinner';
@@ -33,7 +32,7 @@ export const App: React.FC = () => {
       }
       setAllProducts(allProds);
 
-      if (activeCatalogueSlug !== 'home' && activeCatalogueSlug !== 'admin') {
+      if (activeCatalogueSlug !== 'home') {
         const currentCat = cats.find((c) => c.slug === activeCatalogueSlug);
         if (currentCat) {
           const prods = await getProducts(currentCat.id);
@@ -48,11 +47,15 @@ export const App: React.FC = () => {
   };
 
   useEffect(() => {
-    document.body.classList.add('catalogue-active');
+    if (activeCatalogueSlug !== 'home') {
+      document.body.classList.add('catalogue-active');
+    } else {
+      document.body.classList.remove('catalogue-active');
+    }
     return () => {
       document.body.classList.remove('catalogue-active');
     };
-  }, []);
+  }, [activeCatalogueSlug]);
 
   useEffect(() => {
     loadData();
@@ -60,7 +63,7 @@ export const App: React.FC = () => {
 
   // Update category products when category changes
   useEffect(() => {
-    if (activeCatalogueSlug === 'home' || activeCatalogueSlug === 'admin') {
+    if (activeCatalogueSlug === 'home') {
       setProducts([]);
       return;
     }
@@ -70,16 +73,10 @@ export const App: React.FC = () => {
     }
   }, [activeCatalogueSlug, catalogues]);
 
-  // URL hash sync (#/ or #/admin or #/c/slug or #/c/slug/p/code)
+  // URL hash sync (#/ or #/c/slug or #/c/slug/p/code)
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash;
-
-      if (hash === '#/admin') {
-        setActiveCatalogueSlug('admin');
-        setActiveProductCode(null);
-        return;
-      }
 
       const detailMatch = hash.match(/^#\/c\/([^/]+)\/p\/(.+)$/);
       if (detailMatch) {
@@ -118,9 +115,7 @@ export const App: React.FC = () => {
     const run = () => {
       setActiveCatalogueSlug(slug);
       setActiveProductCode(code || null);
-      if (slug === 'admin') {
-        window.location.hash = '#/admin';
-      } else if (code) {
+      if (code) {
         window.location.hash = `#/c/${slug}/p/${encodeURIComponent(code)}`;
       } else if (slug !== 'home') {
         window.location.hash = `#/c/${slug}`;
@@ -138,13 +133,10 @@ export const App: React.FC = () => {
     }
   };
 
-  // Keyboard navigation & Admin shortcut
+  // Keyboard navigation (Escape to navigate back/home)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
-        e.preventDefault();
-        navigateTo(activeCatalogueSlug === 'admin' ? 'home' : 'admin');
-      } else if (e.key === 'Escape') {
+      if (e.key === 'Escape') {
         if (activeProductCode) navigateTo(activeCatalogueSlug, null);
         else if (activeCatalogueSlug !== 'home') navigateTo('home');
       }
@@ -170,14 +162,6 @@ export const App: React.FC = () => {
           <div className="min-h-screen flex items-center justify-center">
             <Spinner fullScreen={false} text="Loading catalogue..." size="lg" />
           </div>
-        ) : activeCatalogueSlug === 'admin' ? (
-          /* Standalone Non-Modal Admin Page */
-          <AdminPage
-            catalogues={catalogues}
-            products={allProducts}
-            onRefresh={loadData}
-            onExit={() => navigateTo('home')}
-          />
         ) : activeProductCode && activeProduct && currentCatalogue ? (
           /* Route 3: A4 Detail View strictly from inspire.html */
           <ProductDetailPage
@@ -195,7 +179,7 @@ export const App: React.FC = () => {
           />
         ) : (
           /* Route 1: Clean Minimal Index Page (Brand + Search + Category Cards) */
-          <div className="flex flex-col min-h-screen justify-between bg-desk dark:bg-zinc-950 text-ink dark:text-zinc-100 transition-colors">
+          <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
             <IndexPage
               catalogues={catalogues}
               allProducts={allProducts}

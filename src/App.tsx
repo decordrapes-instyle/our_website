@@ -45,9 +45,32 @@ function App() {
   const location = useLocation();
   const isMobile = useIsMobile();
 
+  // Track whether an active A4 catalogue group or detail sheet view is opened
+  const [catalogueGroupOpen, setCatalogueGroupOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const hash = window.location.hash;
+    return hash.startsWith("#/c/");
+  });
+
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash;
+      setCatalogueGroupOpen(hash.startsWith("#/c/"));
+    };
+    window.addEventListener("hashchange", handleHash);
+    window.addEventListener("popstate", handleHash);
+    return () => {
+      window.removeEventListener("hashchange", handleHash);
+      window.removeEventListener("popstate", handleHash);
+    };
+  }, []);
+
+  // When on Catalogue Homepage (/catalogue without group hash), header and footer are visible!
+  const isCatalogueGroup = location.pathname.startsWith("/catalogue") && catalogueGroupOpen;
+
   const hideHeaderFooter =
     location.pathname.startsWith("/profile") ||
-    location.pathname.startsWith("/catalogue") ||
+    isCatalogueGroup ||
     location.pathname.startsWith("/warranty") ||
     location.pathname.startsWith("/check-warranty") ||
     location.pathname === "/terms" ||

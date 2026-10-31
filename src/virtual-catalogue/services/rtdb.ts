@@ -1,6 +1,5 @@
 import { Catalogue, Product } from '../types/catalogue';
 import { INITIAL_CATALOGUES, INITIAL_PRODUCTS } from '../data/mockData';
-import { getCurrentUser } from './auth';
 import { database } from '../../config/firebase';
 import { ref, get, set, remove, update } from 'firebase/database';
 
@@ -13,59 +12,22 @@ const getEnv = (key: string): string => {
   return '';
 };
 
-// Use the same Firebase Realtime Database as the main application
-const DEFAULT_CATALOGUE_RTDB_URL =
-  getEnv('VITE_FIREBASE_DATABASE_URL') ||
-  getEnv('VITE_CATALOGUE_RTDB_URL') ||
-  'https://decor-drapes-default-rtdb.asia-southeast1.firebasedatabase.app';
-
-let dynamicRtdbUrl = '';
-let dynamicAuthToken = '';
-
-/**
- * Programmatic configuration for main app integration.
- * Allows the main app to specify a custom database URL or token at runtime.
- */
-export function configureCatalogueDatabase(config: { rtdbUrl?: string; authToken?: string }): void {
-  if (config.rtdbUrl) dynamicRtdbUrl = config.rtdbUrl.replace(/\/$/, '');
-  if (config.authToken) dynamicAuthToken = config.authToken;
-}
-
 const RTDB_URL = (
-  dynamicRtdbUrl ||
   getEnv('VITE_FIREBASE_DATABASE_URL') ||
   getEnv('VITE_CATALOGUE_RTDB_URL') ||
-  DEFAULT_CATALOGUE_RTDB_URL
+  'https://decor-drapes-default-rtdb.asia-southeast1.firebasedatabase.app'
 ).replace(/\/$/, '');
-
-const DB_SECRET =
-  getEnv('VITE_CATALOGUE_DB_SECRET') ||
-  getEnv('VITE_FIREBASE_DB_SECRET') ||
-  '';
 
 const STORAGE_KEY_CATALOGUES = 'v1_cat_catalogues_cache';
 const STORAGE_KEY_PRODUCTS = 'v1_cat_products_cache';
 
+// Unified collection root names supported in Firebase
+const PRIMARY_PATH = 'legend-catalogue';
+const SECONDARY_PATH = 'virtual-catalogue';
+
 // Helper to check if live Firebase is active
 export function isFirebaseConfigured(): boolean {
-  return Boolean(RTDB_URL || database);
-}
-
-function getAuthQueryParam(forWrite = false): string {
-  if (dynamicAuthToken) {
-    return `?auth=${encodeURIComponent(dynamicAuthToken)}`;
-  }
-  if (DB_SECRET) {
-    return `?auth=${DB_SECRET}`;
-  }
-  const user = getCurrentUser();
-  if (user?.idToken) {
-    return `?auth=${encodeURIComponent(user.idToken)}`;
-  }
-  if (forWrite) {
-    console.warn('Realtime Database write attempted without authentication credentials.');
-  }
-  return '';
+  return Boolean(database || RTDB_URL);
 }
 
 // Local cache initializers
@@ -115,12 +77,17 @@ function getLocalProducts(): Product[] {
   return INITIAL_PRODUCTS;
 }
 
-// Fetch all Catalogues wrapped under /virtual-catalogue/catalogues
+// Fetch all Catalogues from unified Firebase collections: legend-catalogue & virtual-catalogue
 export async function getCatalogues(): Promise<Catalogue[]> {
-  // First attempt via Firebase Client SDK
   if (database) {
     try {
-      const snapshot = await get(ref(database, 'virtual-catalogue/catalogues'));
+      // 1. Try primary collection 'legend-catalogue'
+      let snapshot = await get(ref(database, `${PRIMARY_PATH}/catalogues`));
+      if (!snapshot.exists() || !snapshot.val()) {
+        // 2. Try secondary collection 'virtual-catalogue'
+        snapshot = await get(ref(database, `${SECONDARY_PATH}/catalogues`));
+      }
+
       if (snapshot.exists()) {
         const data = snapshot.val();
         if (data) {
@@ -130,14 +97,17 @@ export async function getCatalogues(): Promise<Catalogue[]> {
         }
       }
     } catch (e) {
-      // SDK call failed or denied, continue to REST
+      console.warn('Firebase RTDB SDK error, falling back to REST / local:', e);
     }
   }
 
-  // Second attempt via REST
-  if (isFirebaseConfigured()) {
+  // Second attempt via REST fallback
+  if (RTDB_URL) {
     try {
-      const res = await fetch(`${RTDB_URL}/virtual-catalogue/catalogues.json${getAuthQueryParam(false)}`);
+      let res = await fetch(`${RTDB_URL}/${PRIMARY_PATH}/catalogues.json`);
+      if (!res.ok) {
+        res = await fetch(`${RTDB_URL}/${SECONDARY_PATH}/catalogues.json`);
+      }
       if (res.ok) {
         const data = await res.json();
         if (data && !data.error) {
@@ -147,20 +117,24 @@ export async function getCatalogues(): Promise<Catalogue[]> {
         }
       }
     } catch (e) {
-      console.warn('Firebase RTDB error, falling back to local cache:', e);
+      console.warn('Firebase REST error, falling back to local cache:', e);
     }
   }
 
-  // Fallback to local cache & mock data
   return getLocalCatalogues();
 }
 
-// Fetch Products by Catalogue ID wrapped under /virtual-catalogue/products
+// Fetch Products by Catalogue ID from unified Firebase collections
 export async function getProducts(catalogueId: string): Promise<Product[]> {
-  // First attempt via Firebase Client SDK
   if (database) {
     try {
-      const snapshot = await get(ref(database, 'virtual-catalogue/products'));
+      // 1. Try primary collection 'legend-catalogue'
+      let snapshot = await get(ref(database, `${PRIMARY_PATH}/products`));
+      if (!snapshot.exists() || !snapshot.val()) {
+        // 2. Try secondary collection 'virtual-catalogue'
+        snapshot = await get(ref(database, `${SECONDARY_PATH}/products`));
+      }
+
       if (snapshot.exists()) {
         const data = snapshot.val();
         if (data) {
@@ -170,24 +144,7 @@ export async function getProducts(catalogueId: string): Promise<Product[]> {
         }
       }
     } catch (e) {
-      // Continue to REST
-    }
-  }
-
-  // Second attempt via REST
-  if (isFirebaseConfigured()) {
-    try {
-      const res = await fetch(`${RTDB_URL}/virtual-catalogue/products.json${getAuthQueryParam(false)}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && !data.error) {
-          const list: Product[] = Object.values(data);
-          const filtered = list.filter((p) => p.catalogueId === catalogueId);
-          return filtered.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-        }
-      }
-    } catch (e) {
-      console.warn('Firebase RTDB error, falling back to local cache:', e);
+      console.warn('Firebase RTDB products error, falling back:', e);
     }
   }
 
@@ -198,7 +155,7 @@ export async function getProducts(catalogueId: string): Promise<Product[]> {
     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 }
 
-// Save or Update a single Product under /virtual-catalogue/products/:id
+// Save or Update a single Product under both unified collection roots
 export async function saveProduct(product: Product): Promise<void> {
   const all = getLocalProducts();
   const index = all.findIndex((p) => p.id === product.id);
@@ -211,21 +168,18 @@ export async function saveProduct(product: Product): Promise<void> {
 
   if (database) {
     try {
-      await set(ref(database, `virtual-catalogue/products/${product.id}`), product);
+      await Promise.allSettled([
+        set(ref(database, `${PRIMARY_PATH}/products/${product.id}`), product),
+        set(ref(database, `${SECONDARY_PATH}/products/${product.id}`), product),
+      ]);
       return;
-    } catch (e) { /* fallback to REST */ }
-  }
-
-  if (isFirebaseConfigured()) {
-    await fetch(`${RTDB_URL}/virtual-catalogue/products/${product.id}.json${getAuthQueryParam(true)}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(product),
-    });
+    } catch (e) {
+      console.error('Error saving product to Firebase:', e);
+    }
   }
 }
 
-// Bulk Insert / Import Products under /virtual-catalogue/products
+// Bulk Insert / Import Products under both unified collection roots
 export async function bulkInsertProducts(products: Product[]): Promise<void> {
   const all = getLocalProducts();
   for (const prod of products) {
@@ -242,40 +196,36 @@ export async function bulkInsertProducts(products: Product[]): Promise<void> {
 
   if (database) {
     try {
-      await update(ref(database, 'virtual-catalogue/products'), payload);
+      await Promise.allSettled([
+        update(ref(database, `${PRIMARY_PATH}/products`), payload),
+        update(ref(database, `${SECONDARY_PATH}/products`), payload),
+      ]);
       return;
-    } catch (e) { /* fallback to REST */ }
-  }
-
-  if (isFirebaseConfigured()) {
-    await fetch(`${RTDB_URL}/virtual-catalogue/products.json${getAuthQueryParam(true)}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    } catch (e) {
+      console.error('Error bulk updating products in Firebase:', e);
+    }
   }
 }
 
-// Delete Product from /virtual-catalogue/products/:id
+// Delete Product from both unified collection roots
 export async function deleteProduct(productId: string): Promise<void> {
   const all = getLocalProducts().filter((p) => p.id !== productId);
   localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(all));
 
   if (database) {
     try {
-      await remove(ref(database, `virtual-catalogue/products/${productId}`));
+      await Promise.allSettled([
+        remove(ref(database, `${PRIMARY_PATH}/products/${productId}`)),
+        remove(ref(database, `${SECONDARY_PATH}/products/${productId}`)),
+      ]);
       return;
-    } catch (e) { /* fallback to REST */ }
-  }
-
-  if (isFirebaseConfigured()) {
-    await fetch(`${RTDB_URL}/virtual-catalogue/products/${productId}.json${getAuthQueryParam(true)}`, {
-      method: 'DELETE',
-    });
+    } catch (e) {
+      console.error('Error deleting product from Firebase:', e);
+    }
   }
 }
 
-// Save or Update a Catalogue Category under /virtual-catalogue/catalogues/:id
+// Save or Update a Catalogue Category under both unified collection roots
 export async function saveCatalogue(catalogue: Catalogue): Promise<void> {
   const all = getLocalCatalogues();
   const index = all.findIndex((c) => c.id === catalogue.id);
@@ -288,36 +238,32 @@ export async function saveCatalogue(catalogue: Catalogue): Promise<void> {
 
   if (database) {
     try {
-      await set(ref(database, `virtual-catalogue/catalogues/${catalogue.id}`), catalogue);
+      await Promise.allSettled([
+        set(ref(database, `${PRIMARY_PATH}/catalogues/${catalogue.id}`), catalogue),
+        set(ref(database, `${SECONDARY_PATH}/catalogues/${catalogue.id}`), catalogue),
+      ]);
       return;
-    } catch (e) { /* fallback to REST */ }
-  }
-
-  if (isFirebaseConfigured()) {
-    await fetch(`${RTDB_URL}/virtual-catalogue/catalogues/${catalogue.id}.json${getAuthQueryParam(true)}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(catalogue),
-    });
+    } catch (e) {
+      console.error('Error saving catalogue category to Firebase:', e);
+    }
   }
 }
 
-// Delete a Catalogue Category from /virtual-catalogue/catalogues/:id
+// Delete a Catalogue Category from both unified collection roots
 export async function deleteCatalogue(catalogueId: string): Promise<void> {
   const all = getLocalCatalogues().filter((c) => c.id !== catalogueId);
   localStorage.setItem(STORAGE_KEY_CATALOGUES, JSON.stringify(all));
 
   if (database) {
     try {
-      await remove(ref(database, `virtual-catalogue/catalogues/${catalogueId}`));
+      await Promise.allSettled([
+        remove(ref(database, `${PRIMARY_PATH}/catalogues/${catalogueId}`)),
+        remove(ref(database, `${SECONDARY_PATH}/catalogues/${catalogueId}`)),
+      ]);
       return;
-    } catch (e) { /* fallback to REST */ }
-  }
-
-  if (isFirebaseConfigured()) {
-    await fetch(`${RTDB_URL}/virtual-catalogue/catalogues/${catalogueId}.json${getAuthQueryParam(true)}`, {
-      method: 'DELETE',
-    });
+    } catch (e) {
+      console.error('Error deleting catalogue category from Firebase:', e);
+    }
   }
 }
 
